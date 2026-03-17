@@ -1,0 +1,35 @@
+{
+  "name": "request-tracker",
+  "type": "module",
+  "version": "2.0.0",
+  "description": "Chrome DevTools extension that captures and decodes network requests from marketing/analytics tracking services",
+  "main": "dist/panel.js",
+  "scripts": {
+    "dev": "concurrently \"npm:watch:css\" \"npm:watch:js\"",
+    "watch:css": "tailwindcss -i styles/input.css -o dist/panel.css --watch",
+    "watch:js": "rollup -c -w",
+    "build": "npm run build:css && npm run build:js",
+    "build:css": "tailwindcss -i styles/input.css -o dist/panel.css --minify",
+    "build:js": "rollup -c --environment NODE_ENV:production",
+    "clean": "rm -rf dist/*"
+  },
+  "keywords": [
+    "chrome-extension",
+    "devtools",
+    "analytics",
+    "tracking",
+    "ga4",
+    "google-analytics",
+    "adobe-analytics",
+    "meta-pixel"
+  ],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^25.0.7",
+    "@rollup/plugin-node-resolve": "^15.2.3",
+    "concurrently": "^8.2.2",
+    "rollup": "^4.9.6",
+    "tailwindcss": "^3.4.1"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "Request Tracker",
+  "version": "2.0.0",
+  "description": "Captures and decodes network requests from analytics, tracking, and marketing tags.",
+  "devtools_page": "public/devtools.html",
+  "background": {
+    "service_worker": "dist/background.js"
+  },
+  "permissions": [
+    "webRequest",
+    "storage"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "icons": {
+    "16": "public/icons/icon16.png",
+    "48": "public/icons/icon48.png",
+    "128": "public/icons/icon128.png"
+  }
+}

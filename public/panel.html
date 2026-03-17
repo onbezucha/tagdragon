@@ -1,0 +1,1145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Request Tracker</title>
+  
+  
+  <!-- Tailwind CSS build output -->
+  <link rel="stylesheet" href="../dist/panel.css">
+  
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      width: 100%;
+      font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 13px;
+      line-height: 1.4;
+      color: var(--text-0);
+      background-color: var(--bg-0);
+    }
+
+    body {
+      display: grid;
+      grid-template-rows: 36px auto auto 1fr 24px;
+      gap: 0;
+      overflow: hidden;
+    }
+
+    /* === TOOLBAR === */
+    #toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 8px;
+      background-color: var(--bg-1);
+      border-bottom: 1px solid var(--border);
+      gap: 8px;
+    }
+
+    #toolbar > .toolbar-section {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .toolbar-separator {
+      width: 1px;
+      height: 20px;
+      background-color: var(--border);
+    }
+
+    button {
+      background: none;
+      border: none;
+      padding: 4px;
+      cursor: pointer;
+      color: var(--text-0);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 3px;
+      transition: background-color 150ms;
+    }
+
+    button:hover {
+      background-color: var(--bg-2);
+    }
+
+    button svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    /* Clear button in toolbar */
+    #btn-clear {
+      padding: 4px 6px;
+    }
+
+    /* Pause toggle */
+    #chk-pause {
+      display: none;
+    }
+
+    label[for="chk-pause"] {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 6px;
+      cursor: pointer;
+      border-radius: 3px;
+      transition: background-color 150ms;
+      user-select: none;
+      font-size: 12px;
+    }
+
+    label[for="chk-pause"]:hover {
+      background-color: var(--bg-2);
+    }
+
+    label[for="chk-pause"] svg {
+      width: 12px;
+      height: 14px;
+    }
+
+    /* Filter wrap (search input section) */
+    .filter-wrap {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      background-color: var(--bg-2);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 3px 6px;
+      min-width: 200px;
+    }
+
+    .filter-wrap svg {
+      width: 14px;
+      height: 14px;
+      flex-shrink: 0;
+    }
+
+    #filter-input {
+      flex: 1;
+      border: none;
+      background: none;
+      color: var(--text-0);
+      font-size: 12px;
+      outline: none;
+      padding: 0;
+      font-family: inherit;
+    }
+
+    #filter-input::placeholder {
+      color: var(--text-2);
+    }
+
+    #btn-clear-filter {
+      padding: 2px;
+      opacity: 0.5;
+      transition: opacity 150ms;
+    }
+
+    #btn-clear-filter:hover {
+      opacity: 1;
+      background-color: transparent;
+    }
+
+    /* Export button */
+    #btn-export {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 8px;
+      font-size: 12px;
+    }
+
+    #btn-export svg {
+      width: 12px;
+      height: 12px;
+    }
+
+    /* Settings popover */
+    #settings-popover {
+      position: absolute;
+      top: 40px;
+      right: 8px;
+      background-color: var(--bg-1);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      z-index: 1000;
+      min-width: 240px;
+      max-width: 300px;
+      padding: 8px 0;
+      display: none;
+    }
+
+    #settings-popover.visible {
+      display: block;
+    }
+
+    .settings-section {
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .settings-section:last-of-type {
+      border-bottom: none;
+    }
+
+    .settings-label {
+      display: block;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text-1);
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+
+
+    #btn-reset-filters {
+      display: block;
+      padding: 8px 12px;
+      border-top: 1px solid var(--border);
+      background: none;
+      border: none;
+      width: 100%;
+      text-align: left;
+      color: var(--accent);
+      font-size: 12px;
+      cursor: pointer;
+      transition: background-color 150ms;
+    }
+
+    #btn-reset-filters:hover {
+      background-color: var(--bg-2);
+    }
+
+    /* === FILTER POPOVER === */
+    #filter-popover {
+      position: fixed;
+      background-color: var(--bg-1);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 2px 8px rgba(0, 0, 0, 0.2);
+      z-index: 1000;
+      min-width: 200px;
+      max-width: 260px;
+      padding: 4px 0;
+      display: none;
+    }
+
+    #filter-popover.visible {
+      display: block;
+    }
+
+    .filter-popover-section {
+      padding: 0;
+    }
+
+    .filter-popover-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 12px;
+      cursor: pointer;
+      font-size: 12px;
+      color: var(--text-0);
+      transition: background 80ms;
+      position: relative;
+    }
+
+    .filter-popover-item:hover {
+      background: var(--bg-2);
+    }
+
+    .filter-popover-item.active-filter {
+      background: var(--accent-muted);
+    }
+
+    .filter-popover-icon {
+      font-size: 13px;
+      width: 18px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    .filter-popover-label {
+      flex: 1;
+      font-weight: 500;
+    }
+
+    .filter-popover-arrow {
+      color: var(--text-2);
+      font-size: 10px;
+      flex-shrink: 0;
+    }
+
+    .filter-popover-divider {
+      height: 1px;
+      background: var(--border);
+      margin: 4px 0;
+    }
+
+    /* === FILTER SUBMENU === */
+    .filter-submenu {
+      position: fixed;
+      background-color: var(--bg-1);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 2px 8px rgba(0, 0, 0, 0.2);
+      z-index: 1001;
+      min-width: 200px;
+      max-width: 300px;
+      padding: 4px 0;
+      display: none;
+      max-height: 320px;
+      overflow-y: auto;
+    }
+
+    .filter-submenu.visible {
+      display: block;
+    }
+
+    .filter-submenu-search {
+      padding: 6px 8px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .filter-submenu-search input {
+      width: 100%;
+      padding: 4px 8px;
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--text-0);
+      font-size: 11px;
+      font-family: inherit;
+      outline: none;
+    }
+
+    .filter-submenu-search input:focus {
+      border-color: var(--accent);
+    }
+
+    .filter-submenu-search input::placeholder {
+      color: var(--text-2);
+    }
+
+    .filter-submenu-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 12px;
+      cursor: pointer;
+      font-size: 12px;
+      color: var(--text-0);
+      transition: background 80ms;
+    }
+
+    .filter-submenu-item:hover {
+      background: var(--bg-2);
+    }
+
+    .filter-submenu-item.selected {
+      background: var(--accent-muted);
+      color: var(--accent);
+    }
+
+    .filter-submenu-item .item-label {
+      font-family: var(--font-mono);
+      font-size: 11px;
+    }
+
+    .filter-submenu-item .item-count {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--text-2);
+      margin-left: 8px;
+    }
+
+    .filter-submenu-divider {
+      height: 1px;
+      background: var(--border-subtle);
+      margin: 4px 0;
+    }
+
+    .filter-submenu-group-label {
+      padding: 6px 12px 3px;
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text-2);
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    /* Has-param inline input in submenu */
+    .filter-submenu-input-row {
+      display: flex;
+      gap: 4px;
+      padding: 6px 8px;
+    }
+
+    .filter-submenu-input-row input {
+      flex: 1;
+      padding: 4px 8px;
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--text-0);
+      font-size: 11px;
+      font-family: var(--font-mono);
+      outline: none;
+    }
+
+    .filter-submenu-input-row input:focus {
+      border-color: var(--accent);
+    }
+
+    .filter-submenu-input-row button {
+      padding: 4px 10px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    .filter-submenu-input-row button:hover {
+      background: var(--accent-hover);
+    }
+
+    .filter-submenu-quickpicks {
+      padding: 4px 8px 6px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+
+    .filter-submenu-quickpick {
+      padding: 2px 8px;
+      background: var(--bg-2);
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+      font-size: 10px;
+      font-family: var(--font-mono);
+      color: var(--text-1);
+      cursor: pointer;
+      transition: all 100ms;
+    }
+
+    .filter-submenu-quickpick:hover {
+      background: var(--accent-muted);
+      color: var(--accent);
+      border-color: rgba(80, 144, 255, 0.25);
+    }
+
+    /* Scrollbar for submenu */
+    .filter-submenu::-webkit-scrollbar {
+      width: 5px;
+    }
+
+    .filter-submenu::-webkit-scrollbar-track {
+      background: var(--bg-1);
+    }
+
+    .filter-submenu::-webkit-scrollbar-thumb {
+      background: var(--bg-3);
+      border-radius: 3px;
+    }
+
+    /* === PROVIDER BAR === */
+    #provider-bar {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 8px;
+      background-color: var(--bg-1);
+      border-bottom: 1px solid var(--border);
+      gap: 6px;
+      min-height: 28px;
+    }
+
+    #provider-bar.visible {
+      display: flex;
+    }
+
+    #provider-pills {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+      flex-wrap: wrap;
+      flex: 1;
+    }
+
+    .provider-bar-actions {
+      display: flex;
+      gap: 2px;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .provider-bar-btn {
+      padding: 2px 6px;
+      font-size: 10px;
+      color: var(--text-2);
+      border: 1px solid var(--border-subtle);
+      border-radius: 3px;
+      background: var(--bg-2);
+      cursor: pointer;
+      transition: all 100ms;
+    }
+
+    .provider-bar-btn:hover {
+      color: var(--text-0);
+      background: var(--bg-3);
+      border-color: var(--border);
+    }
+
+
+
+    /* === FILTER BAR === */
+    #filter-bar {
+      display: none;
+      align-items: center;
+      padding: 0 8px;
+      background-color: var(--bg-0);
+      border-bottom: 1px solid var(--border);
+      gap: 6px;
+      min-height: 28px;
+    }
+
+    #filter-bar.visible {
+      display: flex;
+    }
+
+    .add-filter-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 10px;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text-1);
+      background: var(--bg-2);
+      border: 1px dashed var(--border);
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 150ms;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .add-filter-btn:hover {
+      color: var(--accent);
+      border-color: var(--accent);
+      border-style: solid;
+      background: var(--accent-muted);
+    }
+
+    .add-filter-btn svg {
+      width: 10px;
+      height: 10px;
+    }
+
+    #active-filters {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+      flex-wrap: wrap;
+      flex: 1;
+    }
+
+    /* === MAIN AREA === */
+    #main {
+      display: grid;
+      grid-template-columns: minmax(280px, var(--list-width, 340px)) 6px 1fr;
+      gap: 0;
+      overflow: hidden;
+      position: relative;
+    }
+
+    #list-pane {
+      display: flex;
+      flex-direction: column;
+      background-color: var(--bg-0);
+      border-right: 1px solid var(--border);
+      overflow: hidden;
+    }
+
+    #request-list {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #request-list::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    #request-list::-webkit-scrollbar-track {
+      background: var(--bg-0);
+    }
+
+    #request-list::-webkit-scrollbar-thumb {
+      background: var(--bg-2);
+      border-radius: 4px;
+    }
+
+    #request-list::-webkit-scrollbar-thumb:hover {
+      background: var(--bg-3);
+    }
+
+    #empty-state {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 20px;
+      color: var(--text-2);
+    }
+
+    .empty-icon {
+      margin-bottom: 12px;
+      opacity: 0.7;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    @keyframes radarSweep {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    .empty-radar {
+      opacity: 0.6;
+    }
+
+    .radar-sweep {
+      transform-origin: 20px 20px;
+      animation: radarSweep 3s linear infinite;
+    }
+
+    .empty-title {
+      font-weight: 500;
+      font-size: 13px;
+      color: var(--text-1);
+      margin-bottom: 6px;
+    }
+
+    .empty-subtitle {
+      font-size: 11px;
+      color: var(--text-2);
+      line-height: 1.5;
+      max-width: 280px;
+    }
+
+
+
+    /* === SPLITTER === */
+    #splitter {
+      width: 6px;
+      background-color: var(--border);
+      cursor: col-resize;
+      transition: background-color 150ms;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    #splitter:hover {
+      background-color: var(--accent);
+    }
+
+    #splitter:hover .splitter-handle span {
+      background-color: var(--text-0);
+    }
+
+    .splitter-handle {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      pointer-events: none;
+    }
+
+    .splitter-handle span {
+      width: 2px;
+      height: 2px;
+      border-radius: 50%;
+      background-color: var(--text-3);
+      transition: background-color 150ms;
+    }
+
+    /* === DETAIL PANE === */
+    #detail-pane {
+      display: flex;
+      flex-direction: column;
+      background-color: var(--bg-0);
+      overflow: hidden;
+    }
+
+    #detail-pane.hidden {
+      display: none;
+    }
+
+    #detail-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px;
+      background-color: var(--bg-1);
+      border-bottom: 1px solid var(--border);
+      min-height: 36px;
+    }
+
+    #detail-provider-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    #detail-url {
+      flex: 1;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px;
+      color: var(--text-1);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      min-width: 0;
+    }
+
+    #btn-close-detail {
+      padding: 4px 6px;
+      flex-shrink: 0;
+    }
+
+    #detail-meta {
+      display: flex;
+      gap: 12px;
+      padding: 6px 8px;
+      background-color: var(--bg-1);
+      border-bottom: 1px solid var(--border);
+      font-size: 11px;
+      flex-wrap: wrap;
+    }
+
+    .detail-meta-item {
+      display: flex;
+      gap: 4px;
+    }
+
+    .detail-meta-label {
+      color: var(--text-2);
+      font-weight: 500;
+    }
+
+    .detail-meta-value {
+      color: var(--text-0);
+      font-family: 'IBM Plex Mono', monospace;
+    }
+
+    /* Detail tabs */
+    #detail-tabs {
+      display: flex;
+      gap: 0;
+      padding: 0;
+      background-color: var(--bg-1);
+      border-bottom: 1px solid var(--border);
+      overflow-x: auto;
+      flex-shrink: 0;
+    }
+
+    .dtab {
+      padding: 8px 12px;
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      color: var(--text-2);
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 150ms;
+    }
+
+    .dtab:hover {
+      color: var(--text-0);
+      background-color: var(--bg-2);
+    }
+
+    .dtab.active {
+      color: var(--text-0);
+      border-bottom-color: var(--accent);
+    }
+
+    .dtab.disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    /* Detail content area */
+    #detail-content {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 12px;
+    }
+
+    #detail-content::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    #detail-content::-webkit-scrollbar-track {
+      background: var(--bg-0);
+    }
+
+    #detail-content::-webkit-scrollbar-thumb {
+      background: var(--bg-2);
+      border-radius: 4px;
+    }
+
+    #detail-content::-webkit-scrollbar-thumb:hover {
+      background: var(--bg-3);
+    }
+
+    .tab-pane {
+      display: none;
+    }
+
+    .tab-pane.active {
+      display: block;
+    }
+
+    /* === STATUS BAR === */
+    #status-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 8px;
+      background-color: var(--bg-1);
+      border-top: 1px solid var(--border);
+      font-size: 11px;
+      color: var(--text-2);
+    }
+
+    .status-left {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .status-separator {
+      color: var(--text-3);
+      font-size: 10px;
+    }
+
+    .status-label {
+      color: var(--text-2);
+    }
+
+    #size-badge .value,
+    #time-badge .value {
+      color: var(--text-1);
+      font-family: var(--font-mono);
+    }
+
+    .status-hint {
+      color: var(--text-2);
+      font-size: 10px;
+    }
+  </style>
+</head>
+<body>
+  <!-- TOOLBAR -->
+  <div id="toolbar">
+    <div class="toolbar-section">
+      <button id="btn-clear" title="Clear all (Ctrl+L)">
+        <svg width="14" height="14" viewBox="0 0 14 14">
+          <path d="M3 4h8l-.5 8.5a1 1 0 01-1 .5H4.5a1 1 0 01-1-.5L3 4z" stroke="currentColor" stroke-width="1.2" fill="none"/>
+          <path d="M5.5 6v5M8.5 6v5" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/>
+          <path d="M1.5 4h11M5 4V2.5a.5.5 0 01.5-.5h3a.5.5 0 01.5.5V4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+        </svg>
+      </button>
+      <div class="toolbar-separator"></div>
+      <label for="chk-pause">
+        <input type="checkbox" id="chk-pause">
+        <svg width="12" height="14" viewBox="0 0 12 14">
+          <rect x="1" y="1" width="3.5" height="12" rx="1" fill="currentColor"/>
+          <rect x="7.5" y="1" width="3.5" height="12" rx="1" fill="currentColor"/>
+        </svg>
+        <span>Pause</span>
+      </label>
+      <div class="toolbar-separator"></div>
+      <div class="filter-wrap">
+        <svg width="14" height="14" viewBox="0 0 14 14">
+          <circle cx="6" cy="6" r="4" stroke="currentColor" stroke-width="1.3" fill="none"/>
+          <path d="M9.5 9.5l3 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+        </svg>
+        <input type="text" id="filter-input" placeholder="Filter by URL, parameter, or provider...">
+        <button id="btn-clear-filter">
+          <svg width="12" height="12" viewBox="0 0 12 12">
+            <path d="M1 1l10 10M11 1L1 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+    <div class="toolbar-section">
+      <button id="btn-settings" title="Filters & settings">
+        <svg width="14" height="14" viewBox="0 0 14 14">
+          <circle cx="7" cy="7" r="2" stroke="currentColor" stroke-width="1.2" fill="none"/>
+          <path d="M7 1v1.5M7 11.5V13M1 7h1.5M11.5 7H13M2.8 2.8l1 1M10.2 10.2l1 1M11.2 2.8l-1 1M3.8 10.2l-1 1" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/>
+        </svg>
+      </button>
+      <button id="btn-export" title="Export as JSON">
+        <svg width="12" height="12" viewBox="0 0 12 12">
+          <path d="M6 1v7M3 6l3 3 3-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M1.5 10.5h9" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+        </svg>
+        <span>Export</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- SETTINGS POPOVER -->
+  <div id="settings-popover">
+    <div class="settings-section">
+      <span class="settings-label">About</span>
+      <div style="font-size: 11px; color: var(--text-1); line-height: 1.5;">
+        Request Tracker v2.0<br>
+        Captures and decodes network requests from marketing/analytics tracking services.
+      </div>
+    </div>
+    <div class="settings-section">
+      <span class="settings-label">Keyboard Shortcuts</span>
+      <div style="font-size: 11px; color: var(--text-1); line-height: 1.8;">
+        <div style="display: flex; justify-content: space-between;">
+          <span>Clear all</span>
+          <kbd style="font-family: var(--font-mono); font-size: 10px; padding: 1px 5px; background: var(--bg-2); border: 1px solid var(--border); border-radius: 3px;">Ctrl+L</kbd>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+          <span>Focus search</span>
+          <kbd style="font-family: var(--font-mono); font-size: 10px; padding: 1px 5px; background: var(--bg-2); border: 1px solid var(--border); border-radius: 3px;">Ctrl+F</kbd>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+          <span>Add filter</span>
+          <kbd style="font-family: var(--font-mono); font-size: 10px; padding: 1px 5px; background: var(--bg-2); border: 1px solid var(--border); border-radius: 3px;">Ctrl+Shift+F</kbd>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+          <span>Navigate list</span>
+          <kbd style="font-family: var(--font-mono); font-size: 10px; padding: 1px 5px; background: var(--bg-2); border: 1px solid var(--border); border-radius: 3px;">&uarr; &darr; / j k</kbd>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+          <span>Close panel</span>
+          <kbd style="font-family: var(--font-mono); font-size: 10px; padding: 1px 5px; background: var(--bg-2); border: 1px solid var(--border); border-radius: 3px;">Esc</kbd>
+        </div>
+      </div>
+    </div>
+    <div class="settings-section">
+      <span class="settings-label">Performance</span>
+      <div style="margin-top: 4px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+          <span style="font-size: 11px; color: var(--text-1);">Max requests</span>
+          <select id="cfg-max-requests" style="
+            background: var(--bg-2); 
+            border: 1px solid var(--border); 
+            border-radius: 4px; 
+            color: var(--text-0); 
+            font-size: 11px; 
+            font-family: var(--font-mono);
+            padding: 2px 6px;
+            cursor: pointer;
+            outline: none;
+          ">
+            <option value="250">250</option>
+            <option value="500" selected>500</option>
+            <option value="1000">1000</option>
+            <option value="2000">2000</option>
+            <option value="0">Unlimited</option>
+          </select>
+        </div>
+        <label style="display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-1); cursor: pointer; user-select: none;">
+          <input type="checkbox" id="cfg-auto-prune" checked style="accent-color: var(--accent); cursor: pointer;">
+          Auto-prune oldest requests
+        </label>
+      </div>
+    </div>
+    <button id="btn-reset-filters">Reset all filters</button>
+  </div>
+
+  <!-- PROVIDER BAR -->
+  <div id="provider-bar">
+    <div id="provider-pills"></div>
+    <div class="provider-bar-actions">
+      <button id="btn-providers-all" class="provider-bar-btn" title="Show all providers">All</button>
+      <button id="btn-providers-none" class="provider-bar-btn" title="Hide all providers">None</button>
+    </div>
+  </div>
+
+  <!-- FILTER BAR -->
+  <div id="filter-bar">
+    <button id="btn-add-filter" class="add-filter-btn" title="Add filter (Ctrl+Shift+F)">
+      <svg width="12" height="12" viewBox="0 0 12 12">
+        <path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+      <span>Filter</span>
+    </button>
+    <div id="active-filters"></div>
+  </div>
+
+  <!-- FILTER POPOVER -->
+  <div id="filter-popover">
+    <div class="filter-popover-section" data-filter="event">
+      <div class="filter-popover-item" data-action="open-submenu" data-submenu="event">
+        <span class="filter-popover-icon">&#9889;</span>
+        <span class="filter-popover-label">Event Type</span>
+        <span class="filter-popover-arrow">&#9656;</span>
+      </div>
+    </div>
+    <div class="filter-popover-section" data-filter="status">
+      <div class="filter-popover-item" data-action="open-submenu" data-submenu="status">
+        <span class="filter-popover-icon">&#128246;</span>
+        <span class="filter-popover-label">HTTP Status</span>
+        <span class="filter-popover-arrow">&#9656;</span>
+      </div>
+    </div>
+    <div class="filter-popover-section" data-filter="method">
+      <div class="filter-popover-item" data-action="open-submenu" data-submenu="method">
+        <span class="filter-popover-icon">&#128225;</span>
+        <span class="filter-popover-label">HTTP Method</span>
+        <span class="filter-popover-arrow">&#9656;</span>
+      </div>
+    </div>
+    <div class="filter-popover-section" data-filter="userid">
+      <div class="filter-popover-item" data-action="open-submenu" data-submenu="userid">
+        <span class="filter-popover-icon">&#128100;</span>
+        <span class="filter-popover-label">User ID</span>
+        <span class="filter-popover-arrow">&#9656;</span>
+      </div>
+    </div>
+    <div class="filter-popover-divider"></div>
+    <div class="filter-popover-section" data-filter="has-param">
+      <div class="filter-popover-item" data-action="open-submenu" data-submenu="has-param">
+        <span class="filter-popover-icon">&#128269;</span>
+        <span class="filter-popover-label">Has Parameter</span>
+        <span class="filter-popover-arrow">&#9656;</span>
+      </div>
+    </div>
+
+    <!-- SUBMENUS (appear when hovering/clicking a menu item) -->
+    <div id="filter-submenu" class="filter-submenu">
+      <div id="filter-submenu-content"></div>
+    </div>
+  </div>
+
+  <!-- MAIN AREA -->
+  <div id="main">
+    <!-- REQUEST LIST PANE -->
+    <div id="list-pane">
+       <div id="request-list">
+         <div id="empty-state">
+           <div class="empty-icon">
+             <svg width="40" height="40" viewBox="0 0 40 40" class="empty-radar">
+               <circle cx="20" cy="20" r="16" stroke="var(--text-3)" stroke-width="1" fill="none"/>
+               <circle cx="20" cy="20" r="10" stroke="var(--text-3)" stroke-width="1" fill="none" opacity="0.5"/>
+               <circle cx="20" cy="20" r="4" stroke="var(--text-3)" stroke-width="1" fill="none" opacity="0.3"/>
+               <line x1="20" y1="20" x2="20" y2="4" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" class="radar-sweep"/>
+             </svg>
+           </div>
+           <div class="empty-title">Waiting for requests...</div>
+           <div class="empty-subtitle">Load a page or trigger an action. Capturing: GA4, UA, GTM, Meta, Hotjar, Tealium, Adobe, LinkedIn, Sklik, Bing and more.</div>
+         </div>
+       </div>
+    </div>
+
+    <!-- SPLITTER -->
+    <div id="splitter">
+      <div class="splitter-handle">
+        <span></span><span></span><span></span>
+      </div>
+    </div>
+
+    <!-- DETAIL PANE -->
+    <div id="detail-pane" class="hidden">
+      <div id="detail-header">
+        <div id="detail-provider-badge"></div>
+        <div id="detail-url"></div>
+        <button id="btn-close-detail">
+          <svg width="12" height="12" viewBox="0 0 12 12">
+            <path d="M1 1l10 10M11 1L1 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
+
+      <div id="detail-meta">
+        <div class="detail-meta-item">
+          <span class="detail-meta-label">Method:</span>
+          <span class="detail-meta-value" id="meta-method">—</span>
+        </div>
+        <div class="detail-meta-item">
+          <span class="detail-meta-label">Status:</span>
+          <span class="detail-meta-value" id="meta-status">—</span>
+        </div>
+        <div class="detail-meta-item">
+          <span class="detail-meta-label">Duration:</span>
+          <span class="detail-meta-value" id="meta-duration">—</span>
+        </div>
+        <div class="detail-meta-item">
+          <span class="detail-meta-label">Time:</span>
+          <span class="detail-meta-value" id="meta-timestamp">—</span>
+        </div>
+      </div>
+
+      <div id="detail-tabs">
+        <button class="dtab active" data-tab="decoded">Decoded</button>
+        <button class="dtab" data-tab="query">Query</button>
+        <button class="dtab" data-tab="post">POST</button>
+        <button class="dtab" data-tab="headers">Headers</button>
+        <button class="dtab" data-tab="response">Response</button>
+      </div>
+
+      <div id="detail-content"></div>
+    </div>
+  </div>
+
+  <!-- STATUS BAR -->
+  <div id="status-bar">
+    <div class="status-left">
+      <span id="status-stats">0 / 0 requests</span>
+      <span class="status-separator">·</span>
+      <span id="size-badge"><span class="status-label">Size:</span> <span class="value">0B</span></span>
+      <span class="status-separator">·</span>
+      <span id="time-badge"><span class="status-label">Avg:</span> <span class="value">—</span></span>
+    </div>
+    <span class="status-hint">Ctrl+L to clear</span>
+  </div>
+
+  <!-- Panel Script -->
+  <script src="../dist/panel.js"></script>
+</body>
+</html>
