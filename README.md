@@ -1,7 +1,7 @@
 # Request Tracker
 
 [![Chrome Extension](https://img.shields.io/badge/Chrome-Extension-green?style=flat-square&logo=google-chrome)](https://chrome.google.com/webstore)
-[![Version](https://img.shields.io/badge/version-2.0.0-blue.svg?style=flat-square)](https://github.com/your-username/TagDragon/releases)
+[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg?style=flat-square)](https://github.com/your-username/TagDragon/releases)
 [![License](https://img.shields.io/badge/license-ISC-purple.svg?style=flat-square)](LICENSE)
 [![Manifest V3](https://img.shields.io/badge/Manifest-V3-orange.svg?style=flat-square)](https://developer.chrome.com/docs/extensions/mv3/intro)
 
