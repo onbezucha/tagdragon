@@ -1,0 +1,125 @@
+import type { Provider } from '../../types/provider';
+import { getParams } from '../url-parser';
+
+interface HARPostBody {
+  text?: string;
+  raw?: Array<{ bytes?: string }>;
+  mimeType?: string;
+}
+
+export const aepWebSDK: Provider = {
+  name: 'AEP Web SDK',
+  color: '#C70000',
+  // Modern implementations use Web SDK (Alloy)
+  // POST JSON to *.adobedc.net/ee/v2/interact or /collect
+  // eVars and props are nested in: events[0].data.__adobe.analytics.eVarN / propN
+  pattern: /\/ee\/[^/]+\/v\d+\/interact|\/ee\/[^/]+\/v\d+\/collect|\/ee\/v\d+\/interact|\/ee\/v\d+\/collect|\/ee\/collect|\.adobedc\.net/,
+
+  parseParams(url: string, postRaw: unknown): Record<string, string | undefined> {
+    const urlParams = getParams(url, null);
+
+    // Parse POST JSON payload
+    let payload: Record<string, unknown> = {};
+    try {
+      const har = postRaw as HARPostBody | undefined;
+      const bodyStr = har?.text ||
+        (har?.raw?.[0]?.bytes ? atob(har.raw[0].bytes) : '');
+      if (bodyStr) payload = JSON.parse(bodyStr) as Record<string, unknown>;
+    } catch {
+      // Parsing failed, continue with empty payload
+    }
+
+    const event0 = ((payload.events as unknown[]) || [])[0] as Record<string, unknown> | undefined || {};
+    const xdm = (event0.xdm as Record<string, unknown>) || {};
+    const data = (event0.data as Record<string, unknown>) || {};
+    const adobe = (data.__adobe as Record<string, unknown>) || {};
+    const aa = (adobe.analytics as Record<string, unknown>) || {}; // <-- eVars and props are here
+    const device = (xdm.device as Record<string, unknown>) || {};
+    const web = (xdm.web as Record<string, unknown>) || {};
+    const identity = (xdm.identityMap as Record<string, unknown>) || {};
+
+    // All eVars: eVar1-eVar250 (key is "eVarN" or "evarN")
+    const eVars: Record<string, string> = {};
+    for (let i = 1; i <= 250; i++) {
+      const v = aa[`eVar${i}`] || aa[`evar${i}`];
+      if (v !== undefined && v !== null && v !== '') {
+        eVars[`eVar${i}`] = String(v);
+      }
+    }
+
+    // All props: prop1-prop75
+    const props: Record<string, string> = {};
+    for (let i = 1; i <= 75; i++) {
+      const v = aa[`prop${i}`] || aa[`Prop${i}`];
+      if (v !== undefined && v !== null && v !== '') {
+        props[`prop${i}`] = String(v);
+      }
+    }
+
+    // List variables: list1-list3
+    const lists: Record<string, string> = {};
+    for (let i = 1; i <= 3; i++) {
+      const v = aa[`list${i}`];
+      if (v) {
+        lists[`list${i}`] = String(v);
+      }
+    }
+
+    // Extract page details from web.webPageDetails
+    const pageDetails = (web.webPageDetails as Record<string, unknown>) || {};
+
+    // Extract referrer from web.webReferrer
+    const referrer = (web.webReferrer as Record<string, unknown>) || {};
+
+    // Extract ECID from identity map
+    const ecidArray = (identity.ECID as unknown[]) || [];
+    const ecidObj = (ecidArray[0] as Record<string, unknown>) || {};
+
+    // Extract screen dimensions
+    const screenDimensions = device.screenWidth && device.screenHeight
+      ? `${device.screenWidth}x${device.screenHeight}`
+      : undefined;
+
+    // Get datastream ID from configId or from meta config overrides
+    let datastreamId = urlParams.configId as string | undefined;
+    if (!datastreamId && payload.meta && typeof payload.meta === 'object') {
+      const meta = payload.meta as Record<string, unknown>;
+      const overrides = meta.configOverrides as Record<string, unknown> | undefined;
+      if (overrides) {
+        const analytics = overrides.com_adobe_analytics as Record<string, unknown> | undefined;
+        const suites = analytics?.reportSuites as unknown[];
+        datastreamId = suites?.[0] as string | undefined;
+      }
+    }
+
+    return {
+      // Basic info
+      'Datastream ID': datastreamId,
+      'Request type': payload.requestId ? 'interact' : 'collect',
+      'Event type': String(xdm.eventType ?? ''),
+
+      // Adobe Analytics specifics (from __adobe.analytics)
+      'Page name': String(aa.pageName ?? ''),
+      'Page URL': String((aa.pageURL || pageDetails?.URL) ?? ''),
+      'Channel': String(aa.channel ?? ''),
+      'Server': String(aa.server ?? ''),
+      'Events': String(aa.events ?? ''),
+      'Link name': String(aa.linkName ?? ''),
+      'Link type': String(aa.linkType ?? ''),
+      'Campaign': String(aa.campaign ?? ''),
+      'Referrer': String((aa.referrer || referrer?.URL) ?? ''),
+
+      // eVars and props
+      ...eVars,
+      ...props,
+      ...lists,
+
+      // XDM identity
+      'ECID': String(ecidObj.id ?? ''),
+
+      // Device
+      'Screen': screenDimensions,
+      'Screen orient': String(device.screenOrientation ?? ''),
+    };
+  },
+};

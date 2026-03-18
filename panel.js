@@ -18,6 +18,13 @@ let filterMethod = '';
 let filterHasParam = '';
 const requestMap = new Map();    // id → request data (O(1) lookup)
 
+// ─── ADOBE ENV SWITCHER STATE ─────────────────────────────────────────────
+let adobeEnvState = {
+  detected: null,       // { url, hostname, environment, libraryId, type }
+  config: null,         // { active, urls, originalUrl } from storage
+  selectedEnv: null,    // currently selected in popover (before apply)
+};
+
 // ─── CONFIG (persisted via chrome.storage.local) ──────────────────────────
 const DEFAULT_CONFIG = {
   maxRequests: 500,
@@ -598,6 +605,21 @@ const $filterSubmenu = document.getElementById('filter-submenu');
 const $filterSubmenuContent = document.getElementById('filter-submenu-content');
 const $main = document.getElementById('main');
 const $splitter = document.getElementById('splitter');
+
+// ─── ENV SWITCHER DOM REFS ────────────────────────────────────────────────
+const $envBadge = document.getElementById('adobe-env-badge');
+const $envBadgeLabel = $envBadge ? $envBadge.querySelector('.env-badge-label') : null;
+const $envPopover = document.getElementById('env-popover');
+const $envSeparator = document.getElementById('env-separator');
+const $envDetectedUrl = document.getElementById('env-detected-url');
+const $envDetectedType = document.getElementById('env-detected-type');
+const $envUrlDev = document.getElementById('env-url-dev');
+const $envUrlAcc = document.getElementById('env-url-acc');
+const $envUrlProd = document.getElementById('env-url-prod');
+const $envApply = document.getElementById('env-apply');
+const $envReset = document.getElementById('env-reset');
+const $envHostname = document.getElementById('env-hostname');
+const $envSelectBtns = document.querySelectorAll('.env-select-btn');
 
 // ─── ADOBE ANALYTICS PARSERS (unchanged) ──────────────────────────────────
 function parseAdobeEvents(eventsString) {
@@ -1931,6 +1953,314 @@ function initConfigUI() {
   }
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// ADOBE ENVIRONMENT SWITCHER
+// Detects Adobe Launch/Tags library and allows switching DEV / ACC / PROD
+// ═══════════════════════════════════════════════════════════════════════════
+
+const DETECT_ADOBE_SCRIPT = `
+(function() {
+  var scripts = document.querySelectorAll('script[src]');
+  for (var i = 0; i < scripts.length; i++) {
+    var src = scripts[i].src;
+    if (src.indexOf('assets.adobedtm.com') !== -1 ||
+        /launch-EN[a-f0-9]+/.test(src) ||
+        /launch-[a-f0-9]+\\\\.min\\\\.js/.test(src) ||
+        /satellite-[a-f0-9]+/.test(src)) {
+      return JSON.stringify({ url: src, hostname: location.hostname });
+    }
+  }
+  return null;
+})()
+`;
+
+// ─── ENV DETECTION ────────────────────────────────────────────────────────
+function parseAdobeLibraryUrl(url) {
+  const envMatch = url.match(/launch-EN([a-f0-9]+)(?:-(development|staging))?\.min\.js/);
+  const legacyMatch = url.match(/launch-([a-f0-9]+)(?:-(development|staging))?\.min\.js/);
+  const satelliteMatch = url.match(/satellite-([a-f0-9]+)\.js/);
+
+  const isDTM = !!satelliteMatch;
+  const isNew = !!envMatch;
+  const libraryId = envMatch?.[1] || legacyMatch?.[1] || satelliteMatch?.[1];
+  const rawEnv = envMatch?.[2] || legacyMatch?.[2] || 'production';
+
+  let environment = 'prod';
+  if (rawEnv === 'development') environment = 'dev';
+  else if (rawEnv === 'staging') environment = 'acc';
+
+  const type = isDTM ? 'DTM (legacy)' : isNew ? 'Adobe Tags' : 'Launch (legacy)';
+  return { libraryId, environment, type };
+}
+
+function detectAdobeLibrary() {
+  return new Promise((resolve) => {
+    chrome.devtools.inspectedWindow.eval(DETECT_ADOBE_SCRIPT, (result) => {
+      if (!result) { resolve(null); return; }
+      try {
+        const data = JSON.parse(result);
+        const parsed = parseAdobeLibraryUrl(data.url);
+        resolve({ ...data, ...parsed });
+      } catch { resolve(null); }
+    });
+  });
+}
+
+// ─── ENV STORAGE (per-hostname) ───────────────────────────────────────────
+async function loadEnvConfig(hostname) {
+  try {
+    const stored = await chrome.storage.local.get('rt_adobe_env');
+    return stored.rt_adobe_env?.[hostname] || null;
+  } catch { return null; }
+}
+
+async function saveEnvConfig(hostname, envConfig) {
+  try {
+    const stored = await chrome.storage.local.get('rt_adobe_env');
+    const all = stored.rt_adobe_env || {};
+    all[hostname] = envConfig;
+    await chrome.storage.local.set({ rt_adobe_env: all });
+  } catch {
+    console.warn('Request Tracker: Env config save failed');
+  }
+}
+
+async function clearEnvConfig(hostname) {
+  try {
+    const stored = await chrome.storage.local.get('rt_adobe_env');
+    const all = stored.rt_adobe_env || {};
+    delete all[hostname];
+    await chrome.storage.local.set({ rt_adobe_env: all });
+  } catch {}
+}
+
+// ─── ENV UI HELPERS ───────────────────────────────────────────────────────
+function updateEnvBadge(env, isWarning) {
+  if (!$envBadge) return;
+  $envBadge.classList.remove('hidden');
+  if ($envSeparator) $envSeparator.style.display = '';
+
+  const labels = { dev: 'DEV', acc: 'ACC', prod: 'PROD' };
+
+  if (isWarning) {
+    $envBadge.dataset.env = 'warning';
+    $envBadgeLabel.textContent = labels[env] + ' \u26a0';
+  } else {
+    $envBadge.dataset.env = env;
+    $envBadgeLabel.textContent = labels[env] || env.toUpperCase();
+  }
+}
+
+function hideEnvBadge() {
+  if (!$envBadge) return;
+  $envBadge.classList.add('hidden');
+  if ($envSeparator) $envSeparator.style.display = 'none';
+}
+
+function validateEnvUrl(url) {
+  if (!url || !url.trim()) return false;
+  return /assets\.adobedtm\.com|launch-[a-zA-Z0-9]|satellite-[a-f0-9]/.test(url);
+}
+
+function updateApplyButton() {
+  if (!$envApply) return;
+  const sel = adobeEnvState.selectedEnv;
+
+  if (sel === 'prod') {
+    $envApply.disabled = false;
+    return;
+  }
+
+  const urlField = sel === 'dev' ? $envUrlDev : $envUrlAcc;
+  $envApply.disabled = !validateEnvUrl(urlField?.value);
+}
+
+function renderEnvPopover() {
+  const det = adobeEnvState.detected;
+  const cfg = adobeEnvState.config;
+  if (!det) return;
+
+  // Detected info
+  if ($envDetectedUrl) {
+    $envDetectedUrl.textContent = det.url.length > 60
+      ? '\u2026' + det.url.slice(-55)
+      : det.url;
+    $envDetectedUrl.title = det.url;
+  }
+  if ($envDetectedType) $envDetectedType.textContent = det.type;
+  if ($envHostname) $envHostname.textContent = det.hostname;
+
+  // Fill URL fields
+  if ($envUrlProd) $envUrlProd.value = cfg?.originalUrl || det.url;
+  if (cfg?.urls) {
+    if ($envUrlDev) $envUrlDev.value = cfg.urls.dev || '';
+    if ($envUrlAcc) $envUrlAcc.value = cfg.urls.acc || '';
+  } else {
+    if ($envUrlDev) $envUrlDev.value = '';
+    if ($envUrlAcc) $envUrlAcc.value = '';
+  }
+
+  // Active env button
+  const activeEnv = cfg?.active || 'prod';
+  adobeEnvState.selectedEnv = activeEnv;
+  $envSelectBtns.forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.env === activeEnv);
+  });
+
+  updateApplyButton();
+}
+
+// ─── ENV SWITCH (eval on inspected page) ──────────────────────────────────
+function switchAdobeEnv(targetUrl) {
+  const safeUrl = targetUrl.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+
+  const script = `
+  (function() {
+    var scripts = document.querySelectorAll('script[src]');
+    for (var i = 0; i < scripts.length; i++) {
+      var src = scripts[i].src;
+      if (src.indexOf('assets.adobedtm.com') !== -1 ||
+          /launch-EN[a-f0-9]+/.test(src) ||
+          /launch-[a-f0-9]+\\.min\\.js/.test(src) ||
+          /satellite-[a-f0-9]+/.test(src)) {
+        scripts[i].remove();
+        var s = document.createElement('script');
+        s.src = '${safeUrl}';
+        s.async = true;
+        document.head.appendChild(s);
+        return 'replaced';
+      }
+    }
+    return 'not_found';
+  })()
+  `;
+
+  chrome.devtools.inspectedWindow.eval(script, (result) => {
+    if (result === 'replaced') {
+      chrome.devtools.inspectedWindow.reload();
+    }
+  });
+}
+
+// ─── ENV INIT ─────────────────────────────────────────────────────────────
+async function initAdobeEnvSwitcher() {
+  const detected = await detectAdobeLibrary();
+  if (!detected) {
+    hideEnvBadge();
+    return;
+  }
+
+  adobeEnvState.detected = detected;
+  const cfg = await loadEnvConfig(detected.hostname);
+  adobeEnvState.config = cfg;
+
+  if (cfg && cfg.active !== 'prod') {
+    // Override configured but NOT auto-applied → warning badge
+    updateEnvBadge(cfg.active, true);
+  } else {
+    updateEnvBadge(detected.environment, false);
+  }
+}
+
+// ─── ENV EVENT LISTENERS ──────────────────────────────────────────────────
+// Badge click → toggle popover
+if ($envBadge) {
+  $envBadge.addEventListener('click', (e) => {
+    e.stopPropagation();
+    $settingsPopover.classList.remove('visible');
+    if (typeof closeFilterPopover === 'function') closeFilterPopover();
+
+    if ($envPopover.classList.contains('visible')) {
+      $envPopover.classList.remove('visible');
+      return;
+    }
+
+    renderEnvPopover();
+    $envPopover.classList.add('visible');
+  });
+}
+
+// Environment select buttons
+$envSelectBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    adobeEnvState.selectedEnv = btn.dataset.env;
+    $envSelectBtns.forEach(b => b.classList.toggle('active', b === btn));
+    updateApplyButton();
+  });
+});
+
+// Input change → validate
+[$envUrlDev, $envUrlAcc].forEach(input => {
+  if (input) input.addEventListener('input', () => updateApplyButton());
+});
+
+// Apply button
+if ($envApply) {
+  $envApply.addEventListener('click', async () => {
+    const det = adobeEnvState.detected;
+    if (!det) return;
+
+    const sel = adobeEnvState.selectedEnv;
+    const urls = {
+      dev: ($envUrlDev?.value || '').trim(),
+      acc: ($envUrlAcc?.value || '').trim(),
+      prod: det.url,
+    };
+
+    const envConfig = {
+      active: sel,
+      urls,
+      originalUrl: adobeEnvState.config?.originalUrl || det.url,
+      updatedAt: new Date().toISOString(),
+    };
+
+    await saveEnvConfig(det.hostname, envConfig);
+    adobeEnvState.config = envConfig;
+
+    const targetUrl = urls[sel];
+    if (sel === 'prod') {
+      // Switch back to original
+      switchAdobeEnv(envConfig.originalUrl);
+    } else if (targetUrl) {
+      switchAdobeEnv(targetUrl);
+    }
+
+    updateEnvBadge(sel, false);
+    $envPopover.classList.remove('visible');
+  });
+}
+
+// Reset button
+if ($envReset) {
+  $envReset.addEventListener('click', async () => {
+    const det = adobeEnvState.detected;
+    if (!det) return;
+
+    const originalUrl = adobeEnvState.config?.originalUrl || det.url;
+
+    await clearEnvConfig(det.hostname);
+    adobeEnvState.config = null;
+    adobeEnvState.selectedEnv = 'prod';
+
+    if ($envUrlDev) $envUrlDev.value = '';
+    if ($envUrlAcc) $envUrlAcc.value = '';
+    $envSelectBtns.forEach(b => b.classList.toggle('active', b.dataset.env === 'prod'));
+    updateEnvBadge('prod', false);
+
+    switchAdobeEnv(originalUrl);
+    $envPopover.classList.remove('visible');
+  });
+}
+
+// Close popover on outside click
+document.addEventListener('click', (e) => {
+  if ($envPopover && !$envPopover.contains(e.target) && !e.target.closest('#adobe-env-badge')) {
+    $envPopover.classList.remove('visible');
+  }
+});
+
+// Initialize on panel load
+initAdobeEnvSwitcher();
 
 
 // ─── FILTER POPOVER ───────────────────────────────────────────────────────

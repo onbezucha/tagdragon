@@ -910,6 +910,15 @@
       </div>
     </div>
     <div class="toolbar-section">
+      <!-- Adobe Environment Switcher Badge -->
+      <div id="adobe-env-badge" class="env-badge hidden" title="Adobe prostředí">
+        <span class="env-badge-dot"></span>
+        <span class="env-badge-label">PROD</span>
+        <svg width="8" height="8" viewBox="0 0 8 8">
+          <path d="M2 3l2 2 2-2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </svg>
+      </div>
+      <div class="toolbar-separator" id="env-separator" style="display:none;"></div>
       <button id="btn-settings" title="Filters & settings">
         <svg width="14" height="14" viewBox="0 0 14 14">
           <circle cx="7" cy="7" r="2" stroke="currentColor" stroke-width="1.2" fill="none"/>
@@ -990,6 +999,53 @@
       </div>
     </div>
     <button id="btn-reset-filters">Reset all filters</button>
+  </div>
+
+  <!-- Adobe Environment Switcher Popover -->
+  <div id="env-popover">
+    <div class="settings-section">
+      <span class="settings-label">Adobe – přepínání prostředí</span>
+      <div id="env-detected-info" class="env-detected">
+        <span class="env-detected-label">Detekováno:</span>
+        <span id="env-detected-url" class="env-detected-url">—</span>
+        <span id="env-detected-type" class="env-detected-type"></span>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="env-input-group">
+        <label class="env-input-label">DEV</label>
+        <input type="text" id="env-url-dev" class="env-input" placeholder="//assets.adobedtm.com/…-development.min.js">
+      </div>
+      <div class="env-input-group">
+        <label class="env-input-label">ACC</label>
+        <input type="text" id="env-url-acc" class="env-input" placeholder="//assets.adobedtm.com/…-staging.min.js">
+      </div>
+      <div class="env-input-group">
+        <label class="env-input-label">PROD</label>
+        <input type="text" id="env-url-prod" class="env-input" readonly disabled>
+      </div>
+    </div>
+
+    <div class="settings-section env-actions">
+      <div class="env-buttons">
+        <button class="env-select-btn" data-env="dev">
+          <span class="env-select-dot env-dot-dev"></span> DEV
+        </button>
+        <button class="env-select-btn" data-env="acc">
+          <span class="env-select-dot env-dot-acc"></span> ACC
+        </button>
+        <button class="env-select-btn active" data-env="prod">
+          <span class="env-select-dot env-dot-prod"></span> PROD
+        </button>
+      </div>
+      <button id="env-apply" class="env-apply-btn" disabled>🔄 Přepnout &amp; reload</button>
+      <button id="env-reset" class="env-reset-btn">✕ Obnovit původní</button>
+    </div>
+
+    <div class="env-footer">
+      Konfigurace pro: <strong id="env-hostname">—</strong>
+    </div>
   </div>
 
   <!-- PROVIDER BAR -->

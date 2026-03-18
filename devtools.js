@@ -51,7 +51,7 @@ const PROVIDERS = [
   {
     name: "Meta Pixel",
     color: "#1877F2",
-    pattern: /facebook\.com\/tr[/?]|connect\.facebook\.net\/tr/,
+    pattern: /facebook\.com\/tr[/?]/,
     parseParams(url, postBody) {
       const p = getParams(url, postBody);
       return {
