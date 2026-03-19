@@ -191,9 +191,9 @@ let isPaused = false;
 
 | File | Purpose | Lines |
 |------|---------|-------|
-| `panel.js` | UI controller, state, rendering, Adobe env switcher UI | ~2840 |
-| `devtools.js` | Network interception, provider matching | ~480 |
-| `background.js` | Service worker, extension requests, Adobe redirect rules | ~180 |
+| `panel.js` | UI controller, state, rendering, Adobe env switcher UI, PROVIDER_CATEGORIES | ~2901 |
+| `devtools.js` | Network interception, provider matching, PROVIDERS array | ~578 |
+| `background.js` | Service worker, extension requests, declarativeNetRequest rules | ~177 |
 | `public/panel.html` | Panel DOM + inline CSS | ~1100 |
 | `styles/input.css` | Tailwind source + custom CSS | ~770 |
 

@@ -4,7 +4,7 @@
 
 **Chrome DevTools extension for capturing and decoding marketing/analytics tracking requests**
 
-[![Chrome Extension Version](https://img.shields.io/badge/version-1.1.2-blue.svg)](https://github.com/yourusername/TagDragon)
+[![Chrome Extension Version](https://img.shields.io/badge/version-1.2.1-blue.svg)](https://github.com/yourusername/TagDragon)
 [![License](https://img.shields.io/badge/license-ISC-green.svg)](LICENSE)
 [![Chrome](https://img.shields.io/badge/chrome-88+-brightgreen.svg)](https://www.google.com/chrome/)
 
@@ -21,7 +21,7 @@
 ### ✨ Key Features
 
 - **Real-time Request Capture** - Monitor tracking requests as they happen
-- **Multi-Provider Support** - Decode requests from 14+ tracking platforms
+- **Multi-Provider Support** - Decode requests from 16+ tracking platforms
 - **Advanced Filtering** - Filter by provider, event type, HTTP status, method, and custom parameters
 - **Detailed Analysis** - View decoded parameters, query strings, POST bodies, headers, and responses
 - **Export Functionality** - Export captured requests as JSON
@@ -129,15 +129,18 @@ Request Tracker supports the following tracking platforms:
 | **Google Analytics 4** | `google-analytics.com/g/collect` | Events, parameters, client ID |
 | **Google Analytics UA** | `google-analytics.com/collect` | Events, custom dimensions |
 | **Google Tag Manager** | `googletagmanager.com/gtag/js` | Container info |
+| **Google Ads** | `google.com/conversion` | Conversion ID, label, event tracking |
 | **Adobe Analytics** | `sc.omtrdc.net`, `metrics.*.com` | Events, eVars, props |
 | **Adobe AEP WebSDK** | `*.adobe.io/*` | Experience Cloud events |
 | **Meta Pixel** | `connect.facebook.net` | Pixel events, custom data |
 | **Hotjar** | `static.hotjar.com` | Heatmap, session recording |
 | **Tealium** | `tags.tiqcdn.com` | UDO data layer |
 | **LinkedIn** | `linkedin.com/insight` | Conversion events |
-| **Seznam Sklik** | `*.sklik.cz` | Campaign tracking |
+| **Seznam Sklik** | `*.seznam.cz` | Campaign tracking, retargeting |
 | **Microsoft Bing Ads** | `bat.bing.com` | Conversion tracking |
+| **AdForm** | `adform.io` | Tracking, retargeting, order tracking |
 | **DoubleClick** | `doubleclick.net` | Ad serving |
+| **DV360** | `dv360.eyeota.net` | Programmatic advertising |
 | **Criteo** | `*.criteo.com` | Retargeting events |
 | **Scorecard** | `scorecardresearch.com` | Audience measurement |
 

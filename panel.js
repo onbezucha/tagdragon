@@ -356,21 +356,28 @@ const PROVIDER_CATEGORIES = {
       icon: '⚡',
       order: 1,
       defaultExpanded: true,
-      patterns: [/^ev$/, /^Event$/, /^a$/, /^Action$/]
+      patterns: [/^Event$/, /^Event Count$/]
     },
     pixel: {
       label: 'Pixel Info',
       icon: '🔑',
       order: 2,
       defaultExpanded: true,
-      patterns: [/^id$/, /^Pixel ID$/]
+      patterns: [/^Pixel ID$/, /^FBP Cookie$/]
     },
     page: {
       label: 'Page',
       icon: '📄',
       order: 3,
       defaultExpanded: true,
-      patterns: [/^dl$/, /^URL$/, /^rl$/]
+      patterns: [/^Page URL$/, /^Referrer$/]
+    },
+    technical: {
+      label: 'Technical',
+      icon: '⚙️',
+      order: 4,
+      defaultExpanded: false,
+      patterns: [/^Timestamp$/, /^Screen$/, /^Version$/, /^Request Method$/]
     }
   },
 
@@ -463,21 +470,28 @@ const PROVIDER_CATEGORIES = {
       icon: '🔑',
       order: 1,
       defaultExpanded: true,
-      patterns: [/^id$/, /^ID$/]
+      patterns: [/^Type$/, /^ID$/, /^Consent$/]
+    },
+    identifiers: {
+      label: 'Identifiers',
+      icon: '🆔',
+      order: 2,
+      defaultExpanded: true,
+      patterns: [/^UDID$/, /^SID$/, /^IDs Version$/]
     },
     conversion: {
       label: 'Conversion',
       icon: '🎯',
-      order: 2,
+      order: 3,
       defaultExpanded: true,
-      patterns: [/^value$/, /^Value$/]
+      patterns: [/^Value$/]
     },
     page: {
       label: 'Page',
       icon: '📄',
-      order: 3,
+      order: 4,
       defaultExpanded: true,
-      patterns: [/^URL$/, /^url$/]
+      patterns: [/^Page URL$/, /^URL$/]
     }
   },
 
@@ -505,6 +519,30 @@ const PROVIDER_CATEGORIES = {
     }
   },
 
+  'Google Ads': {
+    conversion: {
+      label: 'Conversion',
+      icon: '🎯',
+      order: 1,
+      defaultExpanded: true,
+      patterns: [/^Conversion ID$/, /^Conversion Label$/, /^Conversion Type$/, /^Event$/]
+    },
+    page: {
+      label: 'Page',
+      icon: '📄',
+      order: 2,
+      defaultExpanded: true,
+      patterns: [/^Page Title$/, /^Page URL$/, /^Referrer$/]
+    },
+    technical: {
+      label: 'Technical',
+      icon: '⚙️',
+      order: 3,
+      defaultExpanded: false,
+      patterns: [/^GTM Container$/, /^Random$/, /^URL$/]
+    }
+  },
+
   'DV360': {
     page: {
       label: 'Request',
@@ -512,6 +550,30 @@ const PROVIDER_CATEGORIES = {
       order: 1,
       defaultExpanded: true,
       patterns: [/^URL$/]
+    }
+  },
+
+  'AdForm': {
+    tracking: {
+      label: 'Tracking',
+      icon: '🎯',
+      order: 1,
+      defaultExpanded: true,
+      patterns: [/^Tracking ID$/, /^Page Name$/, /^Mode$/]
+    },
+    page: {
+      label: 'Page',
+      icon: '📄',
+      order: 2,
+      defaultExpanded: true,
+      patterns: [/^Page URL$/, /^Referrer$/]
+    },
+    technical: {
+      label: 'Technical',
+      icon: '⚙️',
+      order: 3,
+      defaultExpanded: false,
+      patterns: [/^Language$/, /^Resolution$/, /^Order ID$/]
     }
   },
 

@@ -55,10 +55,16 @@ const PROVIDERS = [
     parseParams(url, postBody) {
       const p = getParams(url, postBody);
       return {
-        "Event":    p.ev,
-        "Pixel ID": p.id,
-        "Action":   p.a,
-        "URL":      p.dl,
+        "Event":       p.ev,
+        "Pixel ID":    p.id,
+        "FBP Cookie":  p.fbp,
+        "Page URL":    p.dl ? decodeURIComponent(p.dl) : undefined,
+        "Referrer":    p.rl ? decodeURIComponent(p.rl) : undefined,
+        "Timestamp":   p.ts,
+        "Screen":      p.sw && p.sh ? `${p.sw}x${p.sh}` : undefined,
+        "Version":     p.v,
+        "Event Count": p.ec,
+        "Request Method": p.rqm,
       };
     }
   },
@@ -244,13 +250,31 @@ const PROVIDERS = [
   {
     name: "Sklik",
     color: "#CC0000",
-    pattern: /c\.seznam\.cz\/retargeting|h\.seznam\.cz/,
+    pattern: /c\.seznam\.cz\/retargeting/,
     parseParams(url, postBody) {
       const p = getParams(url, postBody);
+      
+      // Determine request type based on URL path
+      const isRetargeting = url.includes('/retargeting');
+      
+      // Parse ids JSON parameter if present
+      let idsData = {};
+      if (p.ids) {
+        try {
+          idsData = JSON.parse(p.ids);
+        } catch {}
+      }
+      
       return {
-        "ID":    p.id,
-        "Value": p.value,
-        "URL":   url,
+        "Type":       isRetargeting ? "Retargeting" : "Hit",
+        "ID":         p.id,
+        "Consent":    p.consent === "1" ? "Yes" : p.consent === "0" ? "No" : p.consent,
+        "UDID":       idsData.udid,
+        "SID":        idsData.sid,
+        "IDs Version": idsData._version,
+        "Page URL":   p.url ? decodeURIComponent(p.url) : undefined,
+        "Value":      p.value,
+        "URL":        url,
       };
     }
   },
@@ -268,11 +292,82 @@ const PROVIDERS = [
     }
   },
   {
+    name: "Google Ads",
+    color: "#4285F4",
+    // Google Ads conversion tracking via doubleclick
+    pattern: /googleads\.g\.doubleclick\.net\/pagead\/(viewthroughconversion|conversion)/,
+    parseParams(url, postBody) {
+      const p = getParams(url, postBody);
+      
+      // Extract conversion ID from URL path
+      const conversionIdMatch = url.match(/\/(viewthroughconversion|conversion)\/(\d+)/);
+      const conversionId = conversionIdMatch?.[2];
+      const conversionType = conversionIdMatch?.[1] === 'viewthroughconversion' ? 'View-through' : 'Click-through';
+      
+      // Decode event from data parameter
+      let eventName = p.en;
+      if (p.data) {
+        const dataMatch = p.data.match(/event=([^&]+)/);
+        if (dataMatch) eventName = dataMatch[1];
+      }
+      
+      return {
+        "Conversion ID":    conversionId,
+        "Conversion Label": p.label,
+        "Conversion Type":  conversionType,
+        "Event":            eventName,
+        "Page Title":       p.tiba ? decodeURIComponent(p.tiba) : undefined,
+        "Page URL":         p.url ? decodeURIComponent(p.url) : undefined,
+        "Referrer":         p.ref ? decodeURIComponent(p.ref) : undefined,
+        "GTM Container":    p.gtm,
+        "Random":           p.random,
+        "URL":              url,
+      };
+    }
+  },
+  {
     name: "DV360",
     color: "#7B2D8B",
-    pattern: /doubleclick\.net|ad\.doubleclick\.net|googleads\.g\.doubleclick\.net/,
+    // Display & Video 360 (excludes Google Ads conversion URLs)
+    pattern: /doubleclick\.net(?!.*\/pagead\/(viewthroughconversion|conversion))|ad\.doubleclick\.net/,
     parseParams(url) {
       return { "URL": url };
+    }
+  },
+  {
+    name: "AdForm",
+    color: "#6D4C9F",
+    pattern: /track\.adform\.net\/Serving\/TrackPoint|adform\.net\/Banners/,
+    parseParams(url, postBody) {
+      const p = getParams(url, postBody);
+      
+      // Parse ADFPageName
+      let pageName = p.ADFPageName;
+      if (pageName) {
+        pageName = decodeURIComponent(pageName);
+      }
+      
+      // Parse Set1 parameter (format: lang|locale|resolution|unknown)
+      let set1Data = {};
+      if (p.Set1) {
+        const parts = decodeURIComponent(p.Set1).split('|');
+        set1Data = {
+          language: parts[0],
+          locale: parts[1],
+          resolution: parts[2],
+        };
+      }
+      
+      return {
+        "Page Name":   pageName,
+        "Tracking ID": p.pm,
+        "Page URL":    p.loc ? decodeURIComponent(p.loc) : undefined,
+        "Referrer":    p.CPref ? decodeURIComponent(p.CPref) : undefined,
+        "Language":    set1Data.language,
+        "Resolution":  set1Data.resolution,
+        "Order ID":    p.ord,
+        "Mode":        p.ADFtpmode,
+      };
     }
   },
   {
