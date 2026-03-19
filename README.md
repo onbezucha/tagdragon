@@ -21,7 +21,7 @@
 ### ✨ Key Features
 
 - **Real-time Request Capture** - Monitor tracking requests as they happen
-- **Multi-Provider Support** - Decode requests from 15+ tracking platforms
+- **Multi-Provider Support** - Decode requests from 14+ tracking platforms
 - **Advanced Filtering** - Filter by provider, event type, HTTP status, method, and custom parameters
 - **Detailed Analysis** - View decoded parameters, query strings, POST bodies, headers, and responses
 - **Export Functionality** - Export captured requests as JSON
@@ -130,7 +130,6 @@ Request Tracker supports the following tracking platforms:
 | **Google Analytics UA** | `google-analytics.com/collect` | Events, custom dimensions |
 | **Google Tag Manager** | `googletagmanager.com/gtag/js` | Container info |
 | **Adobe Analytics** | `sc.omtrdc.net`, `metrics.*.com` | Events, eVars, props |
-| **Adobe Launch** | `assets.adobedtm.com` | Property info, environment |
 | **Adobe AEP WebSDK** | `*.adobe.io/*` | Experience Cloud events |
 | **Meta Pixel** | `connect.facebook.net` | Pixel events, custom data |
 | **Hotjar** | `static.hotjar.com` | Heatmap, session recording |
@@ -187,7 +186,7 @@ Special feature for Adobe Launch/Tags implementations:
 - Uses Chrome's `declarativeNetRequest` API for reliable URL replacement
 - Redirects persist across page navigations and browser restarts
 - Per-hostname configuration storage
-- Supports Adobe Launch, Adobe Tags, and legacy DTM/Satellite libraries
+- Supports Adobe Tags (Launch) libraries
 
 ## 🏗️ Architecture
 

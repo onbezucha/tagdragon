@@ -433,30 +433,6 @@ const PROVIDER_CATEGORIES = {
     }
   },
 
-  'Adobe Launch': {
-    library: {
-      label: 'Library',
-      icon: '📦',
-      order: 1,
-      defaultExpanded: true,
-      patterns: [/^Type$/, /^Environment$/, /^Library ID$/]
-    },
-    org: {
-      label: 'Organization',
-      icon: '🔑',
-      order: 2,
-      defaultExpanded: true,
-      patterns: [/^Org ID/, /^Property hash$/]
-    },
-    page: {
-      label: 'Page',
-      icon: '📄',
-      order: 3,
-      defaultExpanded: true,
-      patterns: [/^URL$/]
-    }
-  },
-
   'LinkedIn': {
     tracking: {
       label: 'Tracking',
@@ -1077,7 +1053,8 @@ $list.addEventListener('click', (e) => {
 
 function getEventName(data) {
   if (!data.decoded) return getHostname(data.url);
-  return data.decoded.Event 
+  return data.decoded['Event type']
+    || data.decoded.Event 
     || data.decoded['Hit type']
     || data.decoded.event
     || data.decoded['Event']
@@ -1964,9 +1941,7 @@ const DETECT_ADOBE_SCRIPT = `
   for (var i = 0; i < scripts.length; i++) {
     var src = scripts[i].src;
     if (src.indexOf('assets.adobedtm.com') !== -1 ||
-        /launch-EN[a-f0-9]+/.test(src) ||
-        /launch-[a-f0-9]+\\\\.min\\\\.js/.test(src) ||
-        /satellite-[a-f0-9]+/.test(src)) {
+        /launch-EN[a-f0-9]+/.test(src)) {
       return JSON.stringify({ url: src, hostname: location.hostname });
     }
   }
@@ -1977,20 +1952,15 @@ const DETECT_ADOBE_SCRIPT = `
 // ─── ENV DETECTION ────────────────────────────────────────────────────────
 function parseAdobeLibraryUrl(url) {
   const envMatch = url.match(/launch-EN([a-f0-9]+)(?:-(development|staging))?\.min\.js/);
-  const legacyMatch = url.match(/launch-([a-f0-9]+)(?:-(development|staging))?\.min\.js/);
-  const satelliteMatch = url.match(/satellite-([a-f0-9]+)\.js/);
 
-  const isDTM = !!satelliteMatch;
-  const isNew = !!envMatch;
-  const libraryId = envMatch?.[1] || legacyMatch?.[1] || satelliteMatch?.[1];
-  const rawEnv = envMatch?.[2] || legacyMatch?.[2] || 'production';
+  const libraryId = envMatch?.[1];
+  const rawEnv = envMatch?.[2] || 'production';
 
   let environment = 'prod';
   if (rawEnv === 'development') environment = 'dev';
   else if (rawEnv === 'staging') environment = 'acc';
 
-  const type = isDTM ? 'DTM (legacy)' : isNew ? 'Adobe Tags' : 'Launch (legacy)';
-  return { libraryId, environment, type };
+  return { libraryId, environment, type: 'Adobe Tags' };
 }
 
 function detectAdobeLibrary() {
@@ -2059,7 +2029,7 @@ function hideEnvBadge() {
 
 function validateEnvUrl(url) {
   if (!url || !url.trim()) return false;
-  return /assets\.adobedtm\.com|launch-[a-zA-Z0-9]+|satellite-[a-f0-9]+/.test(url);
+  return /assets\.adobedtm\.com|launch-EN[a-zA-Z0-9]+/.test(url);
 }
 
 function updateApplyButton() {
