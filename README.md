@@ -4,7 +4,11 @@
 
 **Chrome DevTools extension for capturing and decoding marketing/analytics tracking requests**
 
+<<<<<<< HEAD
 [![Chrome Extension Version](https://img.shields.io/badge/version-1.2.1-blue.svg)](https://github.com/yourusername/TagDragon)
+=======
+[![Chrome Extension Version](https://img.shields.io/badge/version-1.2.0-blue.svg)](https://github.com/yourusername/TagDragon)
+>>>>>>> 726d314b140fe2e4970cf73ac90a672c174e8af7
 [![License](https://img.shields.io/badge/license-ISC-green.svg)](LICENSE)
 [![Chrome](https://img.shields.io/badge/chrome-88+-brightgreen.svg)](https://www.google.com/chrome/)
 
