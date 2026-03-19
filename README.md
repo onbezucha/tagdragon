@@ -4,7 +4,7 @@
 
 **The dragon that sees every tag. Chrome DevTools extension for capturing and decoding marketing/analytics tracking requests.**
 
-[![Chrome Extension Version](https://img.shields.io/badge/version-1.2.1-blue.svg)](https://github.com/yourusername/TagDragon)
+[![Chrome Extension Version](https://img.shields.io/badge/version-1.3.0-blue.svg)](https://github.com/yourusername/TagDragon)
 [![License](https://img.shields.io/badge/license-ISC-green.svg)](LICENSE)
 [![Chrome](https://img.shields.io/badge/chrome-88+-brightgreen.svg)](https://www.google.com/chrome/)
 
@@ -16,7 +16,7 @@
 
 ## 📋 Overview
 
-**TagDragon v1.2.1** is a powerful Chrome DevTools extension that helps developers, marketers, and analysts debug and analyze web tracking implementations. It captures network requests from popular analytics and marketing platforms, decodes them into human-readable format, and provides advanced filtering and search capabilities.
+**TagDragon v1.3.0** is a powerful Chrome DevTools extension that helps developers, marketers, and analysts debug and analyze web tracking implementations. It captures network requests from popular analytics and marketing platforms, decodes them into human-readable format, and provides advanced filtering and search capabilities.
 
 ### ✨ Key Features
 
@@ -28,6 +28,10 @@
 - **Adobe Environment Switcher** - Switch between DEV/ACC/PROD Adobe Launch environments
 - **Performance Optimized** - Efficient handling of large request volumes with auto-pruning
 - **Keyboard Shortcuts** - Power-user friendly navigation and controls
+- **Pause/Resume Capture** - Temporarily pause request capturing
+- **Sort Order** - Toggle between newest/oldest first
+- **Wrap Values** - Wrap long parameter values for better readability
+- **Auto-expand** - Automatically expand detail sections when selecting requests
 
 ## 🚀 Installation
 
@@ -163,6 +167,7 @@ TagDragon supports the following tracking platforms:
 - **Provider Bar** - Quick filter by provider type
 - **Filter Bar** - Advanced filtering capabilities
 - **Status Bar** - Request count, total size, and average duration
+- **Quick-Actions Toolbar** - Compact buttons for pause, sort, wrap, and auto-expand
 
 ### Detail Tabs
 
@@ -180,6 +185,19 @@ TagDragon supports the following tracking platforms:
 - Filter by HTTP method
 - Filter by presence of specific parameters
 - Custom parameter filters with quick-pick suggestions
+
+### Settings & Quick-Actions
+
+The extension provides configurable settings with quick-access toolbar buttons:
+
+| Setting | Description | Toolbar Button |
+|---------|-------------|----------------|
+| **Pause/Resume** | Temporarily pause request capture | ⏸ |
+| **Sort Order** | Toggle between newest/oldest first | ⇅ |
+| **Wrap Values** | Wrap long parameter values | ↩ |
+| **Auto-expand** | Auto-expand detail sections | 📑 |
+
+All settings are persisted to `chrome.storage.local` and synchronized between the toolbar and Settings popover.
 
 ### Adobe Environment Switcher
 

@@ -166,8 +166,31 @@ Centralized state objects with getter/setter functions:
 let allRequests = [];
 const requestMap = new Map();  // id → request (O(1) lookup)
 let selectedId = null;
-let isPaused = false;
+let isPaused = false;  // pause/resume request capture
 ```
+
+### Configuration (persisted settings)
+
+Default configuration object stored in `chrome.storage.local`:
+```javascript
+const DEFAULT_CONFIG = {
+  maxRequests: 500,       // Max requests to keep in memory
+  autoPrune: true,        // Auto-prune oldest when limit reached
+  pruneRatio: 0.8,        // Keep 80% when pruning
+  sortOrder: 'asc',       // 'asc' = oldest first, 'desc' = newest first
+  wrapValues: false,      // Wrap long parameter values
+  autoExpand: false,      // Auto-expand detail sections on select
+};
+```
+
+### Quick-Actions Toolbar
+
+Compact icon buttons in the toolbar for quick settings toggles:
+- **⇅ Sort Order** - Toggle newest/oldest first
+- **↩ Wrap Values** - Toggle long value wrapping
+- **📑 Auto-expand** - Toggle auto-expand sections
+
+All settings also available in Settings popover. Quick buttons sync bidirectionally with Settings popover.
 
 ### DOM Performance
 
@@ -191,11 +214,11 @@ let isPaused = false;
 
 | File | Purpose | Lines |
 |------|---------|-------|
-| `panel.js` | UI controller, state, rendering, Adobe env switcher UI, PROVIDER_CATEGORIES | ~2901 |
+| `panel.js` | UI controller, state, rendering, Adobe env switcher UI, PROVIDER_CATEGORIES, quick-actions | ~3200 |
 | `devtools.js` | Network interception, provider matching, PROVIDERS array | ~578 |
 | `background.js` | Service worker, extension requests, declarativeNetRequest rules | ~177 |
-| `public/panel.html` | Panel DOM + inline CSS | ~1100 |
-| `styles/input.css` | Tailwind source + custom CSS | ~770 |
+| `public/panel.html` | Panel DOM + inline CSS + quick-actions toolbar | ~1450 |
+| `styles/input.css` | Tailwind source + custom CSS | ~800 |
 
 ## Chrome Extension Notes
 

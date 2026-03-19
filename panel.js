@@ -25,11 +25,17 @@ let adobeEnvState = {
   selectedEnv: null,    // currently selected in popover (before apply)
 };
 
+// ─── THEME STATE ──────────────────────────────────────────────────────────
+let currentTheme = 'dark'; // 'dark' or 'light'
+
 // ─── CONFIG (persisted via chrome.storage.local) ──────────────────────────
 const DEFAULT_CONFIG = {
   maxRequests: 500,
   autoPrune: true,
   pruneRatio: 0.75,  // when limit reached, prune down to 75%
+  sortOrder: 'asc',  // 'asc' = oldest first (bottom), 'desc' = newest first (top)
+  wrapValues: false,  // wrap long parameter values instead of truncating
+  autoExpand: false,  // automatically expand all parameter sections when request is selected
 };
 
 let config = { ...DEFAULT_CONFIG };
@@ -53,8 +59,113 @@ async function saveConfig() {
   }
 }
 
-// Load config at startup
-loadConfig().then(() => initConfigUI());
+function applyWrapValuesClass() {
+  if (config.wrapValues) {
+    document.body.classList.add('wrap-values');
+  } else {
+    document.body.classList.remove('wrap-values');
+  }
+}
+
+function syncQuickButtons() {
+  // Sort button - active when desc (newest first)
+  if ($quickSort) {
+    $quickSort.classList.toggle('active', config.sortOrder === 'desc');
+    $quickSort.title = config.sortOrder === 'desc'
+      ? 'Řazení: Nejnovější nahoře (aktivní)'
+      : 'Řazení: Nejstarší nahoře';
+  }
+
+  // Wrap button
+  if ($quickWrap) {
+    $quickWrap.classList.toggle('active', config.wrapValues);
+    $quickWrap.title = config.wrapValues
+      ? 'Zalamovat hodnoty (aktivní)'
+      : 'Zalamovat dlouhé hodnoty';
+  }
+
+  // Expand button
+  if ($quickExpand) {
+    $quickExpand.classList.toggle('active', config.autoExpand);
+    $quickExpand.title = config.autoExpand
+      ? 'Automaticky rozbalit (aktivní)'
+      : 'Automaticky rozbalit';
+  }
+}
+
+// ─── THEME MANAGEMENT ─────────────────────────────────────────────────────
+async function loadTheme() {
+  try {
+    const stored = await chrome.storage.local.get('rt_theme');
+    if (stored.rt_theme && ['dark', 'light'].includes(stored.rt_theme)) {
+      currentTheme = stored.rt_theme;
+    }
+  } catch {
+    // fallback to dark theme
+  }
+  applyTheme(currentTheme, false); // false = no transition on initial load
+}
+
+async function saveTheme(theme) {
+  try {
+    await chrome.storage.local.set({ rt_theme: theme });
+  } catch {
+    console.warn('TagDragon: Theme save failed');
+  }
+}
+
+function applyTheme(theme, animate = true) {
+  currentTheme = theme;
+  
+  // Disable transitions for instant switch on load
+  if (!animate) {
+    document.body.classList.add('no-transition');
+  }
+  
+  // Apply theme
+  if (theme === 'light') {
+    document.documentElement.setAttribute('data-theme', 'light');
+  } else {
+    document.documentElement.removeAttribute('data-theme');
+  }
+  
+  // Update toggle button state
+  updateThemeUI();
+  
+  // Re-enable transitions
+  if (!animate) {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        document.body.classList.remove('no-transition');
+      });
+    });
+  }
+}
+
+function toggleTheme() {
+  const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+  applyTheme(newTheme, true);
+  saveTheme(newTheme);
+}
+
+function updateThemeUI() {
+  // Update settings popover buttons
+  const $themeDark = document.getElementById('theme-dark');
+  const $themeLight = document.getElementById('theme-light');
+  
+  if ($themeDark && $themeLight) {
+    $themeDark.classList.toggle('active', currentTheme === 'dark');
+    $themeLight.classList.toggle('active', currentTheme === 'light');
+  }
+}
+
+// Load config and theme at startup
+loadConfig().then(() => {
+  initConfigUI();
+  applyWrapValuesClass();
+  syncQuickButtons();
+});
+loadTheme();
 
 // ─── COPY SVG ICON ────────────────────────────────────────────────────────
 const COPY_SVG = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="4" y="4" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M10 4V2.5A1.5 1.5 0 008.5 1H2.5A1.5 1.5 0 001 2.5v6A1.5 1.5 0 002.5 10H4" stroke="currentColor" stroke-width="1.2"/></svg>';
@@ -659,6 +770,16 @@ const $envReset = document.getElementById('env-reset');
 const $envHostname = document.getElementById('env-hostname');
 const $envSelectBtns = document.querySelectorAll('.env-select-btn');
 
+// ─── THEME DOM REFS ───────────────────────────────────────────────────────
+const $themeToggle = document.getElementById('btn-theme-toggle');
+const $themeDark = document.getElementById('theme-dark');
+const $themeLight = document.getElementById('theme-light');
+
+// ─── QUICK ACTIONS DOM REFS ───────────────────────────────────────────────
+const $quickSort = document.getElementById('btn-quick-sort');
+const $quickWrap = document.getElementById('btn-quick-wrap');
+const $quickExpand = document.getElementById('btn-quick-expand');
+
 // ─── ADOBE ANALYTICS PARSERS (unchanged) ──────────────────────────────────
 function parseAdobeEvents(eventsString) {
   if (!eventsString || typeof eventsString !== 'string') return null;
@@ -1020,8 +1141,14 @@ function flushPendingRequests() {
      fragment.appendChild(row);
   }
   
-  // Single DOM append for all batched rows
-  $list.appendChild(fragment);
+  // Append or prepend based on sort order
+  if (config.sortOrder === 'desc') {
+    // Newest first: insert at the beginning
+    $list.insertBefore(fragment, $list.firstChild);
+  } else {
+    // Oldest first (default): append at the end
+    $list.appendChild(fragment);
+  }
   
   _pendingRequests = [];
   
@@ -1129,6 +1256,20 @@ function getHostname(url) {
   try { return new URL(url).hostname; } catch { return url.slice(0, 40); }
 }
 
+function autoExpandSections() {
+  if (!config.autoExpand) return;
+  
+  // Expand all collapsed category sections in the detail pane
+  const categoryHeaders = $detailContent.querySelectorAll('.category-header');
+  categoryHeaders.forEach(header => {
+    header.classList.remove('collapsed');
+    const content = header.nextElementSibling;
+    if (content && content.classList.contains('category-content')) {
+      content.classList.remove('collapsed');
+    }
+  });
+}
+
 // ─── SELECT REQUEST (with tab memory) ────────────────────────────────────
 function selectRequest(data, row) {
   document.querySelectorAll('.req-row.active').forEach(r => r.classList.remove('active'));
@@ -1161,6 +1302,7 @@ function selectRequest(data, row) {
   
   updateTabStates(data, availableTabs);
   renderTab(activeTab, data);
+  autoExpandSections();
   
   row.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
 }
@@ -1508,7 +1650,7 @@ function updateActiveFilters() {
       type: 'search', 
       label: `"${filterText}"`,
       colorClass: 'filter-pill--search',
-      dotColor: '#5090ff',
+       dotColor: '#F59E0B',  // Dragon Amber accent
       onRemove: () => { 
         filterText = ''; 
         $filterInput.value = ''; 
@@ -1969,6 +2111,9 @@ document.getElementById('btn-reset-filters').addEventListener('click', () => {
 function initConfigUI() {
   const cfgMaxEl = document.getElementById('cfg-max-requests');
   const cfgPruneEl = document.getElementById('cfg-auto-prune');
+  const cfgSortEl = document.getElementById('cfg-sort-order');
+  const cfgWrapValuesEl = document.getElementById('cfg-wrap-values');
+  const cfgAutoExpandEl = document.getElementById('cfg-auto-expand');
   
   if (cfgMaxEl) {
     // Set initial value from config
@@ -1988,6 +2133,40 @@ function initConfigUI() {
     cfgPruneEl.addEventListener('change', (e) => {
       config.autoPrune = e.target.checked;
       saveConfig();
+    });
+  }
+  
+  if (cfgSortEl) {
+    // Set initial value from config
+    cfgSortEl.value = config.sortOrder;
+    
+    cfgSortEl.addEventListener('change', (e) => {
+      config.sortOrder = e.target.value;
+      saveConfig();
+      syncQuickButtons();
+    });
+  }
+  
+  if (cfgWrapValuesEl) {
+    // Set initial value from config
+    cfgWrapValuesEl.checked = config.wrapValues;
+    
+    cfgWrapValuesEl.addEventListener('change', (e) => {
+      config.wrapValues = e.target.checked;
+      saveConfig();
+      applyWrapValuesClass();
+      syncQuickButtons();
+    });
+  }
+  
+  if (cfgAutoExpandEl) {
+    // Set initial value from config
+    cfgAutoExpandEl.checked = config.autoExpand;
+    
+    cfgAutoExpandEl.addEventListener('change', (e) => {
+      config.autoExpand = e.target.checked;
+      saveConfig();
+      syncQuickButtons();
     });
   }
 }
@@ -2824,6 +3003,9 @@ document.getElementById('btn-clear').addEventListener('click', () => {
 document.getElementById('chk-pause').addEventListener('change', (e) => {
   isPaused = e.target.checked;
   document.body.classList.toggle('paused', isPaused);
+  
+  // Optional: Log pause state for debugging
+  // console.log(`TagDragon: ${isPaused ? 'Paused' : 'Resumed'} request capture`);
 });
 
 let filterTimer;
@@ -2882,6 +3064,60 @@ document.addEventListener('click', (e) => {
     setTimeout(() => copyBtn.classList.remove('copied'), 800);
   }).catch(err => console.error('Copy failed:', err));
 });
+
+// ─── THEME TOGGLE ─────────────────────────────────────────────────────────
+if ($themeToggle) {
+  $themeToggle.addEventListener('click', toggleTheme);
+}
+
+if ($themeDark) {
+  $themeDark.addEventListener('click', () => {
+    applyTheme('dark', true);
+    saveTheme('dark');
+  });
+}
+
+if ($themeLight) {
+  $themeLight.addEventListener('click', () => {
+    applyTheme('light', true);
+    saveTheme('light');
+  });
+}
+
+// ─── QUICK ACTIONS EVENT HANDLERS ─────────────────────────────────────────
+if ($quickSort) {
+  $quickSort.addEventListener('click', () => {
+    config.sortOrder = config.sortOrder === 'asc' ? 'desc' : 'asc';
+    saveConfig();
+    syncQuickButtons();
+    // Also sync the settings popover select if it exists
+    const cfgSortEl = document.getElementById('cfg-sort-order');
+    if (cfgSortEl) cfgSortEl.value = config.sortOrder;
+  });
+}
+
+if ($quickWrap) {
+  $quickWrap.addEventListener('click', () => {
+    config.wrapValues = !config.wrapValues;
+    saveConfig();
+    applyWrapValuesClass();
+    syncQuickButtons();
+    // Also sync the settings popover checkbox if it exists
+    const cfgWrapEl = document.getElementById('cfg-wrap-values');
+    if (cfgWrapEl) cfgWrapEl.checked = config.wrapValues;
+  });
+}
+
+if ($quickExpand) {
+  $quickExpand.addEventListener('click', () => {
+    config.autoExpand = !config.autoExpand;
+    saveConfig();
+    syncQuickButtons();
+    // Also sync the settings popover checkbox if it exists
+    const cfgExpandEl = document.getElementById('cfg-auto-expand');
+    if (cfgExpandEl) cfgExpandEl.checked = config.autoExpand;
+  });
+}
 
 // ─── UTILITY FUNCTIONS ────────────────────────────────────────────────────
 function formatBytes(bytes) {

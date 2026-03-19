@@ -44,35 +44,110 @@
     src: url('../public/fonts/IBMPlexMono-Medium.woff2') format('woff2');
   }
 
-  /* === CSS CUSTOM PROPERTIES === */
+  /* ═══════════════════════════════════════════════════════════════════════════
+     TAGDRAGON "DRAGON EYE" COLOR PALETTE
+     ═══════════════════════════════════════════════════════════════════════════ */
+  
+  /* Default: Dark Mode */
   :root {
-    --bg-0: #181920;
-    --bg-1: #1e2028;
-    --bg-2: #252830;
-    --bg-3: #2d3039;
-    --bg-hover: #2a2d38;
-    --bg-active: #1a2540;
-    --border: rgba(255, 255, 255, 0.10);
-    --border-subtle: rgba(255, 255, 255, 0.06);
-    --border-strong: rgba(255, 255, 255, 0.15);
-    --text-0: #e8eaf4;
-    --text-1: #a8adc0;
-    --text-2: #6b7194;
-    --text-3: #4a5078;
-    --accent: #5090ff;
-    --accent-hover: #3d78e8;
-    --accent-muted: rgba(80, 144, 255, 0.15);
-    --green: #3ecf8e;
-    --red: #ef5350;
-    --orange: #ffa726;
-    --yellow: #ffee58;
-    --purple: #ab47bc;
+    /* ─── POZADÍ ─────────────────────────────────────────────────────────────── */
+    --bg-0: #141210;          /* Nejtmavší — jemně teplý podtón */
+    --bg-1: #1a1816;          /* Panel pozadí */
+    --bg-2: #221f1c;          /* Karty, sekce */
+    --bg-3: #2a2622;          /* Elevated elementy */
+    --bg-hover: #2e2925;      /* Hover stav */
+    --bg-active: #3d2a1a;     /* Aktivní/vybraný — oranžový tón */
+
+    /* ─── OKRAJE ─────────────────────────────────────────────────────────────── */
+    --border: rgba(251, 191, 36, 0.12);         /* Jemný zlatý */
+    --border-subtle: rgba(251, 191, 36, 0.06);  /* Velmi jemný */
+    --border-strong: rgba(245, 158, 11, 0.25);  /* Výrazný */
+
+    /* ─── TEXT ───────────────────────────────────────────────────────────────── */
+    --text-0: #f5f0e8;        /* Primární — teplá bílá */
+    --text-1: #b8a89a;        /* Sekundární — teplá šedá */
+    --text-2: #7a6b5c;        /* Terciární */
+    --text-3: #4d4339;        /* Disabled / placeholder */
+
+    /* ─── PRIMÁRNÍ AKCENT (Dragon Amber) ─────────────────────────────────────── */
+    --accent: #F59E0B;
+    --accent-hover: #D97706;
+    --accent-active: #E8710A;
+    --accent-muted: rgba(245, 158, 11, 0.15);
+    --accent-glow: rgba(251, 191, 36, 0.30);
+
+    /* ─── DRAGON BRAND BARVY (z loga) ────────────────────────────────────────── */
+    --dragon-gold: #FBBF24;
+    --dragon-orange: #E8710A;
+    --dragon-ember: #C2410C;
+    --dragon-red: #DC2626;
+
+    /* ─── SÉMANTICKÉ BARVY ───────────────────────────────────────────────────── */
+    --green: #3ecf8e;         /* Success */
+    --red: #ef5350;           /* Error */
+    --yellow: #FBBF24;        /* Warning — sjednoceno s dragon-gold */
+    --purple: #ab47bc;        /* Info / special */
+
+    /* ─── FONTY ──────────────────────────────────────────────────────────────── */
     --font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', monospace;
     --font-sans: 'IBM Plex Sans', -apple-system, system-ui, sans-serif;
+
+    /* ─── OSTATNÍ ────────────────────────────────────────────────────────────── */
     --radius-sm: 3px;
     --radius: 6px;
     --radius-lg: 8px;
     --ease: cubic-bezier(0.4, 0, 0.2, 1);
+    
+    /* ─── THEME TOGGLE ICON ──────────────────────────────────────────────────── */
+    --theme-icon-sun: block;
+    --theme-icon-moon: none;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     LIGHT MODE
+     ═══════════════════════════════════════════════════════════════════════════ */
+  [data-theme="light"] {
+    /* ─── POZADÍ (inspirováno sclerou z loga) ────────────────────────────────── */
+    --bg-0: #FEF7ED;          /* Nejtmavší — krémová */
+    --bg-1: #FFFBF5;          /* Panel pozadí */
+    --bg-2: #FFF8EE;          /* Karty */
+    --bg-3: #FEF3E2;          /* Elevated */
+    --bg-hover: #FDF0D5;      /* Hover */
+    --bg-active: #FEEAC2;     /* Aktivní — zlatý tón */
+
+    /* ─── OKRAJE ─────────────────────────────────────────────────────────────── */
+    --border: rgba(194, 65, 12, 0.15);
+    --border-subtle: rgba(194, 65, 12, 0.08);
+    --border-strong: rgba(232, 113, 10, 0.25);
+
+    /* ─── TEXT (inspirováno zornicí z loga) ──────────────────────────────────── */
+    --text-0: #1F2937;        /* Primární — tmavá z loga */
+    --text-1: #4B5563;        /* Sekundární */
+    --text-2: #6B7280;        /* Terciární */
+    --text-3: #9CA3AF;        /* Disabled */
+
+    /* ─── AKCENT (výrazně tmavší pro kontrast na světlém pozadí) ─────────────── */
+    --accent: #92400E;
+    --accent-hover: #78350F;
+    --accent-active: #7C2D12;
+    --accent-muted: rgba(146, 64, 14, 0.12);
+    --accent-glow: rgba(146, 64, 14, 0.25);
+
+    /* ─── SÉMANTICKÉ (tmavší verze pro light mode) ───────────────────────────── */
+    --green: #059669;
+    --red: #DC2626;
+    --yellow: #D97706;
+    --purple: #7C3AED;
+
+    /* ─── DRAGON BRAND (tmavší pro light mode) ───────────────────────────────── */
+    --dragon-gold: #92400E;
+    --dragon-orange: #7C2D12;
+    --dragon-ember: #6B1F1A;
+    --dragon-red: #991B1B;
+    
+    /* ─── THEME TOGGLE ICON ──────────────────────────────────────────────────── */
+    --theme-icon-sun: none;
+    --theme-icon-moon: block;
   }
 }
 
@@ -357,6 +432,9 @@
     flex: 1;
     word-break: break-all;
     padding-right: 28px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .param-value.decoded {
@@ -366,6 +444,13 @@
   .param-value.missing {
     color: var(--orange);
     font-style: italic;
+  }
+
+  /* Wrap long values when enabled via wrap-values class */
+  body.wrap-values .param-value {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
   }
 
   .param-copy-btn {
@@ -439,6 +524,16 @@
     padding-right: 12px;
     max-height: 200px;
     overflow-y: auto;
+    white-space: nowrap;
+    overflow-x: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Wrap long values in param table when enabled */
+  body.wrap-values .param-table .pv {
+    white-space: normal;
+    overflow-x: visible;
+    text-overflow: clip;
   }
 
   .param-table .pc {
@@ -570,7 +665,7 @@
 
   .ppill.active {
     background: var(--accent-muted);
-    border-color: rgba(80, 144, 255, 0.25);
+    border-color: var(--accent-glow);
   }
 
   .ppill.inactive {
@@ -661,9 +756,9 @@
 
   /* Filter pill color variants */
   .filter-pill--search {
-    background: rgba(80, 144, 255, 0.12);
-    border: 1px solid rgba(80, 144, 255, 0.25);
-    color: #a8c8ff;
+    background: var(--accent-muted);
+    border: 1px solid var(--accent-glow);
+    color: var(--dragon-gold);
   }
 
   .filter-pill--event {

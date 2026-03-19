@@ -8,35 +8,49 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        // Background colors (dark mode defaults, light mode via CSS variables)
         bg: {
-          0: '#181920',
-          1: '#1e2028',
-          2: '#252830',
-          3: '#2d3039',
-          hover: '#2a2d38',
-          active: '#1a2540',
+          0: 'var(--bg-0)',
+          1: 'var(--bg-1)',
+          2: 'var(--bg-2)',
+          3: 'var(--bg-3)',
+          hover: 'var(--bg-hover)',
+          active: 'var(--bg-active)',
         },
+        // Border colors
         border: {
-          DEFAULT: 'rgba(255, 255, 255, 0.10)',
-          subtle: 'rgba(255, 255, 255, 0.06)',
-          strong: 'rgba(255, 255, 255, 0.15)',
+          DEFAULT: 'var(--border)',
+          subtle: 'var(--border-subtle)',
+          strong: 'var(--border-strong)',
         },
+        // Text colors
         text: {
-          0: '#e8eaf4',
-          1: '#a8adc0',
-          2: '#6b7194',
-          3: '#4a5078',
+          0: 'var(--text-0)',
+          1: 'var(--text-1)',
+          2: 'var(--text-2)',
+          3: 'var(--text-3)',
         },
+        // Accent colors (Dragon Amber)
         accent: {
-          DEFAULT: '#5090ff',
-          hover: '#3d78e8',
-          muted: 'rgba(80, 144, 255, 0.15)',
+          DEFAULT: 'var(--accent)',
+          hover: 'var(--accent-hover)',
+          active: 'var(--accent-active)',
+          muted: 'var(--accent-muted)',
+          glow: 'var(--accent-glow)',
         },
-        green: '#3ecf8e',
-        red: '#ef5350',
-        orange: '#ffa726',
-        yellow: '#ffee58',
-        purple: '#ab47bc',
+        // Dragon brand colors (from logo)
+        dragon: {
+          gold: '#FBBF24',
+          amber: '#F59E0B',
+          orange: '#E8710A',
+          ember: '#C2410C',
+          red: '#DC2626',
+        },
+        // Semantic colors (preserved)
+        green: 'var(--green)',
+        red: 'var(--red)',
+        yellow: 'var(--yellow)',
+        purple: 'var(--purple)',
       },
       fontFamily: {
         mono: ['IBM Plex Mono', 'ui-monospace', 'SF Mono', 'monospace'],
