@@ -495,7 +495,7 @@ function getHeavyData(requestId) {
 
 // ─── DEVTOOLS PANEL ──────────────────────────────────────────────────────────
 chrome.devtools.panels.create(
-  "Request Tracker",
+  "TagDragon",
   null,
   "public/panel.html",
   (panel) => {

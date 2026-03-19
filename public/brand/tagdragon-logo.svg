@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <defs>
+    <!-- Fire gradient for iris -->
+    <radialGradient id="fireGradient" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#FBBF24"/>
+      <stop offset="35%" stop-color="#F59E0B"/>
+      <stop offset="65%" stop-color="#E8710A"/>
+      <stop offset="100%" stop-color="#DC2626"/>
+    </radialGradient>
+    
+    <!-- Outer glow -->
+    <radialGradient id="glowGradient" cx="50%" cy="50%" r="50%">
+      <stop offset="65%" stop-color="#F59E0B" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#F59E0B" stop-opacity="0.4"/>
+    </radialGradient>
+    
+    <!-- Ring gradient -->
+    <linearGradient id="ringGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#E8710A"/>
+      <stop offset="50%" stop-color="#F59E0B"/>
+      <stop offset="100%" stop-color="#FBBF24"/>
+    </linearGradient>
+    
+    <!-- Filter for shadow -->
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="3" stdDeviation="5" flood-color="#000" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+  
+  <!-- Outer glow effect -->
+  <circle cx="128" cy="128" r="118" fill="url(#glowGradient)"/>
+  
+  <!-- Outer ring -->
+  <circle cx="128" cy="128" r="105" fill="none" stroke="url(#ringGradient)" stroke-width="10" filter="url(#shadow)"/>
+  
+  <!-- Eye white (sclera) -->
+  <circle cx="128" cy="128" r="88" fill="#FEF3C7"/>
+  
+  <!-- Iris -->
+  <circle cx="128" cy="128" r="58" fill="url(#fireGradient)"/>
+  
+  <!-- Iris texture lines -->
+  <g stroke="#C2410C" stroke-width="1.5" opacity="0.4">
+    <line x1="128" y1="75" x2="128" y2="82"/>
+    <line x1="128" y1="181" x2="128" y2="174"/>
+    <line x1="75" y1="128" x2="82" y2="128"/>
+    <line x1="181" y1="128" x2="174" y2="128"/>
+    <line x1="94" y1="94" x2="99" y2="99"/>
+    <line x1="162" y1="162" x2="157" y2="157"/>
+    <line x1="162" y1="94" x2="157" y2="99"/>
+    <line x1="94" y1="162" x2="99" y2="157"/>
+  </g>
+  
+  <!-- Pupil -->
+  <ellipse cx="128" cy="128" rx="24" ry="28" fill="#1F2937"/>
+  
+  <!-- Primary highlight -->
+  <ellipse cx="116" cy="116" rx="10" ry="12" fill="#FFF" opacity="0.95"/>
+  
+  <!-- Secondary highlight -->
+  <circle cx="140" cy="140" r="5" fill="#FFF" opacity="0.4"/>
+</svg>

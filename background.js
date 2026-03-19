@@ -164,7 +164,7 @@ async function restoreAdobeRedirectRules() {
       });
     }
   } catch (err) {
-    console.warn('Request Tracker: Failed to restore redirect rules', err);
+    console.warn('TagDragon: Failed to restore redirect rules', err);
   }
 }
 

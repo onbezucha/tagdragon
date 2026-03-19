@@ -31,5 +31,8 @@
     "concurrently": "^8.2.2",
     "rollup": "^4.9.6",
     "tailwindcss": "^3.4.1"
+  },
+  "dependencies": {
+    "sharp": "^0.34.5"
   }
 }

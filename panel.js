@@ -49,7 +49,7 @@ async function saveConfig() {
   try {
     await chrome.storage.local.set({ rt_config: config });
   } catch {
-    console.warn('Request Tracker: Config save failed');
+    console.warn('TagDragon: Config save failed');
   }
 }
 
@@ -950,7 +950,7 @@ window.receiveRequest = function(data) {
       _rafId = requestAnimationFrame(flushPendingRequests);
     }
   } catch(err) {
-    console.error('Request Tracker: Error processing request', err);
+    console.error('TagDragon: Error processing request', err);
   }
 };
 
@@ -2053,7 +2053,7 @@ async function saveEnvConfig(hostname, envConfig) {
     all[hostname] = envConfig;
     await chrome.storage.local.set({ rt_adobe_env: all });
   } catch {
-    console.warn('Request Tracker: Env config save failed');
+    console.warn('TagDragon: Env config save failed');
   }
 }
 
@@ -2150,9 +2150,9 @@ async function setAdobeRedirect(fromUrl, toUrl) {
       (response) => {
         if (response?.success) {
           resolve(true);
-        } else {
-          console.warn('Request Tracker: Failed to set redirect rule', response?.error);
-          resolve(false);
+         } else {
+           console.warn('TagDragon: Failed to set redirect rule', response?.error);
+           resolve(false);
         }
       }
     );

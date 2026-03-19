@@ -1,8 +1,8 @@
-# 🐉 Request Tracker
+# 🐉 TagDragon
 
 <div align="center">
 
-**Chrome DevTools extension for capturing and decoding marketing/analytics tracking requests**
+**The dragon that sees every tag. Chrome DevTools extension for capturing and decoding marketing/analytics tracking requests.**
 
 [![Chrome Extension Version](https://img.shields.io/badge/version-1.2.1-blue.svg)](https://github.com/yourusername/TagDragon)
 [![License](https://img.shields.io/badge/license-ISC-green.svg)](LICENSE)
@@ -16,7 +16,7 @@
 
 ## 📋 Overview
 
-**Request Tracker v2.0.0** is a powerful Chrome DevTools extension that helps developers, marketers, and analysts debug and analyze web tracking implementations. It captures network requests from popular analytics and marketing platforms, decodes them into human-readable format, and provides advanced filtering and search capabilities.
+**TagDragon v1.2.1** is a powerful Chrome DevTools extension that helps developers, marketers, and analysts debug and analyze web tracking implementations. It captures network requests from popular analytics and marketing platforms, decodes them into human-readable format, and provides advanced filtering and search capabilities.
 
 ### ✨ Key Features
 
@@ -54,7 +54,7 @@
    - Enable **Developer mode** (toggle in top-right corner)
    - Click **Load unpacked**
    - Select the `TagDragon` directory
-   - Open DevTools on any page to see the "Request Tracker" tab
+    - Open DevTools on any page to see the "TagDragon" tab
 
 ### Development Mode
 
@@ -122,7 +122,7 @@ TagDragon/
 
 ## 🔌 Supported Providers
 
-Request Tracker supports the following tracking platforms:
+TagDragon supports the following tracking platforms:
 
 | Provider | Pattern | Capabilities |
 |----------|---------|--------------|

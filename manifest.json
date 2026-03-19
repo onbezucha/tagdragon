@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Request Tracker",
-  "version": "2.0.0",
-  "description": "Captures and decodes network requests from analytics, tracking, and marketing tags.",
+  "name": "TagDragon",
+  "version": "1.2.1",
+  "description": "The dragon that sees every tag. Captures and decodes network requests from analytics, tracking, and marketing tags.",
   "devtools_page": "public/devtools.html",
   "background": {
     "service_worker": "dist/background.js"
