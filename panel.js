@@ -2059,7 +2059,7 @@ function hideEnvBadge() {
 
 function validateEnvUrl(url) {
   if (!url || !url.trim()) return false;
-  return /assets\.adobedtm\.com|launch-[a-zA-Z0-9]|satellite-[a-f0-9]/.test(url);
+  return /assets\.adobedtm\.com|launch-[a-zA-Z0-9]+|satellite-[a-f0-9]+/.test(url);
 }
 
 function updateApplyButton() {
@@ -2110,33 +2110,49 @@ function renderEnvPopover() {
   updateApplyButton();
 }
 
-// ─── ENV SWITCH (eval on inspected page) ──────────────────────────────────
-function switchAdobeEnv(targetUrl) {
-  const safeUrl = targetUrl.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-
-  const script = `
-  (function() {
-    var scripts = document.querySelectorAll('script[src]');
-    for (var i = 0; i < scripts.length; i++) {
-      var src = scripts[i].src;
-      if (src.indexOf('assets.adobedtm.com') !== -1 ||
-          /launch-EN[a-f0-9]+/.test(src) ||
-          /launch-[a-f0-9]+\\.min\\.js/.test(src) ||
-          /satellite-[a-f0-9]+/.test(src)) {
-        scripts[i].remove();
-        var s = document.createElement('script');
-        s.src = '${safeUrl}';
-        s.async = true;
-        document.head.appendChild(s);
-        return 'replaced';
+// ─── ENV SWITCH (via declarativeNetRequest in background) ─────────────────
+async function setAdobeRedirect(fromUrl, toUrl) {
+  return new Promise((resolve) => {
+    chrome.runtime.sendMessage(
+      { type: 'SET_ADOBE_REDIRECT', fromUrl, toUrl },
+      (response) => {
+        if (response?.success) {
+          resolve(true);
+        } else {
+          console.warn('Request Tracker: Failed to set redirect rule', response?.error);
+          resolve(false);
+        }
       }
-    }
-    return 'not_found';
-  })()
-  `;
+    );
+  });
+}
 
-  chrome.devtools.inspectedWindow.eval(script, (result) => {
-    if (result === 'replaced') {
+async function clearAdobeRedirect() {
+  return new Promise((resolve) => {
+    chrome.runtime.sendMessage(
+      { type: 'CLEAR_ADOBE_REDIRECT' },
+      (response) => {
+        resolve(response?.success || false);
+      }
+    );
+  });
+}
+
+async function getAdobeRedirect() {
+  return new Promise((resolve) => {
+    chrome.runtime.sendMessage(
+      { type: 'GET_ADOBE_REDIRECT' },
+      (response) => {
+        resolve(response?.success ? response.rule : null);
+      }
+    );
+  });
+}
+
+// Legacy function for compatibility - now uses network-level redirect
+function switchAdobeEnv(fromUrl, toUrl) {
+  setAdobeRedirect(fromUrl, toUrl).then((success) => {
+    if (success) {
       chrome.devtools.inspectedWindow.reload();
     }
   });
@@ -2154,10 +2170,26 @@ async function initAdobeEnvSwitcher() {
   const cfg = await loadEnvConfig(detected.hostname);
   adobeEnvState.config = cfg;
 
+  // Check if there's an active redirect rule in background
+  const activeRedirect = await getAdobeRedirect();
+  
   if (cfg && cfg.active !== 'prod') {
-    // Override configured but NOT auto-applied → warning badge
-    updateEnvBadge(cfg.active, true);
+    const targetUrl = cfg.urls?.[cfg.active];
+    if (targetUrl) {
+      // If no active redirect but config says non-prod, set it up
+      if (!activeRedirect) {
+        await setAdobeRedirect(detected.url, targetUrl);
+      }
+      updateEnvBadge(cfg.active, false);
+    } else {
+      // URL not configured → warning badge
+      updateEnvBadge(cfg.active, true);
+    }
   } else {
+    // If config is prod but there's an active redirect, clear it
+    if (activeRedirect) {
+      await clearAdobeRedirect();
+    }
     updateEnvBadge(detected.environment, false);
   }
 }
@@ -2219,10 +2251,13 @@ if ($envApply) {
 
     const targetUrl = urls[sel];
     if (sel === 'prod') {
-      // Switch back to original
-      switchAdobeEnv(envConfig.originalUrl);
+      // Clear redirect and reload with original
+      await clearAdobeRedirect();
+      chrome.devtools.inspectedWindow.reload();
     } else if (targetUrl) {
-      switchAdobeEnv(targetUrl);
+      // Set redirect rule and reload
+      await setAdobeRedirect(envConfig.originalUrl, targetUrl);
+      chrome.devtools.inspectedWindow.reload();
     }
 
     updateEnvBadge(sel, false);
@@ -2236,9 +2271,9 @@ if ($envReset) {
     const det = adobeEnvState.detected;
     if (!det) return;
 
-    const originalUrl = adobeEnvState.config?.originalUrl || det.url;
-
     await clearEnvConfig(det.hostname);
+    await clearAdobeRedirect();
+    
     adobeEnvState.config = null;
     adobeEnvState.selectedEnv = 'prod';
 
@@ -2247,7 +2282,7 @@ if ($envReset) {
     $envSelectBtns.forEach(b => b.classList.toggle('active', b.dataset.env === 'prod'));
     updateEnvBadge('prod', false);
 
-    switchAdobeEnv(originalUrl);
+    chrome.devtools.inspectedWindow.reload();
     $envPopover.classList.remove('visible');
   });
 }

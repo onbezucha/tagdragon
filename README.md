@@ -181,13 +181,33 @@ Request Tracker supports the following tracking platforms:
 
 ### Adobe Environment Switcher
 
-Special feature for Adobe Launch implementations:
-- Detect current environment (DEV/ACC/PROD)
-- Switch between environments with one click
-- Auto-reload page after switch
+Special feature for Adobe Launch/Tags implementations:
+- Detect current environment (DEV/ACC/PROD) from loaded library
+- Switch between environments using network-level redirects
+- Uses Chrome's `declarativeNetRequest` API for reliable URL replacement
+- Redirects persist across page navigations and browser restarts
 - Per-hostname configuration storage
+- Supports Adobe Launch, Adobe Tags, and legacy DTM/Satellite libraries
 
 ## 🏗️ Architecture
+
+### Adobe Environment Redirect System
+
+The Adobe Environment Switcher uses Chrome's `declarativeNetRequest` API to redirect requests at the network level:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  1. User configures staging URL in panel                        │
+│  2. Panel stores config in chrome.storage.local                 │
+│  3. Background worker creates declarativeNetRequest rule        │
+│  4. Chrome redirects ALL matching requests (network-level)      │
+│  5. Rules persist and restore on browser/extension restart      │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+Key files:
+- `background.js` - Service worker managing redirect rules
+- `panel.js` - UI for environment configuration (lines ~1958-2300)
 
 ### Provider System
 

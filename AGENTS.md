@@ -191,15 +191,42 @@ let isPaused = false;
 
 | File | Purpose | Lines |
 |------|---------|-------|
-| `panel.js` | UI controller, state, rendering | ~2800 |
+| `panel.js` | UI controller, state, rendering, Adobe env switcher UI | ~2900 |
 | `devtools.js` | Network interception, provider matching | ~500 |
-| `background.js` | Service worker, extension request forwarding | ~40 |
+| `background.js` | Service worker, extension requests, Adobe redirect rules | ~180 |
 | `public/panel.html` | Panel DOM + inline CSS | ~1100 |
 | `styles/input.css` | Tailwind source + custom CSS | ~770 |
 
 ## Chrome Extension Notes
 
-- Manifest V3 with permissions: `webRequest`, `storage`
+- Manifest V3 with permissions: `webRequest`, `storage`, `declarativeNetRequest`
 - Host permissions: `<all_urls>`
 - DevTools page: `public/devtools.html`
 - After JS changes, extension must be reloaded at `chrome://extensions/`
+
+## Adobe Environment Switcher
+
+The extension includes functionality to switch Adobe Launch/Tags environments (DEV/ACC/PROD) using network-level redirects.
+
+### How it works
+
+1. **Detection** (`panel.js`): Scans DOM for Adobe Launch script tags
+2. **Configuration** (`panel.js`): User sets staging/dev URLs per hostname
+3. **Storage**: Config saved to `chrome.storage.local` under key `rt_adobe_env`
+4. **Redirect rules** (`background.js`): Uses `chrome.declarativeNetRequest.updateSessionRules()` to redirect PROD URLs to configured environment
+5. **Persistence**: Rules restore automatically on service worker startup via `restoreAdobeRedirectRules()`
+
+### Key functions in background.js
+
+| Function | Purpose |
+|----------|---------|
+| `setAdobeRedirectRule(fromUrl, toUrl)` | Creates session redirect rule |
+| `clearAdobeRedirectRule()` | Removes redirect rule |
+| `getAdobeRedirectRule()` | Returns active redirect rule |
+| `restoreAdobeRedirectRules()` | Restores rules from storage on startup |
+
+### Message types (panel ↔ background)
+
+- `SET_ADOBE_REDIRECT` - Create redirect rule
+- `CLEAR_ADOBE_REDIRECT` - Remove redirect rule  
+- `GET_ADOBE_REDIRECT` - Query active rule
