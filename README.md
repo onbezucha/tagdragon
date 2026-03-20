@@ -21,19 +21,25 @@
 ### Key Features
 
 - **Real-time Request Capture** — Monitor tracking requests as they happen
-- **Multi-Provider Support** — Decode requests from 15 tracking platforms
+- **Multi-Provider Support** — Decode requests from 26 tracking platforms
 - **Provider Filter Popover** — Filter by provider via a toolbar icon; hidden providers persist across restarts
-- **Search Filtering** — Filter requests by URL, parameter name/value, or provider name
+- **Search & Advanced Filtering** — Filter by URL, parameter name/value, event type, HTTP method, status, user ID
 - **Active Filter Chips** — Visual chips for active filters (hidden providers, search text, etc.) with one-click removal
 - **Detailed Analysis** — View decoded parameters, query strings, POST bodies, headers, and responses
+- **Consent Panel** — Inspect and override cookie/consent state on the inspected page
 - **Export** — Export captured requests as JSON
 - **Adobe Environment Switcher** — Switch between DEV/ACC/PROD Adobe Launch environments using network-level redirects
-- **Performance Optimized** — Efficient handling of large request volumes with auto-pruning
+- **Performance Optimized** — Efficient handling of large request volumes with configurable auto-pruning
 - **Keyboard Shortcuts** — Power-user friendly navigation
 
 ## Installation
 
-### Development
+### From GitHub Release (no build required)
+
+1. Download `TagDragon-v1.3.3.zip` from the [Releases page](https://github.com/yourusername/TagDragon/releases)
+2. Unzip the archive
+3. Open `chrome://extensions/`, enable **Developer mode**, click **Load unpacked**, and select the unzipped folder
+### From Source
 
 ```bash
 git clone https://github.com/yourusername/TagDragon.git
@@ -70,7 +76,7 @@ TagDragon/
 │   ├── background/             # Service worker (declarativeNetRequest rules)
 │   ├── devtools/               # DevTools registration + network capture
 │   ├── panel/                  # Panel UI
-│   │   ├── components/         # UI components (provider-bar, filter-bar, detail-pane, adobe-env-switcher, …)
+│   │   ├── components/         # UI components (provider-bar, filter-bar, detail-pane, adobe-env-switcher, consent-panel, status-bar, …)
 │   │   ├── tabs/               # Detail tabs (decoded, query, POST, headers, response)
 │   │   ├── utils/              # DOM helpers, formatting, filtering, categorization
 │   │   ├── state.ts            # Centralized state
@@ -80,8 +86,10 @@ TagDragon/
 │   │   ├── google/             # GA4, UA, GTM, Google Ads
 │   │   ├── adobe/              # Adobe Analytics, AEP WebSDK
 │   │   ├── meta/               # Meta Pixel
-│   │   ├── microsoft/          # Bing Ads
-│   │   └── …                   # Hotjar, Tealium, LinkedIn, Sklik, DV360, Criteo, Scorecard
+│   │   ├── microsoft/          # Bing Ads, Microsoft Clarity
+│   │   └── …                   # Hotjar, Tealium, LinkedIn, Sklik, DV360, Criteo, Scorecard,
+│   │                           #   Amplitude, Mixpanel, Matomo, TikTok, X, Pinterest, Segment,
+│   │                           #   The Trade Desk, Adform
 │   ├── shared/                 # Constants, parameter categories, provider groups
 │   └── types/                  # TypeScript type definitions
 ├── public/                     # Static assets (HTML, icons)
@@ -94,23 +102,55 @@ TagDragon/
 
 ## Supported Providers
 
+### Analytics
+
 | Provider | URL Pattern |
 |----------|-------------|
-| **Google Analytics 4** | `google-analytics.com/g/collect` |
+| **Google Analytics 4** | `google-analytics.com/g/collect`, `analytics.google.com/g/collect` |
 | **Google Analytics UA** | `google-analytics.com/collect` |
+| **Adobe Analytics** | `sc.omtrdc.net`, `2o7.net`, `/b/ss/`, `demdex.net` |
+| **Adobe AEP WebSDK** | `/ee/*/v*/interact`, `*.adobedc.net` |
+| **Amplitude** | `amplitude.com/2/httpapi`, `amplitude.com/batch` |
+| **Mixpanel** | `mixpanel.com/track`, `/engage`, `/import` |
+| **Matomo** | `/piwik.php`, `/matomo.php` |
+| **Scorecard** | `scorecardresearch.com/p` |
+
+### Tag Managers
+
+| Provider | URL Pattern |
+|----------|-------------|
 | **Google Tag Manager** | `googletagmanager.com/gtm.js`, `gtag/js` |
-| **Google Ads** | `googleads.g.doubleclick.net/pagead/…` |
-| **Adobe Analytics** | `sc.omtrdc.net`, `metrics.*.com` |
-| **Adobe AEP WebSDK** | `*.adobe.io/*` |
-| **Meta Pixel** | `connect.facebook.net` |
-| **Hotjar** | `static.hotjar.com` |
-| **Tealium** | `tags.tiqcdn.com` |
-| **LinkedIn** | `linkedin.com/insight` |
-| **Seznam Sklik** | `c.seznam.cz/retargeting`, `h.seznam.cz` (excl. `/sid`) |
-| **Microsoft Bing Ads** | `bat.bing.com` |
+| **Tealium** | `tags.tiqcdn.com`, `collect.tealiumiq.com` |
+| **Segment** | `api.segment.io`, `segmentapis.com` |
+
+### Marketing & Advertising
+
+| Provider | URL Pattern |
+|----------|-------------|
+| **Google Ads** | `googleads.g.doubleclick.net/pagead/…`, `googleadservices.com/pagead/…` |
+| **Meta Pixel** | `facebook.com/tr` |
+| **Microsoft Bing Ads** | `bat.bing.com/action/0` |
+| **Adform** | `track.adform.net`, `a1.adform.net` |
 | **DV360** | `doubleclick.net` (excl. Google Ads paths) |
-| **Criteo** | `*.criteo.com` |
-| **Scorecard** | `scorecardresearch.com` |
+| **Criteo** | `dis.criteo.com`, `sslwidget.criteo.com` |
+| **Seznam Sklik** | `c.seznam.cz/retargeting`, `h.seznam.cz` (excl. `/sid`) |
+| **TikTok Pixel** | `analytics.tiktok.com/api/v*` |
+| **X (Twitter) Pixel** | `analytics.twitter.com/i/adsct`, `t.co/i/adsct` |
+| **Pinterest Pixel** | `ct.pinterest.com/v3/` |
+| **The Trade Desk** | `insight.adsrvr.org/track/` |
+
+### Session Replay
+
+| Provider | URL Pattern |
+|----------|-------------|
+| **Hotjar** | `hotjar.com/h.js`, `hjboot`, `hj.` |
+| **Microsoft Clarity** | `clarity.ms/collect` |
+
+### Visitor Identification
+
+| Provider | URL Pattern |
+|----------|-------------|
+| **LinkedIn** | `linkedin.com/li/track`, `px.ads.linkedin.com` |
 
 ## Keyboard Shortcuts
 
@@ -118,9 +158,9 @@ TagDragon/
 |----------|--------|
 | `Ctrl+L` | Clear all requests |
 | `Ctrl+F` | Focus search input |
-| `↑ / ↓` or `j / k` | Navigate request list |
-| `Home / End` | Jump to first / last request |
-| `Esc` | Close detail panel |
+| `Ctrl+Shift+F` | Open filter popover |
+| `↑ / ↓` | Navigate request list |
+| `Esc` | Clear search / close detail panel / close popovers |
 
 ## UI Overview
 
@@ -130,8 +170,8 @@ TagDragon/
 - **⇅ Sort Order** — toggle oldest/newest first
 - **↩ Wrap Values** — wrap long parameter values
 - **📑 Auto-expand** — auto-expand detail sections on select
-- **⚙ Provider Filter** — opens a popover to show/hide individual providers grouped by category; hidden providers persist across DevTools restarts
-- **⚙ Settings** — performance settings, keyboard shortcuts, theme
+- **🔽 Provider Filter** — opens a popover to show/hide individual providers grouped by category; hidden providers persist across DevTools restarts
+- **⚙ Settings** — performance settings (max requests, auto-prune), keyboard shortcuts, theme
 
 All toolbar settings are persisted to `chrome.storage.local`.
 
@@ -140,14 +180,19 @@ All toolbar settings are persisted to `chrome.storage.local`.
 Appears below the toolbar when active filters are in effect. Shows removable chips for:
 - Text search (`"sklik"`)
 - Hidden providers (`GA4 hidden`)
+- Event type, HTTP method, status, user ID, parameter filters
 
 ### Detail Tabs
 
-1. **Decoded** — human-readable parsed parameters, grouped into collapsible categories
+1. **Decoded** — human-readable parsed parameters, grouped into collapsible provider-specific categories
 2. **Query** — raw URL query string parameters
-3. **POST** — POST body data
+3. **POST** — POST body data with JSON pretty-print
 4. **Headers** — request/response headers
 5. **Response** — response body (lazy-loaded)
+
+### Consent Panel
+
+Lets you inspect and override the consent/cookie state on the inspected page — useful for testing consent mode behavior without manually clearing cookies.
 
 ### Adobe Environment Switcher
 
@@ -177,7 +222,7 @@ interface Provider {
 
 `getParams(url, postBody)` in `src/providers/url-parser.ts` merges URL query params and POST body (URLencoded or JSON) into one flat object for use inside `parseParams`.
 
-Provider order in `src/providers/index.ts` matters — first match wins.
+Provider order in `src/providers/index.ts` matters — first match wins. More specific patterns must come before broader ones (e.g. `googleAds` before `doubleclick`).
 
 ### Adobe Environment Redirect
 
