@@ -4,7 +4,18 @@
 import { setPanelWindow } from './panel-bridge';
 import { initNetworkCapture } from './network-capture';
 
-// Create the DevTools panel
+// ─── DEVTOOLS STATUS TRACKING ────────────────────────────────────────────────
+// Connect a named port to background so it can track whether DevTools are open.
+// The port disconnects automatically when DevTools is closed, which triggers
+// cleanup in the background — more reliable than window.unload + async storage.
+
+const tabId = chrome.devtools.inspectedWindow.tabId;
+const _devToolsPort = chrome.runtime.connect({ name: `devtools_${tabId}` });
+// Port is intentionally kept alive for the lifetime of the DevTools session.
+void _devToolsPort;
+
+// ─── PANEL CREATION ──────────────────────────────────────────────────────────
+
 chrome.devtools.panels.create(
   'TagDragon',
   '',

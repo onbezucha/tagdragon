@@ -2,6 +2,12 @@
 // Captures requests initiated by other Chrome Extensions
 // (these are not visible via chrome.devtools.network)
 
+import { initPopupBridge } from './popup-bridge';
+import { initBadge } from './badge';
+
+initPopupBridge();
+initBadge();
+
 /**
  * Convert headers array to object with lowercase keys.
  */

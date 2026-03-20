@@ -1,8 +1,19 @@
 {
   "manifest_version": 3,
   "name": "TagDragon",
-  "version": "1.3.3",
+  "version": "1.4.0",
   "description": "The dragon that sees every tag. Captures and decodes network requests from analytics, tracking, and marketing tags.",
+
+  "action": {
+    "default_popup": "public/popup.html",
+    "default_icon": {
+      "16": "public/icons/icon16.png",
+      "48": "public/icons/icon48.png",
+      "128": "public/icons/icon128.png"
+    },
+    "default_title": "TagDragon – Request Tracker"
+  },
+
   "devtools_page": "public/devtools.html",
   "background": {
     "service_worker": "dist/background.js"
@@ -11,7 +22,9 @@
     "webRequest",
     "storage",
     "declarativeNetRequest",
-    "cookies"
+    "cookies",
+    "tabs",
+    "activeTab"
   ],
   "host_permissions": [
     "<all_urls>"

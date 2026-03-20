@@ -28,4 +28,9 @@ export default [
     output: { file: 'dist/panel.js', format: 'iife', name: 'RequestTrackerPanel', sourcemap: !isProduction },
     plugins,
   },
+  {
+    input: 'src/popup/index.ts',
+    output: { file: 'dist/popup.js', format: 'iife', name: 'RequestTrackerPopup', sourcemap: !isProduction },
+    plugins,
+  },
 ];

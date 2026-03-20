@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=320">
+  <title>TagDragon</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div id="app">
+
+    <!-- Header -->
+    <header class="header">
+      <div class="header-brand">
+        <img src="icons/icon48.png" class="brand-icon" alt="">
+        <span class="brand-name">TagDragon</span>
+      </div>
+
+    </header>
+
+    <!-- DevTools Warning -->
+    <div id="devtools-warning" class="warning hidden">
+      <span class="warning-icon">⚠️</span>
+      <span class="warning-text">Otevřete DevTools pro zachytávání (F12)</span>
+    </div>
+
+    <!-- Status Bar -->
+    <div class="status-bar">
+      <div class="status-indicator">
+        <span id="status-dot" class="dot recording"></span>
+        <span id="status-text">Nahrávám</span>
+      </div>
+      <button id="btn-pause" class="btn-pause" title="Pozastavit nahrávání">
+        <span class="pause-icon">⏸</span>
+        <span class="pause-text">Pozastavit</span>
+      </button>
+    </div>
+
+    <!-- Providers Section -->
+    <section class="providers-section">
+      <h3 class="section-title">Detekované providery</h3>
+      <div id="providers-empty" class="empty-state hidden">
+        Žádné requesty zachyceny
+      </div>
+      <div id="providers-list" class="providers-list hidden"></div>
+      <button id="btn-show-all" class="btn-show-all hidden">
+        Zobrazit všechny (<span id="others-count">0</span>)
+      </button>
+    </section>
+
+    <!-- Summary Section -->
+    <section class="summary-section">
+      <h3 class="section-title">Souhrn</h3>
+      <div class="summary-grid">
+        <div class="summary-item">
+          <span class="summary-label">Celkem requestů</span>
+          <span id="total-requests" class="summary-value">0</span>
+        </div>
+        <div class="summary-item">
+          <span class="summary-label">Přeneseno dat</span>
+          <span id="total-size" class="summary-value">0 B</span>
+        </div>
+        <div class="summary-item">
+          <span class="summary-label">Průměrná odezva</span>
+          <span id="avg-duration" class="summary-value">0 ms</span>
+        </div>
+        <div class="summary-item">
+          <span class="summary-label">Úspěšnost</span>
+          <span id="success-rate" class="summary-value">100%</span>
+        </div>
+      </div>
+      <div class="last-activity">
+        Poslední aktivita: <span id="last-activity">-</span>
+      </div>
+    </section>
+
+    <!-- Actions -->
+    <section class="actions-section">
+      <button id="btn-clear" class="btn-action btn-danger">
+        <span class="btn-icon">🗑️</span>
+        <span>Vyčistit vše</span>
+      </button>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <span class="footer-version">v1.4.0</span>
+    </footer>
+
+  </div>
+
+  <script src="../dist/popup.js"></script>
+</body>
+</html>

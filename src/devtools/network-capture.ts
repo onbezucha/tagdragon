@@ -3,7 +3,7 @@
 
 import { matchProvider } from '@/providers/index';
 import { getParams } from '@/providers/url-parser';
-import { sendToPanel, heavyDataStore } from './panel-bridge';
+import { sendToPanel, heavyDataStore, getPanelWindow } from './panel-bridge';
 import type { ParsedRequest } from '@/types/request';
 
 interface HARPostData {
@@ -11,6 +11,22 @@ interface HARPostData {
   raw?: Array<{ bytes?: string }>;
   mimeType?: string;
 }
+
+// ─── PAUSE STATE ──────────────────────────────────────────────────────────────
+// Local pause flag, kept in sync with background via RECORDING_PAUSED/RESUMED messages.
+
+const tabId = chrome.devtools.inspectedWindow.tabId;
+let isPaused = false;
+
+// Load initial pause state from session storage (in case popup was paused before DevTools opened)
+chrome.storage.session.get('popup_stats').then((result) => {
+  const allStats = result['popup_stats'] ?? {};
+  if (allStats[tabId]?.isPaused === true) {
+    isPaused = true;
+  }
+}).catch(() => {});
+
+// ─── HELPERS ─────────────────────────────────────────────────────────────────
 
 /**
  * Parse raw HAR postData object — returns string, object or null.
@@ -56,10 +72,14 @@ function headersToObj(
   }, {} as Record<string, string>);
 }
 
+// ─── REQUEST PROCESSING ───────────────────────────────────────────────────────
+
 /**
  * Process a captured network request.
  */
 function processRequest(req: chrome.devtools.network.Request): void {
+  if (isPaused) return;
+
   const url = req.request.url;
   const provider = matchProvider(url);
   if (!provider) return;
@@ -79,6 +99,11 @@ function processRequest(req: chrome.devtools.network.Request): void {
       responseHeaders: headersToObj(req.response.headers),
     });
 
+    const size =
+      req.response.bodySize > 0
+        ? req.response.bodySize
+        : req.response.content?.size || 0;
+
     const parsedRequest: ParsedRequest = {
       id,
       provider: provider.name,
@@ -88,10 +113,7 @@ function processRequest(req: chrome.devtools.network.Request): void {
       status: req.response.status,
       timestamp: new Date().toISOString(),
       duration: Math.round(req.time),
-      size:
-        req.response.bodySize > 0
-          ? req.response.bodySize
-          : req.response.content?.size || 0,
+      size,
       allParams,
       decoded,
       postBody,
@@ -105,8 +127,25 @@ function processRequest(req: chrome.devtools.network.Request): void {
     };
 
     sendToPanel(parsedRequest);
+
+    // Notify background to update popup stats and badge.
+    // Fix: stats aggregation and badge update happen in background context
+    // (only background can call chrome.action.setBadgeText).
+    chrome.runtime.sendMessage({
+      type: 'UPDATE_POPUP_STATS',
+      tabId,
+      provider: provider.name,
+      color: provider.color,
+      size,
+      status: req.response.status,
+      duration: Math.round(req.time),
+    }).catch(() => {
+      // Background may not be ready, ignore
+    });
   });
 }
+
+// ─── RUNTIME MESSAGES ────────────────────────────────────────────────────────
 
 /**
  * Message from background script or panel.
@@ -120,13 +159,28 @@ interface ClearHeavyDataMessage {
   type: 'CLEAR_HEAVY_DATA';
 }
 
-type RuntimeMessage = ExtensionRequestMessage | ClearHeavyDataMessage;
+interface RecordingPausedMessage {
+  type: 'RECORDING_PAUSED';
+  tabId: number;
+}
+
+interface RecordingResumedMessage {
+  type: 'RECORDING_RESUMED';
+  tabId: number;
+}
+
+type RuntimeMessage =
+  | ExtensionRequestMessage
+  | ClearHeavyDataMessage
+  | RecordingPausedMessage
+  | RecordingResumedMessage;
 
 /**
- * Handle messages from the background script (extension requests).
+ * Handle messages from the background script (extension requests, pause state).
  */
 function handleRuntimeMessage(msg: RuntimeMessage): void {
   if (msg.type === 'EXT_REQUEST') {
+    if (isPaused) return;
     const provider = matchProvider(msg.data.url);
     if (!provider) return;
     const allParams = getParams(msg.data.url, null);
@@ -144,6 +198,19 @@ function handleRuntimeMessage(msg: RuntimeMessage): void {
 
   if (msg.type === 'CLEAR_HEAVY_DATA') {
     heavyDataStore.clear();
+  }
+
+  // Keep local pause flag in sync; also notify the panel window if visible
+  if (msg.type === 'RECORDING_PAUSED' && msg.tabId === tabId) {
+    isPaused = true;
+    const win = getPanelWindow() as (Window & { _setPaused?: (v: boolean) => void }) | null;
+    win?._setPaused?.(true);
+  }
+
+  if (msg.type === 'RECORDING_RESUMED' && msg.tabId === tabId) {
+    isPaused = false;
+    const win = getPanelWindow() as (Window & { _setPaused?: (v: boolean) => void }) | null;
+    win?._setPaused?.(false);
   }
 }
 
