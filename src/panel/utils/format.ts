@@ -41,10 +41,10 @@ export function getHostname(url: string): string {
 export function getEventName(data: ParsedRequest): string {
   if (!data.decoded) return getHostname(data.url);
   return (
+    data.decoded['Event type'] ||
     data.decoded.Event ||
     data.decoded['Hit type'] ||
     data.decoded.event ||
-    data.decoded['Event'] ||
     data.decoded.event_name ||
     Object.values(data.decoded).find(
       (v) => v && typeof v === 'string' && v.length < 50

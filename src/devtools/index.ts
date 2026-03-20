@@ -7,8 +7,8 @@ import { initNetworkCapture } from './network-capture';
 // Create the DevTools panel
 chrome.devtools.panels.create(
   'Request Tracker',
-  null as any,
-  'dist/panel.html',
+  '',
+  'public/panel.html',
   (panel) => {
     // When panel becomes visible, establish the bridge and flush buffered requests
     panel.onShown.addListener((win: Window) => {

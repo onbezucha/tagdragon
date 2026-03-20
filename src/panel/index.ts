@@ -3,8 +3,6 @@
 // Main entry point - initializes components and handles request flow
 // ═══════════════════════════════════════════════════════════════════════════
 
-import '../../styles/input.css';
-
 import type { ParsedRequest } from '@/types/request';
 import { DOM, qsa } from './utils/dom';
 import { getEventName } from './utils/format';
@@ -19,6 +17,7 @@ import { ensureProviderPill, updateProviderCounts, initProviderBarHandlers, upda
 import { updateActiveFilters, initFilterPopoverHandlers } from './components/filter-bar';
 import { updateStatusBar, showPruneNotification, clearPruneTimer } from './components/status-bar';
 import { initAdobeEnvSwitcher } from './components/adobe-env-switcher';
+import { initTheme } from './theme';
 
 // Extend Window interface for receiveRequest
 declare global {
@@ -105,7 +104,13 @@ function flushPendingRequests(): void {
   }
 
   const list = DOM.list;
-  if (list) list.appendChild(fragment);
+  if (list) {
+    if (state.getConfig().sortOrder === 'desc') {
+      list.insertBefore(fragment, list.firstChild);
+    } else {
+      list.appendChild(fragment);
+    }
+  }
   state.clearPendingRequests();
 
   const stats = state.getStats();
@@ -306,16 +311,18 @@ function initToolbarHandlers(): void {
     if (empty) empty.style.display = '';
     const detail = DOM.detail;
     if (detail) detail.classList.add('hidden');
-    const pills = DOM.providerPills;
-    if (pills) pills.innerHTML = '';
+    const groupList = DOM.providerGroupList;
+    if (groupList) groupList.innerHTML = '';
+    const searchInput = DOM.providerSearchInput;
+    if (searchInput) searchInput.value = '';
     const filters = DOM.activeFilters;
     if (filters) filters.innerHTML = '';
 
     clearPruneTimer();
     if (window._clearHeavyData) window._clearHeavyData();
 
-    const providerBar = DOM.providerBar;
-    if (providerBar) providerBar.classList.remove('visible');
+    DOM.providerPopover?.classList.remove('visible');
+    DOM.btnProviders?.classList.remove('active');
     const filterBar = DOM.filterBar;
     if (filterBar) filterBar.classList.remove('visible');
     updateStatusBar(0, 0, 0);
@@ -378,6 +385,7 @@ function initToolbarHandlers(): void {
   btnSettings?.addEventListener('click', (e: MouseEvent) => {
     e.stopPropagation();
     DOM.settingsPopover?.classList.toggle('visible');
+    DOM.providerPopover?.classList.remove('visible');
   });
 
   document.addEventListener('click', (e: MouseEvent) => {
@@ -388,21 +396,82 @@ function initToolbarHandlers(): void {
     ) {
       DOM.settingsPopover?.classList.remove('visible');
     }
+    if (
+      !DOM.providerPopover?.contains(target) &&
+      !target.closest('#btn-providers')
+    ) {
+      DOM.providerPopover?.classList.remove('visible');
+    }
+  });
+
+  // Provider popover
+  const btnProviders = document.getElementById('btn-providers') as HTMLButtonElement;
+  btnProviders?.addEventListener('click', (e: MouseEvent) => {
+    e.stopPropagation();
+    DOM.providerPopover?.classList.toggle('visible');
+    DOM.settingsPopover?.classList.remove('visible');
   });
 
   // Reset filters button
   btnResetFilters?.addEventListener('click', () => {
     state.resetFilters();
     state.clearHiddenProviders();
+    state.syncHiddenProviders();
     if (DOM.filterInput) DOM.filterInput.value = '';
     const clearFilter = DOM.clearFilter;
     if (clearFilter) clearFilter.style.display = 'none';
     qsa('.ppill.inactive').forEach((p) =>
       p.classList.replace('inactive', 'active')
     );
+    DOM.btnProviders?.classList.remove('active');
     doApplyFilters();
     doUpdateActiveFilters();
     DOM.settingsPopover?.classList.remove('visible');
+  });
+}
+
+// ─── QUICK ACTIONS ───────────────────────────────────────────────────────────
+function applyWrapValuesClass(): void {
+  document.body.classList.toggle('wrap-values', state.getConfig().wrapValues);
+}
+
+function syncQuickButtons(): void {
+  const sortBtn = document.getElementById('btn-quick-sort') as HTMLButtonElement | null;
+  const wrapBtn = document.getElementById('btn-quick-wrap') as HTMLButtonElement | null;
+  const expandBtn = document.getElementById('btn-quick-expand') as HTMLButtonElement | null;
+
+  const cfg = state.getConfig();
+
+  if (sortBtn) {
+    sortBtn.classList.toggle('active', cfg.sortOrder === 'desc');
+    sortBtn.title = cfg.sortOrder === 'desc' ? 'Newest first (click for oldest first)' : 'Oldest first (click for newest first)';
+  }
+  if (wrapBtn) {
+    wrapBtn.classList.toggle('active', cfg.wrapValues);
+    wrapBtn.title = cfg.wrapValues ? 'Wrap values: on' : 'Wrap values: off';
+  }
+  if (expandBtn) {
+    expandBtn.classList.toggle('active', cfg.autoExpand);
+    expandBtn.title = cfg.autoExpand ? 'Auto-expand: on' : 'Auto-expand: off';
+  }
+}
+
+function initQuickActions(): void {
+  document.getElementById('btn-quick-sort')?.addEventListener('click', () => {
+    const next = state.getConfig().sortOrder === 'asc' ? 'desc' : 'asc';
+    state.updateConfig('sortOrder', next);
+    syncQuickButtons();
+  });
+
+  document.getElementById('btn-quick-wrap')?.addEventListener('click', () => {
+    state.updateConfig('wrapValues', !state.getConfig().wrapValues);
+    applyWrapValuesClass();
+    syncQuickButtons();
+  });
+
+  document.getElementById('btn-quick-expand')?.addEventListener('click', () => {
+    state.updateConfig('autoExpand', !state.getConfig().autoExpand);
+    syncQuickButtons();
   });
 }
 
@@ -414,7 +483,7 @@ function initConfigUI(): void {
   if (cfgMaxEl) {
     cfgMaxEl.value = String(state.getConfig().maxRequests);
     cfgMaxEl.addEventListener('change', (e: Event) => {
-      const value = parseInt((e.target as HTMLInputElement).value) || 0;
+      const value = parseInt((e.target as HTMLInputElement).value, 10) || 0;
       state.updateConfig('maxRequests', value);
       pruneIfNeeded();
     });
@@ -425,6 +494,37 @@ function initConfigUI(): void {
     cfgPruneEl.addEventListener('change', (e: Event) => {
       const checked = (e.target as HTMLInputElement).checked;
       state.updateConfig('autoPrune', checked);
+    });
+  }
+
+  const cfgSortEl = document.getElementById('cfg-sort-order') as HTMLSelectElement | null;
+  if (cfgSortEl) {
+    cfgSortEl.value = state.getConfig().sortOrder;
+    cfgSortEl.addEventListener('change', (e: Event) => {
+      const value = (e.target as HTMLSelectElement).value as 'asc' | 'desc';
+      state.updateConfig('sortOrder', value);
+      syncQuickButtons();
+    });
+  }
+
+  const cfgWrapEl = document.getElementById('cfg-wrap-values') as HTMLInputElement | null;
+  if (cfgWrapEl) {
+    cfgWrapEl.checked = state.getConfig().wrapValues;
+    cfgWrapEl.addEventListener('change', (e: Event) => {
+      const checked = (e.target as HTMLInputElement).checked;
+      state.updateConfig('wrapValues', checked);
+      applyWrapValuesClass();
+      syncQuickButtons();
+    });
+  }
+
+  const cfgExpandEl = document.getElementById('cfg-auto-expand') as HTMLInputElement | null;
+  if (cfgExpandEl) {
+    cfgExpandEl.checked = state.getConfig().autoExpand;
+    cfgExpandEl.addEventListener('change', (e: Event) => {
+      const checked = (e.target as HTMLInputElement).checked;
+      state.updateConfig('autoExpand', checked);
+      syncQuickButtons();
     });
   }
 }
@@ -475,6 +575,7 @@ function initRequestListHandler(): void {
 async function init(): Promise<void> {
   // Load config first
   await state.loadConfig();
+  await initTheme();
 
   // Initialize all handlers
   initTabHandlers();
@@ -484,6 +585,9 @@ async function init(): Promise<void> {
   initKeyboardHandlers();
   initSplitter();
   initConfigUI();
+  initQuickActions();
+  syncQuickButtons();
+  applyWrapValuesClass();
   initCategoryToggle();
   initCopyHandler();
   initRequestListHandler();

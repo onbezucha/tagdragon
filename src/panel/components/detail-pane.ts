@@ -14,6 +14,7 @@ import {
   getActiveTab,
   setActiveTab,
   getRequestMap,
+  getConfig,
 } from '../state';
 
 /**
@@ -57,7 +58,8 @@ export function selectRequest(data: ParsedRequest, row: HTMLElement): void {
   
   updateTabStates(availableTabs);
   renderTab(getActiveTab(), data);
-  
+  autoExpandSections();
+
   row.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
 }
 
@@ -148,6 +150,22 @@ export function initTabHandlers(): void {
     const selectedId = getSelectedId();
     const req = selectedId ? getRequestMap().get(selectedId) : null;
     if (req) renderTab(tabName, req);
+  });
+}
+
+/**
+ * Expand all collapsed category sections if autoExpand is enabled.
+ */
+function autoExpandSections(): void {
+  if (!getConfig().autoExpand) return;
+  const $detailContent = DOM.detailContent;
+  if (!$detailContent) return;
+  $detailContent.querySelectorAll('.category-header.collapsed').forEach((header) => {
+    header.classList.remove('collapsed');
+    const content = header.nextElementSibling;
+    if (content?.classList.contains('category-content')) {
+      content.classList.remove('collapsed');
+    }
   });
 }
 

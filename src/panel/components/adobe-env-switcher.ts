@@ -119,7 +119,7 @@ function hideEnvBadge(): void {
 
 function validateEnvUrl(url: string): boolean {
   if (!url || !url.trim()) return false;
-  return /assets\.adobedtm\.com|launch-[a-zA-Z0-9]|satellite-[a-f0-9]/.test(url);
+  return /assets\.adobedtm\.com|launch-[a-zA-Z0-9]+|satellite-[a-f0-9]+/.test(url);
 }
 
 function updateApplyButton(): void {
@@ -179,36 +179,37 @@ function renderEnvPopover(): void {
 }
 
 // ─── ENV SWITCH ───────────────────────────────────────────────────────────
+// Uses declarativeNetRequest (via background) to redirect at network level.
+// The redirect persists across reloads — DOM injection does not.
 
-function switchAdobeEnv(targetUrl: string): void {
-  const safeUrl = targetUrl.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-
-  const script = `
-  (function() {
-    var scripts = document.querySelectorAll('script[src]');
-    for (var i = 0; i < scripts.length; i++) {
-      var src = scripts[i].src;
-      if (src.indexOf('assets.adobedtm.com') !== -1 ||
-          /launch-EN[a-f0-9]+/.test(src) ||
-          /launch-[a-f0-9]+\\.min\\.js/.test(src) ||
-          /satellite-[a-f0-9]+/.test(src)) {
-        scripts[i].remove();
-        var s = document.createElement('script');
-        s.src = '${safeUrl}';
-        s.async = true;
-        document.head.appendChild(s);
-        return 'replaced';
-      }
-    }
-    return 'not_found';
-  })()
-  `;
-
-  chrome.devtools.inspectedWindow.eval(script, (result?: string) => {
-    if (result === 'replaced') {
-      chrome.devtools.inspectedWindow.reload();
-    }
+function setAdobeRedirect(fromUrl: string, toUrl: string): Promise<void> {
+  return new Promise((resolve) => {
+    chrome.runtime.sendMessage({ type: 'SET_ADOBE_REDIRECT', fromUrl, toUrl }, () => resolve());
   });
+}
+
+function clearAdobeRedirect(): Promise<void> {
+  return new Promise((resolve) => {
+    chrome.runtime.sendMessage({ type: 'CLEAR_ADOBE_REDIRECT' }, () => resolve());
+  });
+}
+
+function getAdobeRedirect(): Promise<{ id: number } | null> {
+  return new Promise((resolve) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    chrome.runtime.sendMessage({ type: 'GET_ADOBE_REDIRECT' }, (resp: any) => {
+      resolve(resp?.rule ?? null);
+    });
+  });
+}
+
+async function switchAdobeEnv(fromUrl: string, toUrl: string | null): Promise<void> {
+  if (toUrl && toUrl !== fromUrl) {
+    await setAdobeRedirect(fromUrl, toUrl);
+  } else {
+    await clearAdobeRedirect();
+  }
+  chrome.devtools.inspectedWindow.reload();
 }
 
 // ─── INIT ─────────────────────────────────────────────────────────────────
@@ -224,12 +225,18 @@ export async function initAdobeEnvSwitcher(): Promise<void> {
   const cfg = await loadEnvConfig(detected.hostname);
   adobeEnvState.config = cfg;
 
+  // If config says non-prod but no active redirect rule exists, re-apply it
   if (cfg && cfg.active !== 'prod') {
+    const targetUrl = cfg.urls?.[cfg.active];
+    const activeRule = await getAdobeRedirect();
+    if (!activeRule && targetUrl) {
+      await setAdobeRedirect(cfg.originalUrl || detected.url, targetUrl);
+    }
     updateEnvBadge(cfg.active, true);
   } else {
     updateEnvBadge(detected.environment, false);
   }
-  
+
   setupEnvEventListeners();
 }
 
@@ -295,12 +302,9 @@ function setupEnvEventListeners(): void {
       await saveEnvConfig(det.hostname, envConfig);
       adobeEnvState.config = envConfig;
 
-      const targetUrl = urls[sel];
-      if (sel === 'prod') {
-        switchAdobeEnv(envConfig.originalUrl);
-      } else if (targetUrl) {
-        switchAdobeEnv(targetUrl);
-      }
+      const fromUrl = envConfig.originalUrl;
+      const targetUrl = sel === 'prod' ? null : urls[sel];
+      void switchAdobeEnv(fromUrl, targetUrl);
 
       updateEnvBadge(sel, false);
       $envPopover.classList.remove('visible');
@@ -324,7 +328,7 @@ function setupEnvEventListeners(): void {
       qsa('.env-select-btn').forEach(b => b.classList.toggle('active', (b as HTMLElement).dataset.env === 'prod'));
       updateEnvBadge('prod', false);
 
-      switchAdobeEnv(originalUrl);
+      void switchAdobeEnv(originalUrl, null);
       $envPopover.classList.remove('visible');
     });
   }

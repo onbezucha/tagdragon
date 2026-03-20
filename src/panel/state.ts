@@ -200,13 +200,6 @@ export function isFiltered(id: string): boolean {
 }
 
 /**
- * Add a request ID to the filtered set (alias for addFilteredId).
- */
-export function addToFiltered(id: string): void {
-  requestState.filteredIds.add(id);
-}
-
-/**
  * Remove a request ID from the filtered set (alias for removeFilteredId).
  */
 export function removeFromFiltered(id: string): void {
@@ -551,6 +544,16 @@ export async function loadConfig(): Promise<void> {
     // Fallback to defaults (storage may not be available in all contexts)
     console.warn('Request Tracker: Config load failed, using defaults', error);
   }
+  const storedHidden: string[] = config.hiddenProviders ?? [];
+  hiddenProviders.clear();
+  storedHidden.forEach(p => hiddenProviders.add(p));
+}
+
+/**
+ * Persist current hiddenProviders Set to AppConfig.
+ */
+export function syncHiddenProviders(): void {
+  updateConfig('hiddenProviders', [...hiddenProviders]);
 }
 
 /**
@@ -577,38 +580,3 @@ export function updateConfig<K extends keyof AppConfig>(
   void saveConfig();
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// BACKWARD COMPATIBILITY EXPORTS
-// ─────────────────────────────────────────────────────────────────────────────
-// These exports preserve the original interface for files still using the
-// old variable-based imports. They should be gradually migrated to use
-// the getter/setter functions above.
-
-/**
- * @deprecated Use getAllRequests() instead
- */
-export { requestState as allRequests };
-
-/**
- * @deprecated Use getRequestMap() instead
- */
-export const requestMap = requestState.map;
-
-/**
- * @deprecated Use getFilteredIds() instead
- */
-export const filteredIds = requestState.filteredIds;
-
-/**
- * Re-export provider state (no change needed)
- */
-export { activeProviders, hiddenProviders };
-
-/**
- * Re-export batching state (still used as-is)
- * Note: adobeEnvState is already exported above
- */
-export {
-  pendingRequests,
-  rafId,
-};

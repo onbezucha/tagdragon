@@ -67,6 +67,11 @@ export interface AppConfig {
   maxRequests: number;
   autoPrune: boolean;
   pruneRatio: number;
+  sortOrder: 'asc' | 'desc';
+  wrapValues: boolean;
+  autoExpand: boolean;
+  collapsedGroups: string[];
+  hiddenProviders: string[];
 }
 
 export interface PendingRequest {

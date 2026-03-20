@@ -7,10 +7,20 @@ export interface AppConfig {
   maxRequests: number;
   autoPrune: boolean;
   pruneRatio: number;
+  sortOrder: 'asc' | 'desc';
+  wrapValues: boolean;
+  autoExpand: boolean;
+  collapsedGroups: string[];
+  hiddenProviders: string[];
 }
 
-export const DEFAULT_CONFIG: Readonly<AppConfig> = {
+export const DEFAULT_CONFIG: AppConfig = {
   maxRequests: 500,
   autoPrune: true,
   pruneRatio: 0.75,  // when limit reached, prune down to 75%
-} as const;
+  sortOrder: 'asc',
+  wrapValues: false,
+  autoExpand: false,
+  collapsedGroups: [],
+  hiddenProviders: [],
+};

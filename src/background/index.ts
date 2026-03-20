@@ -14,6 +14,44 @@ function headersToObj(
   }, {} as Record<string, string>);
 }
 
+// ─── ADOBE ENV REDIRECT ───────────────────────────────────────────────────────
+// Uses declarativeNetRequest to redirect Adobe Launch library URLs at network level.
+// This persists across page reloads (unlike DOM injection).
+
+const ADOBE_REDIRECT_RULE_ID = 1001;
+
+chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+  if (message.type === 'SET_ADOBE_REDIRECT') {
+    const { fromUrl, toUrl } = message;
+    chrome.declarativeNetRequest.updateDynamicRules({
+      removeRuleIds: [ADOBE_REDIRECT_RULE_ID],
+      addRules: [{
+        id: ADOBE_REDIRECT_RULE_ID,
+        priority: 1,
+        action: { type: chrome.declarativeNetRequest.RuleActionType.REDIRECT, redirect: { url: toUrl } },
+        condition: { urlFilter: fromUrl, resourceTypes: [chrome.declarativeNetRequest.ResourceType.SCRIPT] },
+      }],
+    }).then(() => sendResponse({ ok: true })).catch((e: Error) => sendResponse({ ok: false, error: e.message }));
+    return true; // async
+  }
+
+  if (message.type === 'CLEAR_ADOBE_REDIRECT') {
+    chrome.declarativeNetRequest.updateDynamicRules({
+      removeRuleIds: [ADOBE_REDIRECT_RULE_ID],
+    }).then(() => sendResponse({ ok: true })).catch((e: Error) => sendResponse({ ok: false, error: e.message }));
+    return true;
+  }
+
+  if (message.type === 'GET_ADOBE_REDIRECT') {
+    chrome.declarativeNetRequest.getDynamicRules().then((rules) => {
+      const rule = rules.find(r => r.id === ADOBE_REDIRECT_RULE_ID);
+      sendResponse({ rule: rule ?? null });
+    });
+    return true;
+  }
+});
+
+// ─── EXTENSION REQUEST RELAY ──────────────────────────────────────────────────
 // Listen for requests from other extensions and relay them to the devtools script
 chrome.webRequest.onBeforeSendHeaders.addListener(
   (details) => {

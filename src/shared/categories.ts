@@ -422,27 +422,81 @@ export const PROVIDER_CATEGORIES: AllProviderCategories = {
     }
   },
 
+  'Google Ads': {
+    conversion: {
+      label: 'Conversion',
+      icon: '🎯',
+      order: 1,
+      defaultExpanded: true,
+      patterns: [/^Conversion ID$/, /^Conversion Label$/, /^Conversion Type$/, /^Event$/, /^Conversion Value$/, /^Currency$/, /^Transaction ID$/],
+      requiredParams: ['Conversion ID', 'Conversion Label']
+    },
+    page: {
+      label: 'Page',
+      icon: '📄',
+      order: 2,
+      defaultExpanded: true,
+      patterns: [/^Page Title$/, /^Page URL$/, /^Referrer$/]
+    },
+    attribution: {
+      label: 'Attribution',
+      icon: '🔗',
+      order: 3,
+      defaultExpanded: true,
+      patterns: [/^Google Click ID$/, /^GTM Container$/]
+    },
+    consent: {
+      label: 'Consent & Privacy',
+      icon: '🔒',
+      order: 4,
+      defaultExpanded: false,
+      patterns: [/^Consent State$/, /^Consent Details$/, /^Non-Personalized$/]
+    },
+    technical: {
+      label: 'Technical',
+      icon: '🔧',
+      order: 5,
+      defaultExpanded: false,
+      patterns: [/^Random$/, /^URL$/]
+    }
+  },
+
   'Sklik': {
     tracking: {
       label: 'Tracking',
       icon: '🔑',
       order: 1,
       defaultExpanded: true,
-      patterns: [/^id$/, /^ID$/]
+      patterns: [/^Type$/, /^ID$/],
+      requiredParams: ['ID']
     },
     conversion: {
       label: 'Conversion',
       icon: '🎯',
       order: 2,
       defaultExpanded: true,
-      patterns: [/^value$/, /^Value$/]
+      patterns: [/^Value$/]
     },
     page: {
       label: 'Page',
       icon: '📄',
       order: 3,
       defaultExpanded: true,
-      patterns: [/^URL$/, /^url$/]
+      patterns: [/^Page URL$/]
+    },
+    user: {
+      label: 'User & Privacy',
+      icon: '👤',
+      order: 4,
+      defaultExpanded: true,
+      patterns: [/^User ID$/, /^Consent$/]
+    },
+    technical: {
+      label: 'Technical',
+      icon: '🔧',
+      order: 5,
+      defaultExpanded: false,
+      patterns: [/^URL$/]
     }
   },
 
@@ -467,6 +521,59 @@ export const PROVIDER_CATEGORIES: AllProviderCategories = {
       order: 3,
       defaultExpanded: true,
       patterns: [/^p$/, /^URL$/]
+    }
+  },
+
+  'Adform': {
+    tracking: {
+      label: 'Tracking',
+      icon: '🔑',
+      order: 1,
+      defaultExpanded: true,
+      patterns: [/^Tracking ID$/, /^Page Name$/, /^Tracking Mode$/],
+      requiredParams: ['Tracking ID']
+    },
+    conversion: {
+      label: 'Conversion',
+      icon: '🎯',
+      order: 2,
+      defaultExpanded: true,
+      patterns: [/^Order ID$/, /^Conversion Value$/, /^Banner ID$/]
+    },
+    page: {
+      label: 'Page',
+      icon: '📄',
+      order: 3,
+      defaultExpanded: true,
+      patterns: [/^Page URL$/, /^Referrer$/]
+    },
+    custom: {
+      label: 'Custom Variables',
+      icon: '📐',
+      order: 4,
+      defaultExpanded: true,
+      patterns: [/^Custom Var \d+$/]
+    },
+    device: {
+      label: 'Device & Browser',
+      icon: '💻',
+      order: 5,
+      defaultExpanded: false,
+      patterns: [/^Language$/, /^Resolution$/, /^Color Depth$/]
+    },
+    consent: {
+      label: 'Consent & Privacy',
+      icon: '🔒',
+      order: 6,
+      defaultExpanded: false,
+      patterns: [/^GDPR$/, /^GDPR Consent$/]
+    },
+    technical: {
+      label: 'Technical',
+      icon: '🔧',
+      order: 7,
+      defaultExpanded: false,
+      patterns: [/^Cache Buster$/, /^URL$/]
     }
   },
 

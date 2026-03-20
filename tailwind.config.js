@@ -2,8 +2,7 @@
 module.exports = {
   content: [
     "./public/**/*.html",
-    "./src/**/*.js",
-    "./panel.js",
+    "./src/**/*.ts",
   ],
   theme: {
     extend: {

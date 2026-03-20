@@ -22,9 +22,9 @@ function postBodyToString(postBody: unknown): string {
   
   // Came as an object from parsePostBody — convert back to URLencoded string
   // so getParams can read parameters correctly
-  if (typeof postBody === 'object' && !(postBody as any).text && !(postBody as any).raw) {
-    return Object.entries(postBody as Record<string, any>)
-      .map(([k, v]) => encodeURIComponent(k) + '=' + encodeURIComponent(v))
+  if (typeof postBody === 'object' && !('text' in postBody) && !('raw' in postBody)) {
+    return Object.entries(postBody as Record<string, unknown>)
+      .map(([k, v]) => encodeURIComponent(k) + '=' + encodeURIComponent(String(v)))
       .join('&');
   }
   

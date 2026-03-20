@@ -46,8 +46,12 @@ interface DOMRefs {
   readonly metaDur: HTMLElement | null;
   readonly metaTs: HTMLElement | null;
   readonly providerPills: HTMLElement | null;
+  readonly providerGroupList: HTMLElement | null;
+  readonly providerSearchInput: HTMLInputElement | null;
   readonly activeFilters: HTMLElement | null;
   readonly providerBar: HTMLElement | null;
+  readonly providerPopover: HTMLElement | null;
+  readonly btnProviders: HTMLElement | null;
   readonly filterBar: HTMLElement | null;
   readonly settingsPopover: HTMLElement | null;
   readonly filterPopover: HTMLElement | null;
@@ -84,8 +88,12 @@ export const DOM: DOMRefs = {
   get metaDur() { return $('meta-duration'); },
   get metaTs() { return $('meta-timestamp'); },
   get providerPills() { return $('provider-pills'); },
+  get providerGroupList() { return $('provider-group-list'); },
+  get providerSearchInput() { return $<HTMLInputElement>('provider-search-input'); },
   get activeFilters() { return $('active-filters'); },
   get providerBar() { return $('provider-bar'); },
+  get providerPopover() { return $('provider-popover'); },
+  get btnProviders() { return $('btn-providers'); },
   get filterBar() { return $('filter-bar'); },
   get settingsPopover() { return $('settings-popover'); },
   get filterPopover() { return $('filter-popover'); },

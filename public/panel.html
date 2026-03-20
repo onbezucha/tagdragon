@@ -28,7 +28,7 @@
 
     body {
       display: grid;
-      grid-template-rows: 36px auto auto 1fr 24px;
+      grid-template-rows: 36px auto 1fr 24px;
       gap: 0;
       overflow: hidden;
     }
@@ -124,7 +124,7 @@
       border: 1px solid var(--border);
       border-radius: 4px;
       color: var(--text-1);
-      font-size: 11px;
+      font-size: 13px;
       cursor: pointer;
       transition: all 150ms var(--ease);
     }
@@ -331,7 +331,7 @@
 
     .settings-label {
       display: block;
-      font-size: 11px;
+      font-size: 13px;
       font-weight: 500;
       color: var(--text-1);
       margin-bottom: 4px;
@@ -350,7 +350,7 @@
       width: 100%;
       text-align: left;
       color: var(--accent);
-      font-size: 12px;
+      font-size: 14px;
       cursor: pointer;
       transition: background-color 150ms;
     }
@@ -594,40 +594,77 @@
       border-radius: 3px;
     }
 
-    /* === PROVIDER BAR === */
-    #provider-bar {
-      display: none;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 8px;
+    /* === PROVIDER POPOVER === */
+    #btn-providers {
+      color: var(--text-0);
+    }
+
+    #btn-providers.active {
+      background: var(--accent-muted);
+      border: 1px solid var(--accent);
+      border-radius: 4px;
+      color: var(--accent);
+    }
+
+    #provider-popover {
+      position: absolute;
+      top: 40px;
+      right: 8px;
       background-color: var(--bg-1);
-      border-bottom: 1px solid var(--border);
-      gap: 6px;
-      min-height: 28px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      z-index: 1000;
+      min-width: 320px;
+      max-width: 400px;
+      padding: 0;
+      display: none;
     }
 
-    #provider-bar.visible {
-      display: flex;
-    }
+    #provider-popover.visible { display: block; }
 
-    #provider-pills {
+    #provider-search-wrap {
       display: flex;
+      align-items: center;
       gap: 4px;
-      align-items: center;
-      flex-wrap: wrap;
       flex: 1;
+      min-width: 0;
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 2px 6px;
     }
 
-    .provider-bar-actions {
-      display: flex;
-      gap: 2px;
-      align-items: center;
-      flex-shrink: 0;
+    #provider-search-input {
+      flex: 1;
+      border: none;
+      background: none;
+      color: var(--text-0);
+      font-size: 13px;
+      outline: none;
+      padding: 0;
+      font-family: inherit;
+      min-width: 0;
     }
+
+    #provider-search-input::placeholder { color: var(--text-2); }
+
+    #btn-provider-search-clear {
+      padding: 0 2px;
+      font-size: 15px;
+      line-height: 1;
+      background: none;
+      border: none;
+      cursor: pointer;
+      opacity: 0.5;
+      color: var(--text-1);
+    }
+
+    #btn-provider-search-clear:hover { opacity: 1; background: none; }
 
     .provider-bar-btn {
       padding: 2px 6px;
-      font-size: 10px;
+      font-size: 12px;
       color: var(--text-2);
       border: 1px solid var(--border-subtle);
       border-radius: 3px;
@@ -636,13 +673,61 @@
       transition: all 100ms;
     }
 
-    .provider-bar-btn:hover {
-      color: var(--text-0);
-      background: var(--bg-3);
-      border-color: var(--border);
+    .provider-bar-btn:hover { color: var(--text-0); background: var(--bg-3); border-color: var(--border); }
+
+    #provider-group-list { overflow-y: auto; max-height: 300px; }
+
+    .pgroup.search-empty { display: none; }
+
+    .pgroup-header {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 6px 3px 4px;
+      border-bottom: 1px solid var(--border-subtle);
+      user-select: none;
     }
 
+    .pgroup-toggle { padding: 2px; flex-shrink: 0; color: var(--text-2); background: none; border: none; cursor: pointer; }
 
+    .pgroup-chevron { transition: transform 150ms; display: inline-block; }
+
+    .pgroup-toggle[aria-expanded="false"] .pgroup-chevron { transform: rotate(-90deg); }
+
+    .pgroup-label {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      color: var(--text-2);
+      flex: 1;
+    }
+
+    .pgroup-count { font-size: 12px; color: var(--text-3); font-family: var(--font-mono); margin-right: 4px; }
+
+    .pgroup-all, .pgroup-none {
+      padding: 1px 5px;
+      font-size: 11px;
+      color: var(--text-2);
+      border: 1px solid var(--border-subtle);
+      border-radius: 3px;
+      background: var(--bg-2);
+      cursor: pointer;
+    }
+
+    .pgroup-all:hover, .pgroup-none:hover { color: var(--text-0); background: var(--bg-3); }
+
+    .pgroup-pills {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+      flex-wrap: wrap;
+      padding: 4px 8px 6px 20px;
+    }
+
+    .pgroup-pills.collapsed { display: none; }
+
+    .ppill.search-hidden { display: none; }
 
     /* === FILTER BAR === */
     #filter-bar {
@@ -698,6 +783,7 @@
 
     /* === MAIN AREA === */
     #main {
+      grid-row: 3;
       display: grid;
       grid-template-columns: minmax(280px, var(--list-width, 340px)) 6px 1fr;
       gap: 0;
@@ -971,6 +1057,7 @@
 
     /* === STATUS BAR === */
     #status-bar {
+      grid-row: 4;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -1093,6 +1180,11 @@
         </button>
       </div>
       <div class="toolbar-separator"></div>
+      <button id="btn-providers" title="Filtr providerů">
+        <svg width="14" height="14" viewBox="0 0 14 14">
+          <path d="M2 4h10M4 7h6M6 10h2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+        </svg>
+      </button>
       <button id="btn-settings" title="Filters & settings">
         <svg width="14" height="14" viewBox="0 0 14 14">
           <path d="M5.5 1.5h3l.3 1.5a4.5 4.5 0 011.3.7l1.4-.6 1.5 2.6-1.1 1a4.5 4.5 0 010 1.6l1.1 1-1.5 2.6-1.4-.6a4.5 4.5 0 01-1.3.7l-.3 1.5h-3l-.3-1.5a4.5 4.5 0 01-1.3-.7l-1.4.6-1.5-2.6 1.1-1a4.5 4.5 0 010-1.6l-1.1-1 1.5-2.6 1.4.6a4.5 4.5 0 011.3-.7l.3-1.5z" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round" fill="none"/>
@@ -1113,33 +1205,33 @@
   <div id="settings-popover">
     <div class="settings-section">
       <span class="settings-label">About</span>
-      <div style="font-size: 11px; color: var(--text-1); line-height: 1.5;">
+      <div style="font-size: 13px; color: var(--text-1); line-height: 1.5;">
         TagDragon v1.3.0<br>
         Captures and decodes network requests from marketing/analytics tracking services.
       </div>
     </div>
     <div class="settings-section">
       <span class="settings-label">Keyboard Shortcuts</span>
-      <div style="font-size: 11px; color: var(--text-1); line-height: 1.8;">
+      <div style="font-size: 13px; color: var(--text-1); line-height: 1.8;">
         <div style="display: flex; justify-content: space-between;">
           <span>Clear all</span>
-          <kbd style="font-family: var(--font-mono); font-size: 10px; padding: 1px 5px; background: var(--bg-2); border: 1px solid var(--border); border-radius: 3px;">Ctrl+L</kbd>
+          <kbd style="font-family: var(--font-mono); font-size: 12px; padding: 1px 5px; background: var(--bg-2); border: 1px solid var(--border); border-radius: 3px;">Ctrl+L</kbd>
         </div>
         <div style="display: flex; justify-content: space-between;">
           <span>Focus search</span>
-          <kbd style="font-family: var(--font-mono); font-size: 10px; padding: 1px 5px; background: var(--bg-2); border: 1px solid var(--border); border-radius: 3px;">Ctrl+F</kbd>
+          <kbd style="font-family: var(--font-mono); font-size: 12px; padding: 1px 5px; background: var(--bg-2); border: 1px solid var(--border); border-radius: 3px;">Ctrl+F</kbd>
         </div>
         <div style="display: flex; justify-content: space-between;">
           <span>Add filter</span>
-          <kbd style="font-family: var(--font-mono); font-size: 10px; padding: 1px 5px; background: var(--bg-2); border: 1px solid var(--border); border-radius: 3px;">Ctrl+Shift+F</kbd>
+          <kbd style="font-family: var(--font-mono); font-size: 12px; padding: 1px 5px; background: var(--bg-2); border: 1px solid var(--border); border-radius: 3px;">Ctrl+Shift+F</kbd>
         </div>
         <div style="display: flex; justify-content: space-between;">
           <span>Navigate list</span>
-          <kbd style="font-family: var(--font-mono); font-size: 10px; padding: 1px 5px; background: var(--bg-2); border: 1px solid var(--border); border-radius: 3px;">&uarr; &darr; / j k</kbd>
+          <kbd style="font-family: var(--font-mono); font-size: 12px; padding: 1px 5px; background: var(--bg-2); border: 1px solid var(--border); border-radius: 3px;">&uarr; &darr; / j k</kbd>
         </div>
         <div style="display: flex; justify-content: space-between;">
           <span>Close panel</span>
-          <kbd style="font-family: var(--font-mono); font-size: 10px; padding: 1px 5px; background: var(--bg-2); border: 1px solid var(--border); border-radius: 3px;">Esc</kbd>
+          <kbd style="font-family: var(--font-mono); font-size: 12px; padding: 1px 5px; background: var(--bg-2); border: 1px solid var(--border); border-radius: 3px;">Esc</kbd>
         </div>
       </div>
     </div>
@@ -1147,13 +1239,13 @@
       <span class="settings-label">Performance</span>
       <div style="margin-top: 4px;">
         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-          <span style="font-size: 11px; color: var(--text-1);">Max requests</span>
+          <span style="font-size: 13px; color: var(--text-1);">Max requests</span>
           <select id="cfg-max-requests" style="
-            background: var(--bg-2); 
-            border: 1px solid var(--border); 
-            border-radius: 4px; 
-            color: var(--text-0); 
-            font-size: 11px; 
+            background: var(--bg-2);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            color: var(--text-0);
+            font-size: 13px;
             font-family: var(--font-mono);
             padding: 2px 6px;
             cursor: pointer;
@@ -1166,7 +1258,7 @@
             <option value="0">Unlimited</option>
           </select>
         </div>
-        <label style="display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-1); cursor: pointer; user-select: none;">
+        <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-1); cursor: pointer; user-select: none;">
           <input type="checkbox" id="cfg-auto-prune" checked style="accent-color: var(--accent); cursor: pointer;">
           Auto-prune oldest requests
         </label>
@@ -1176,18 +1268,18 @@
       <span class="settings-label">Pořadí requestů</span>
       <div style="margin-top: 4px;">
         <div style="display: flex; align-items: center; justify-content: space-between;">
-          <span style="font-size: 11px; color: var(--text-1); display: flex; align-items: center;">
+          <span style="font-size: 13px; color: var(--text-1); display: flex; align-items: center;">
             <svg width="12" height="12" viewBox="0 0 14 14" style="margin-right: 6px; vertical-align: middle; opacity: 0.7;">
               <path d="M3 4l4-3 4 3M3 10l4 3 4-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
             </svg>
             Řazení
           </span>
           <select id="cfg-sort-order" style="
-            background: var(--bg-2); 
-            border: 1px solid var(--border); 
-            border-radius: 4px; 
-            color: var(--text-0); 
-            font-size: 11px; 
+            background: var(--bg-2);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            color: var(--text-0);
+            font-size: 13px;
             font-family: var(--font-mono);
             padding: 2px 6px;
             cursor: pointer;
@@ -1202,7 +1294,7 @@
     <div class="settings-section">
       <span class="settings-label">Zobrazení detailů</span>
       <div style="margin-top: 4px;">
-        <label style="display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-1); cursor: pointer; user-select: none;">
+        <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-1); cursor: pointer; user-select: none;">
           <input type="checkbox" id="cfg-wrap-values" style="accent-color: var(--accent); cursor: pointer;">
           <svg width="12" height="12" viewBox="0 0 14 14" style="margin-right: 6px; vertical-align: middle; opacity: 0.7;">
             <path d="M2 4h10M2 7h7M9 7a2 2 0 010 4H6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" fill="none"/>
@@ -1210,7 +1302,7 @@
           </svg>
           Zalamovat dlouhé hodnoty
         </label>
-        <label style="display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-1); cursor: pointer; user-select: none; margin-top: 6px;">
+        <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-1); cursor: pointer; user-select: none; margin-top: 6px;">
           <input type="checkbox" id="cfg-auto-expand" style="accent-color: var(--accent); cursor: pointer;">
           <svg width="12" height="12" viewBox="0 0 14 14" style="margin-right: 6px; vertical-align: middle; opacity: 0.7;">
             <rect x="2" y="2" width="10" height="3" rx="0.5" stroke="currentColor" stroke-width="1.2" fill="none"/>
@@ -1240,6 +1332,30 @@
       </div>
     </div>
     <button id="btn-reset-filters">Reset all filters</button>
+  </div>
+
+  <!-- PROVIDER POPOVER -->
+  <div id="provider-popover">
+    <div class="settings-section" style="padding-bottom: 6px;">
+      <div style="display:flex; align-items:center; gap:4px; margin-bottom:6px;">
+        <div id="provider-search-wrap">
+          <svg width="12" height="12" viewBox="0 0 14 14" style="flex-shrink:0; opacity:0.5;">
+            <circle cx="6" cy="6" r="4" stroke="currentColor" stroke-width="1.3" fill="none"/>
+            <path d="M9.5 9.5l3 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+          </svg>
+          <input type="text" id="provider-search-input" placeholder="Hledat poskytovatele…">
+          <button id="btn-provider-search-clear" class="hidden">×</button>
+        </div>
+        <div style="display:flex; gap:2px;">
+          <button id="btn-providers-all" class="provider-bar-btn">Vše</button>
+          <button id="btn-providers-none" class="provider-bar-btn">Nic</button>
+        </div>
+      </div>
+    </div>
+    <div id="provider-group-list"></div>
+    <div id="provider-popover-empty" style="padding:12px; font-size:13px; color:var(--text-2); text-align:center; display:none;">
+      Žádní poskytovatelé zatím nebyli zachyceni.
+    </div>
   </div>
 
   <!-- Adobe Environment Switcher Popover -->
@@ -1289,23 +1405,8 @@
     </div>
   </div>
 
-  <!-- PROVIDER BAR -->
-  <div id="provider-bar">
-    <div id="provider-pills"></div>
-    <div class="provider-bar-actions">
-      <button id="btn-providers-all" class="provider-bar-btn" title="Show all providers">All</button>
-      <button id="btn-providers-none" class="provider-bar-btn" title="Hide all providers">None</button>
-    </div>
-  </div>
-
   <!-- FILTER BAR -->
   <div id="filter-bar">
-    <button id="btn-add-filter" class="add-filter-btn" title="Add filter (Ctrl+Shift+F)">
-      <svg width="12" height="12" viewBox="0 0 12 12">
-        <path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-      </svg>
-      <span>Filter</span>
-    </button>
     <div id="active-filters"></div>
   </div>
 
