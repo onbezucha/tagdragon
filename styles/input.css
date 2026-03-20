@@ -196,8 +196,7 @@
   }
 
   .req-row.filtered-out {
-    opacity: 0.2;
-    pointer-events: none;
+    display: none;
   }
 
   .req-row.provider-hidden {
@@ -386,13 +385,17 @@
   }
 
   .category-content {
-    max-height: 2000px;
-    overflow: hidden;
-    transition: max-height 250ms ease-out;
+    display: grid;
+    grid-template-rows: 1fr;
+    transition: grid-template-rows 200ms ease;
   }
 
   .category-content.collapsed {
-    max-height: 0;
+    grid-template-rows: 0fr;
+  }
+
+  .category-content > * {
+    overflow: hidden;
   }
 
   /* ═════════════════════════════════════════════════════════════════════
@@ -818,6 +821,23 @@
     color: var(--red);
     border-color: rgba(239, 83, 80, 0.3);
     background: rgba(239, 83, 80, 0.08);
+  }
+
+  /* ═════════════════════════════════════════════════════════════════════
+     COMPACT ROWS MODE
+     ═════════════════════════════════════════════════════════════════════ */
+
+  body.compact-rows .req-row {
+    padding: 3px 10px;
+    gap: 0;
+  }
+
+  body.compact-rows .req-secondary {
+    display: none;
+  }
+
+  body.compact-rows .req-primary {
+    font-size: 11px;
   }
 
   /* ═════════════════════════════════════════════════════════════════════

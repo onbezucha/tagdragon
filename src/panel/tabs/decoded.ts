@@ -4,6 +4,7 @@ import { COPY_SVG } from '@/shared/constants';
 import { esc } from '../utils/format';
 import { validateValue, parseAdobeEvents, parseAdobeProducts } from '../utils/categorize';
 import type { CategoryMeta, CategorizedParams } from '../utils/categorize';
+import { getConfig } from '@/panel/state';
 
 /**
  * Render categorized parameters for the decoded tab.
@@ -33,7 +34,11 @@ export function renderCategorizedParams(
     const paramCount = Object.keys(paramsWithoutMeta).length;
     if (paramCount === 0) continue;
 
-    const collapsedClass = category.defaultExpanded === false ? 'collapsed' : '';
+    const cfg = getConfig();
+    const isCollapsed = cfg.autoExpand
+      ? false
+      : cfg.collapsedGroups.includes(catKey) || category.defaultExpanded === false;
+    const collapsedClass = isCollapsed ? 'collapsed' : '';
     const providerColor = data.color || '#6b7090';
 
     html += `

@@ -6,7 +6,7 @@ import { initNetworkCapture } from './network-capture';
 
 // Create the DevTools panel
 chrome.devtools.panels.create(
-  'Request Tracker',
+  'TagDragon',
   '',
   'public/panel.html',
   (panel) => {

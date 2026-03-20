@@ -13,6 +13,7 @@ interface PanelWindow extends Window {
   receiveRequest: (data: ParsedRequest) => void;
   _getHeavyData?: (requestId: number) => HeavyData | null;
   _clearHeavyData?: () => void;
+  _deleteHeavyData?: (ids: number[]) => void;
 }
 
 let panelWindow: PanelWindow | null = null;
@@ -27,6 +28,8 @@ export const heavyDataStore = new Map<number, HeavyData>();
 /**
  * Send data to the panel window. Buffers if panel is not yet open.
  */
+const MAX_BUFFER = 500;
+
 export function sendToPanel(data: ParsedRequest): void {
   if (panelWindow && !panelWindow.closed && panelWindow.receiveRequest) {
     try {
@@ -37,6 +40,9 @@ export function sendToPanel(data: ParsedRequest): void {
     }
   }
   buffer.push(data);
+  if (buffer.length > MAX_BUFFER) {
+    buffer.splice(0, buffer.length - MAX_BUFFER);
+  }
 }
 
 /**
@@ -64,6 +70,9 @@ export function setPanelWindow(win: PanelWindow): void {
   // Attach heavy data retrieval functions to panel window
   win._getHeavyData = getHeavyData;
   win._clearHeavyData = clearHeavyData;
+  win._deleteHeavyData = (ids: number[]) => {
+    ids.forEach(id => heavyDataStore.delete(id));
+  };
 
   // Flush all buffered requests
   buffer.forEach((data) => {

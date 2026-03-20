@@ -2,11 +2,13 @@
 
 import type { ParsedRequest } from '@/types/request';
 import { DOM } from '../utils/dom';
-import { formatBytes, getEventName } from '../utils/format';
+import { formatBytes, getEventName, formatTimestamp } from '../utils/format';
 import {
   getHiddenProviders,
   getFilteredIds,
   getRequestMap,
+  getConfig,
+  getAllRequests,
 } from '../state';
 
 export type SelectCallback = (data: ParsedRequest, row: HTMLElement) => void;
@@ -40,8 +42,9 @@ export function createRequestRow(data: ParsedRequest, isVisible: boolean): HTMLE
   const row = rowTemplate.content.firstElementChild?.cloneNode(true) as HTMLElement;
   row.dataset.id = String(data.id);
   
-  const ts = new Date(data.timestamp);
-  const time = ts.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  const cfg = getConfig();
+  const sessionStart = getAllRequests()[0]?.timestamp;
+  const time = formatTimestamp(data.timestamp, cfg.timestampFormat, sessionStart);
   const eventName = data._eventName || getEventName(data);
   
   // Primary line

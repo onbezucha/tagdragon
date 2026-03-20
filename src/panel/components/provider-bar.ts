@@ -44,16 +44,17 @@ function ensureProviderGroup(groupId: string, groupLabel: string, applyFiltersCa
       <button class="pgroup-all" title="Zobrazit vše ve skupině">✓</button>
       <button class="pgroup-none" title="Skrýt vše ve skupině">—</button>
     </div>
-    <div class="pgroup-pills"></div>
+    <div class="pgroup-pills-wrap"><div class="pgroup-pills"></div></div>
   `;
 
   // Collapse toggle (session-only, not persisted)
   const $toggle = $group.querySelector('.pgroup-toggle') as HTMLButtonElement;
+  const $pillsWrap = $group.querySelector('.pgroup-pills-wrap') as HTMLElement;
   const $pills = $group.querySelector('.pgroup-pills') as HTMLElement;
   $toggle.addEventListener('click', () => {
     const expanded = $toggle.getAttribute('aria-expanded') === 'true';
     $toggle.setAttribute('aria-expanded', expanded ? 'false' : 'true');
-    $pills.classList.toggle('collapsed', expanded);
+    $pillsWrap.classList.toggle('collapsed', expanded);
   });
 
   // Per-group All/None

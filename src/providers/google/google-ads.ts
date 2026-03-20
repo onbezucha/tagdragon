@@ -4,15 +4,23 @@ import { getParams } from '../url-parser';
 export const googleAds: Provider = {
   name: 'Google Ads',
   color: '#4285F4',
-  // Google Ads conversion tracking via doubleclick — must be before DV360
-  pattern: /googleads\.g\.doubleclick\.net\/pagead\/(viewthroughconversion|conversion)/,
+  // Covers three conversion endpoints:
+  //   1. googleads.g.doubleclick.net/pagead/(viewthroughconversion|conversion)/  — must be before DV360
+  //   2. www.googleadservices.com/pagead/conversion/  — gtag.js AW- tags (most common)
+  //   3. www.google.com/pagead/1p-conversion/  — enhanced conversions (1P cookie)
+  pattern: /(googleads\.g\.doubleclick\.net|www\.googleadservices\.com)\/pagead\/(viewthroughconversion|conversion)|google\.com\/pagead\/1p-conversion/,
 
   parseParams(url: string, postBody: unknown): Record<string, string | undefined> {
     const p = getParams(url, postBody);
 
-    const conversionIdMatch = url.match(/\/(viewthroughconversion|conversion)\/(\d+)/);
+    const conversionIdMatch = url.match(/\/(viewthroughconversion|conversion|1p-conversion)\/(\d+)/);
     const conversionId = conversionIdMatch?.[2];
-    const conversionType = conversionIdMatch?.[1] === 'viewthroughconversion' ? 'View-through' : 'Click-through';
+    const convType = conversionIdMatch?.[1];
+    const conversionType = convType === 'viewthroughconversion'
+      ? 'View-through'
+      : convType === '1p-conversion'
+        ? 'Enhanced (1P)'
+        : 'Click-through';
 
     let eventName = p.en;
     if (p.data) {

@@ -568,6 +568,16 @@ export async function saveConfig(): Promise<void> {
   }
 }
 
+let saveTimer: ReturnType<typeof setTimeout> | null = null;
+
+function scheduleSave(): void {
+  if (saveTimer) clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    saveTimer = null;
+    void saveConfig();
+  }, 300);
+}
+
 /**
  * Update a specific config value and persist it.
  * Generic function signature ensures type-safe key-value updates.
@@ -577,6 +587,6 @@ export function updateConfig<K extends keyof AppConfig>(
   value: AppConfig[K]
 ): void {
   config[key] = value;
-  void saveConfig();
+  scheduleSave();
 }
 

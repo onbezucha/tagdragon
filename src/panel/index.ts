@@ -12,7 +12,7 @@ import * as state from './state';
 
 // Components
 import { createRequestRow, updateRowVisibility, navigateList, navigateToEdge } from './components/request-list';
-import { selectRequest, initTabHandlers, closeDetailPane } from './components/detail-pane';
+import { selectRequest, initTabHandlers, closeDetailPane, clearTabCache } from './components/detail-pane';
 import { ensureProviderPill, updateProviderCounts, initProviderBarHandlers, updateFilterBarVisibility } from './components/provider-bar';
 import { updateActiveFilters, initFilterPopoverHandlers } from './components/filter-bar';
 import { updateStatusBar, showPruneNotification, clearPruneTimer } from './components/status-bar';
@@ -24,6 +24,7 @@ declare global {
   interface Window {
     receiveRequest: (data: ParsedRequest) => void;
     _clearHeavyData?: () => void;
+    _deleteHeavyData?: (ids: number[]) => void;
   }
 }
 
@@ -41,6 +42,11 @@ function pruneIfNeeded(): void {
   for (const r of removed) {
     state.deleteRequestById(String(r.id));
     state.removeFromFiltered(String(r.id));
+  }
+
+  // Clean up heavy data for pruned requests
+  if (window._deleteHeavyData) {
+    window._deleteHeavyData(removed.map(r => r.id));
   }
 
   // Remove from DOM
@@ -241,15 +247,12 @@ function initKeyboardHandlers(): void {
 
     // Arrow keys for list navigation
     if (
-      (e.key === 'ArrowDown' ||
-        e.key === 'ArrowUp' ||
-        e.key === 'j' ||
-        e.key === 'k') &&
+      (e.key === 'ArrowDown' || e.key === 'ArrowUp') &&
       document.activeElement !== DOM.filterInput
     ) {
       e.preventDefault();
       navigateList(
-        e.key === 'ArrowDown' || e.key === 'j' ? 1 : -1,
+        e.key === 'ArrowDown' ? 1 : -1,
         doSelectRequest
       );
       return;
@@ -273,6 +276,40 @@ function initKeyboardHandlers(): void {
       return;
     }
   });
+}
+
+// ─── CSV EXPORT ──────────────────────────────────────────────────────────────
+function exportCsv(): void {
+  const requests = state.getAllRequests();
+  if (requests.length === 0) return;
+
+  const allKeys = new Set<string>();
+  requests.forEach(r => Object.keys(r.allParams || {}).forEach(k => allKeys.add(k)));
+  const paramKeys = [...allKeys].sort();
+
+  const metaCols = ['id', 'timestamp', 'provider', 'method', 'status', 'url', 'duration', 'size'];
+  const headers = [...metaCols, ...paramKeys];
+
+  const escCsv = (v: unknown): string => {
+    const s = String(v ?? '');
+    if (s.includes(',') || s.includes('"') || s.includes('\n')) {
+      return '"' + s.replace(/"/g, '""') + '"';
+    }
+    return s;
+  };
+
+  const rows = requests.map(r => {
+    const meta = [r.id, r.timestamp, r.provider, r.method, r.status, r.url, r.duration ?? '', r.size ?? ''];
+    const params = paramKeys.map(k => r.allParams?.[k] ?? '');
+    return [...meta, ...params].map(escCsv).join(',');
+  });
+
+  const csv = [headers.join(','), ...rows].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `requests-${Date.now()}.csv`;
+  a.click();
 }
 
 // ─── TOOLBAR EVENTS ──────────────────────────────────────────────────────────
@@ -319,6 +356,7 @@ function initToolbarHandlers(): void {
     if (filters) filters.innerHTML = '';
 
     clearPruneTimer();
+    clearTabCache();
     if (window._clearHeavyData) window._clearHeavyData();
 
     DOM.providerPopover?.classList.remove('visible');
@@ -371,14 +409,18 @@ function initToolbarHandlers(): void {
 
   // Export button
   btnExport?.addEventListener('click', () => {
-    const blob = new Blob(
-      [JSON.stringify(state.getAllRequests(), null, 2)],
-      { type: 'application/json' }
-    );
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `requests-${Date.now()}.json`;
-    a.click();
+    if (state.getConfig().exportFormat === 'csv') {
+      exportCsv();
+    } else {
+      const blob = new Blob(
+        [JSON.stringify(state.getAllRequests(), null, 2)],
+        { type: 'application/json' }
+      );
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `requests-${Date.now()}.json`;
+      a.click();
+    }
   });
 
   // Settings popover
@@ -435,10 +477,15 @@ function applyWrapValuesClass(): void {
   document.body.classList.toggle('wrap-values', state.getConfig().wrapValues);
 }
 
+function applyCompactRowsClass(): void {
+  document.body.classList.toggle('compact-rows', state.getConfig().compactRows);
+}
+
 function syncQuickButtons(): void {
   const sortBtn = document.getElementById('btn-quick-sort') as HTMLButtonElement | null;
   const wrapBtn = document.getElementById('btn-quick-wrap') as HTMLButtonElement | null;
   const expandBtn = document.getElementById('btn-quick-expand') as HTMLButtonElement | null;
+  const compactBtn = document.getElementById('btn-quick-compact') as HTMLButtonElement | null;
 
   const cfg = state.getConfig();
 
@@ -453,6 +500,10 @@ function syncQuickButtons(): void {
   if (expandBtn) {
     expandBtn.classList.toggle('active', cfg.autoExpand);
     expandBtn.title = cfg.autoExpand ? 'Auto-expand: on' : 'Auto-expand: off';
+  }
+  if (compactBtn) {
+    compactBtn.classList.toggle('active', cfg.compactRows);
+    compactBtn.title = cfg.compactRows ? 'Kompaktní seznam: zapnuto' : 'Kompaktní seznam: vypnuto';
   }
 }
 
@@ -471,6 +522,12 @@ function initQuickActions(): void {
 
   document.getElementById('btn-quick-expand')?.addEventListener('click', () => {
     state.updateConfig('autoExpand', !state.getConfig().autoExpand);
+    syncQuickButtons();
+  });
+
+  document.getElementById('btn-quick-compact')?.addEventListener('click', () => {
+    state.updateConfig('compactRows', !state.getConfig().compactRows);
+    applyCompactRowsClass();
     syncQuickButtons();
   });
 }
@@ -527,6 +584,43 @@ function initConfigUI(): void {
       syncQuickButtons();
     });
   }
+
+  const cfgDefaultTabEl = document.getElementById('cfg-default-tab') as HTMLSelectElement | null;
+  if (cfgDefaultTabEl) {
+    cfgDefaultTabEl.value = state.getConfig().defaultTab;
+    cfgDefaultTabEl.addEventListener('change', (e: Event) => {
+      const value = (e.target as HTMLSelectElement).value as 'decoded' | 'query' | 'post' | 'headers' | 'response';
+      state.updateConfig('defaultTab', value);
+    });
+  }
+
+  const cfgCompactEl = document.getElementById('cfg-compact-rows') as HTMLInputElement | null;
+  if (cfgCompactEl) {
+    cfgCompactEl.checked = state.getConfig().compactRows;
+    cfgCompactEl.addEventListener('change', (e: Event) => {
+      const checked = (e.target as HTMLInputElement).checked;
+      state.updateConfig('compactRows', checked);
+      applyCompactRowsClass();
+    });
+  }
+
+  const cfgTimestampEl = document.getElementById('cfg-timestamp-format') as HTMLSelectElement | null;
+  if (cfgTimestampEl) {
+    cfgTimestampEl.value = state.getConfig().timestampFormat;
+    cfgTimestampEl.addEventListener('change', (e: Event) => {
+      const value = (e.target as HTMLSelectElement).value as 'absolute' | 'relative' | 'elapsed';
+      state.updateConfig('timestampFormat', value);
+    });
+  }
+
+  const cfgExportFmtEl = document.getElementById('cfg-export-format') as HTMLSelectElement | null;
+  if (cfgExportFmtEl) {
+    cfgExportFmtEl.value = state.getConfig().exportFormat;
+    cfgExportFmtEl.addEventListener('change', (e: Event) => {
+      const value = (e.target as HTMLSelectElement).value as 'json' | 'csv';
+      state.updateConfig('exportFormat', value);
+    });
+  }
 }
 
 // ─── CATEGORY TOGGLE ─────────────────────────────────────────────────────────
@@ -538,6 +632,15 @@ function initCategoryToggle(): void {
     const content = header.nextElementSibling;
     if (content && content.classList.contains('category-content')) {
       content.classList.toggle('collapsed');
+    }
+    // Persist collapsed state
+    const catKey = (header.closest('.category-section') as HTMLElement)?.dataset.category;
+    if (catKey) {
+      const isNowCollapsed = header.classList.contains('collapsed');
+      const current = new Set(state.getConfig().collapsedGroups);
+      if (isNowCollapsed) current.add(catKey);
+      else current.delete(catKey);
+      state.updateConfig('collapsedGroups', [...current]);
     }
   });
 }
@@ -591,6 +694,7 @@ async function init(): Promise<void> {
   initCategoryToggle();
   initCopyHandler();
   initRequestListHandler();
+  applyCompactRowsClass();
 
   // Initialize Adobe env switcher
   initAdobeEnvSwitcher();

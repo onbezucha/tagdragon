@@ -8,6 +8,7 @@ import { renderParamTable } from '../tabs/query';
 import { renderPostTab } from '../tabs/post';
 import { renderHeadersTab, loadHeavyData } from '../tabs/headers';
 import { renderResponse } from '../tabs/response';
+import { formatTimestamp } from '../utils/format';
 import {
   setSelectedId,
   getSelectedId,
@@ -15,7 +16,31 @@ import {
   setActiveTab,
   getRequestMap,
   getConfig,
+  getAllRequests,
 } from '../state';
+
+// ─── TAB CONTENT CACHE ───────────────────────────────────────────────────────
+// LRU-like cache: requestId → tabName → rendered HTML (max 10 entries)
+const tabCache = new Map<string, Map<string, string>>();
+const TAB_CACHE_MAX = 10;
+
+function getCached(id: string, tab: string): string | undefined {
+  return tabCache.get(id)?.get(tab);
+}
+
+function setCache(id: string, tab: string, html: string): void {
+  if (!tabCache.has(id)) {
+    if (tabCache.size >= TAB_CACHE_MAX) {
+      tabCache.delete(tabCache.keys().next().value!);
+    }
+    tabCache.set(id, new Map());
+  }
+  tabCache.get(id)!.set(tab, html);
+}
+
+export function clearTabCache(): void {
+  tabCache.clear();
+}
 
 /**
  * Select and display a request in the detail pane.
@@ -44,16 +69,20 @@ export function selectRequest(data: ParsedRequest, row: HTMLElement): void {
   $detailUrl!.textContent = data.url;
   ($detailUrl as HTMLElement).title = data.url;
 
+  const cfg = getConfig();
+  const sessionStart = getAllRequests()[0]?.timestamp;
+
   DOM.metaMethod!.textContent = data.method;
   DOM.metaStatus!.textContent = String(data.status || '—');
   DOM.metaDur!.textContent = data.duration ? data.duration + 'ms' : '—';
-  DOM.metaTs!.textContent = new Date(data.timestamp).toLocaleString('en-US', { hour12: false });
+  DOM.metaTs!.textContent = formatTimestamp(data.timestamp, cfg.timestampFormat, sessionStart, true);
 
-  // Tab memory: keep current tab if it has data, otherwise fallback to decoded
+  // Tab memory: keep current tab if it has data, otherwise fallback to defaultTab
   const availableTabs = getAvailableTabs(data);
   const currentTab = getActiveTab();
   if (!availableTabs.includes(currentTab)) {
-    setActiveTab('decoded');
+    const defaultTab = cfg.defaultTab;
+    setActiveTab(availableTabs.includes(defaultTab) ? defaultTab : 'decoded');
   }
   
   updateTabStates(availableTabs);
@@ -103,26 +132,46 @@ export function updateTabStates(availableTabs: TabName[]): void {
 export function renderTab(tab: TabName, data: ParsedRequest): void {
   const $detailContent = DOM.detailContent;
   if (!$detailContent) return;
-  
+  const id = String(data.id);
+
   switch(tab) {
-    case 'decoded':
-      $detailContent.innerHTML = renderCategorizedParams((data as any).categorized, data);
+    case 'decoded': {
+      const cached = getCached(id, 'decoded');
+      if (cached !== undefined) { $detailContent.innerHTML = cached; break; }
+      const html = renderCategorizedParams((data as any).categorized, data);
+      $detailContent.innerHTML = html;
+      setCache(id, 'decoded', html);
       break;
-    case 'query':
-      $detailContent.innerHTML = renderParamTable(data.allParams);
+    }
+    case 'query': {
+      const cached = getCached(id, 'query');
+      if (cached !== undefined) { $detailContent.innerHTML = cached; break; }
+      const html = renderParamTable(data.allParams);
+      $detailContent.innerHTML = html;
+      setCache(id, 'query', html);
       break;
-    case 'post':
+    }
+    case 'post': {
+      const cached = getCached(id, 'post');
+      if (cached !== undefined) { $detailContent.innerHTML = cached; break; }
       renderPostTab(data, $detailContent);
+      setCache(id, 'post', $detailContent.innerHTML);
       break;
-    case 'headers':
+    }
+    case 'headers': {
+      const cached = getCached(id, 'headers');
+      if (cached !== undefined) { $detailContent.innerHTML = cached; break; }
       // Lazy load headers if not yet loaded
       if (!data.requestHeaders && !data.responseHeaders && (data._hasRequestHeaders || data._hasResponseHeaders)) {
         loadHeavyData(data);
       }
-      $detailContent.innerHTML = renderHeadersTab(data);
+      const html = renderHeadersTab(data);
+      $detailContent.innerHTML = html;
+      setCache(id, 'headers', html);
       break;
+    }
     case 'response':
-      // Lazy load response body if not yet loaded
+      // Response tab: lazy-loaded, not cached
       if (!data.responseBody && data._hasResponseBody) {
         loadHeavyData(data);
       }

@@ -10,10 +10,10 @@ export interface ProviderGroup {
 
 // Skupiny dle kategorie (inspirováno Omnibug)
 export const PROVIDER_GROUPS: readonly ProviderGroup[] = [
-  { id: 'analytics',  label: 'Analytics',             providers: ['GA4', 'GA (UA)', 'Adobe AA', 'AEP Web SDK', 'Scorecard'] },
-  { id: 'tagmanager', label: 'Tag Manager',            providers: ['GTM', 'Tealium'] },
-  { id: 'marketing',  label: 'Marketing',              providers: ['Google Ads', 'Meta Pixel', 'Bing Ads', 'Adform', 'DV360', 'Criteo', 'Sklik'] },
-  { id: 'replay',     label: 'Session Replay',         providers: ['Hotjar'] },
+  { id: 'analytics',  label: 'Analytics',             providers: ['GA4', 'GA (UA)', 'Adobe AA', 'AEP Web SDK', 'Scorecard', 'Amplitude', 'Mixpanel', 'Matomo'] },
+  { id: 'tagmanager', label: 'Tag Manager',            providers: ['GTM', 'Tealium', 'Segment'] },
+  { id: 'marketing',  label: 'Marketing',              providers: ['Google Ads', 'Meta Pixel', 'Bing Ads', 'Adform', 'DV360', 'Criteo', 'Sklik', 'TikTok Pixel', 'X (Twitter) Pixel', 'Pinterest Pixel', 'The Trade Desk'] },
+  { id: 'replay',     label: 'Session Replay',         providers: ['Hotjar', 'Microsoft Clarity'] },
   { id: 'visitorid',  label: 'Visitor Identification', providers: ['LinkedIn'] },
 ];
 

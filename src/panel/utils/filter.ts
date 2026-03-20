@@ -86,17 +86,15 @@ export function matchesFilter(data: ParsedRequest): boolean {
     if (data.method !== filterMethod) return false;
   }
 
-  // Has parameter filter
+  // Has parameter filter (case-insensitive)
   if (filterHasParam) {
-    const hasParam = !!(
-      (data.allParams &&
-        data.allParams[filterHasParam] !== undefined &&
-        data.allParams[filterHasParam] !== '') ||
-      (data.decoded &&
-        data.decoded[filterHasParam] !== undefined &&
-        data.decoded[filterHasParam] !== '')
-    );
-    if (!hasParam) return false;
+    const needle = filterHasParam.toLowerCase();
+    const hasParamInMap = (map: Record<string, string | undefined>) =>
+      Object.entries(map).some(([k, v]) => k.toLowerCase() === needle && v !== '' && v !== undefined);
+    const found =
+      (data.allParams && hasParamInMap(data.allParams)) ||
+      (data.decoded && hasParamInMap(data.decoded as Record<string, string | undefined>));
+    if (!found) return false;
   }
 
   return true;

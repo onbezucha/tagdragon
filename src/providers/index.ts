@@ -21,6 +21,21 @@ import { metaPixel } from './meta/pixel';
 // Microsoft
 import { bingAds } from './microsoft/bing-ads';
 
+// Microsoft
+import { microsoftClarity } from './microsoft/clarity';
+
+// Analytics
+import { amplitude } from './amplitude';
+import { mixpanel } from './mixpanel';
+import { matomo } from './matomo';
+
+// Social / Ad pixels
+import { tiktokPixel } from './tiktok';
+import { twitterPixel } from './twitter-pixel';
+import { pinterestPixel } from './pinterest';
+import { segment } from './segment';
+import { theTradeDesk } from './thetradedesk';
+
 // Others
 import { hotjar } from './hotjar';
 import { tealium } from './tealium';
@@ -41,6 +56,14 @@ export const PROVIDERS: ProviderRegistry = [
   gaUA,
   gtm,
   metaPixel,
+  tiktokPixel,
+  twitterPixel,
+  pinterestPixel,
+  segment,
+  amplitude,
+  mixpanel,
+  microsoftClarity,
+  matomo,
   hotjar,
   tealium,
   adobeAA,
@@ -49,6 +72,7 @@ export const PROVIDERS: ProviderRegistry = [
   seznamSklik,
   bingAds,
   googleAds,
+  theTradeDesk,
   adform,
   doubleclick,
   criteo,

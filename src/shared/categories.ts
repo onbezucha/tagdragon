@@ -27,7 +27,7 @@ export const PROVIDER_CATEGORIES: AllProviderCategories = {
       icon: '📄',
       order: 3,
       defaultExpanded: true,
-      patterns: [/^dl$/, /^dp$/, /^dr$/, /^dt$/, /^Page$/, /^Page title$/, /^page_location$/, /^page_title$/, /^page_referrer$/, /^page_path$/],
+      patterns: [/^dl$/, /^dp$/, /^dr$/, /^dt$/, /^Page$/, /^Page title$/, /^Referrer$/, /^page_location$/, /^page_title$/, /^page_referrer$/, /^page_path$/],
       prefixMatch: ['cg']
     },
     eventData: {
@@ -43,9 +43,9 @@ export const PROVIDER_CATEGORIES: AllProviderCategories = {
       icon: '👤',
       order: 5,
       defaultExpanded: true,
-      patterns: [/^cid$/, /^uid$/, /^user_id$/, /^client_id$/, /^Client ID$/, /^_ga$/],
+      patterns: [/^cid$/, /^uid$/, /^user_id$/, /^client_id$/, /^Client ID$/, /^User ID$/, /^_ga$/],
       prefixMatch: ['up.', 'upn.'],
-      requiredParams: ['cid', 'client_id', 'Client ID']
+      requiredParams: ['cid', 'client_id', 'Client ID', 'User ID']
     },
     campaign: {
       label: 'Campaign',
@@ -625,6 +625,244 @@ export const PROVIDER_CATEGORIES: AllProviderCategories = {
       order: 2,
       defaultExpanded: true,
       patterns: [/^c4$/, /^Segment$/, /^rn$/, /^URL$/]
+    }
+  },
+
+  'Amplitude': {
+    event: {
+      label: 'Event',
+      icon: '⚡',
+      order: 1,
+      defaultExpanded: true,
+      patterns: [/^Event$/]
+    },
+    identity: {
+      label: 'Identity',
+      icon: '👤',
+      order: 2,
+      defaultExpanded: true,
+      patterns: [/^User ID$/, /^Device ID$/, /^Session ID$/]
+    },
+    account: {
+      label: 'Account',
+      icon: '🔑',
+      order: 3,
+      defaultExpanded: true,
+      patterns: [/^API Key$/]
+    },
+    ecommerce: {
+      label: 'Ecommerce',
+      icon: '🛒',
+      order: 4,
+      defaultExpanded: true,
+      patterns: [/^Revenue$/]
+    },
+    technical: {
+      label: 'Technical',
+      icon: '🔧',
+      order: 5,
+      defaultExpanded: false,
+      patterns: [/^URL$/]
+    }
+  },
+
+  'Mixpanel': {
+    event: {
+      label: 'Event',
+      icon: '⚡',
+      order: 1,
+      defaultExpanded: true,
+      patterns: [/^Event$/]
+    },
+    identity: {
+      label: 'Identity',
+      icon: '👤',
+      order: 2,
+      defaultExpanded: true,
+      patterns: [/^Distinct ID$/, /^Token$/]
+    },
+    page: {
+      label: 'Page',
+      icon: '📄',
+      order: 3,
+      defaultExpanded: true,
+      patterns: [/^URL$/]
+    }
+  },
+
+  'Microsoft Clarity': {
+    project: {
+      label: 'Project',
+      icon: '🔑',
+      order: 1,
+      defaultExpanded: true,
+      patterns: [/^Project ID$/, /^Version$/]
+    },
+    page: {
+      label: 'Page',
+      icon: '📄',
+      order: 2,
+      defaultExpanded: true,
+      patterns: [/^URL$/]
+    }
+  },
+
+  'TikTok Pixel': {
+    event: {
+      label: 'Event',
+      icon: '⚡',
+      order: 1,
+      defaultExpanded: true,
+      patterns: [/^Event$/, /^Pixel Code$/]
+    },
+    ecommerce: {
+      label: 'Ecommerce',
+      icon: '🛒',
+      order: 2,
+      defaultExpanded: true,
+      patterns: [/^Value$/, /^Currency$/]
+    },
+    page: {
+      label: 'Page',
+      icon: '📄',
+      order: 3,
+      defaultExpanded: true,
+      patterns: [/^URL$/]
+    }
+  },
+
+  'X (Twitter) Pixel': {
+    tracking: {
+      label: 'Tracking',
+      icon: '🔑',
+      order: 1,
+      defaultExpanded: true,
+      patterns: [/^Transaction ID$/, /^Pixel ID$/]
+    },
+    conversion: {
+      label: 'Conversion',
+      icon: '🎯',
+      order: 2,
+      defaultExpanded: true,
+      patterns: [/^Sale Amount$/, /^Order Quantity$/]
+    },
+    page: {
+      label: 'Page',
+      icon: '📄',
+      order: 3,
+      defaultExpanded: true,
+      patterns: [/^URL$/]
+    }
+  },
+
+  'Pinterest Pixel': {
+    tracking: {
+      label: 'Tracking',
+      icon: '🔑',
+      order: 1,
+      defaultExpanded: true,
+      patterns: [/^Tag ID$/, /^Event$/]
+    },
+    ecommerce: {
+      label: 'Ecommerce',
+      icon: '🛒',
+      order: 2,
+      defaultExpanded: true,
+      patterns: [/^Value$/, /^Currency$/]
+    },
+    page: {
+      label: 'Page',
+      icon: '📄',
+      order: 3,
+      defaultExpanded: true,
+      patterns: [/^URL$/]
+    }
+  },
+
+  'Segment': {
+    event: {
+      label: 'Event',
+      icon: '⚡',
+      order: 1,
+      defaultExpanded: true,
+      patterns: [/^Type$/, /^Event$/]
+    },
+    identity: {
+      label: 'Identity',
+      icon: '👤',
+      order: 2,
+      defaultExpanded: true,
+      patterns: [/^Anonymous ID$/, /^User ID$/]
+    },
+    page: {
+      label: 'Page',
+      icon: '📄',
+      order: 3,
+      defaultExpanded: true,
+      patterns: [/^URL$/]
+    }
+  },
+
+  'Matomo': {
+    hit: {
+      label: 'Hit Info',
+      icon: '📊',
+      order: 1,
+      defaultExpanded: true,
+      patterns: [/^Site ID$/, /^Action$/]
+    },
+    event: {
+      label: 'Event',
+      icon: '⚡',
+      order: 2,
+      defaultExpanded: true,
+      patterns: [/^Event Category$/, /^Event Action$/, /^Event Name$/]
+    },
+    ecommerce: {
+      label: 'Ecommerce',
+      icon: '🛒',
+      order: 3,
+      defaultExpanded: true,
+      patterns: [/^Revenue$/]
+    },
+    identity: {
+      label: 'Identity',
+      icon: '👤',
+      order: 4,
+      defaultExpanded: true,
+      patterns: [/^User ID$/]
+    },
+    page: {
+      label: 'Page',
+      icon: '📄',
+      order: 5,
+      defaultExpanded: true,
+      patterns: [/^URL$/]
+    }
+  },
+
+  'The Trade Desk': {
+    tracking: {
+      label: 'Tracking',
+      icon: '🔑',
+      order: 1,
+      defaultExpanded: true,
+      patterns: [/^Advertiser ID$/, /^Universal Pixel ID$/],
+      requiredParams: ['Advertiser ID']
+    },
+    conversion: {
+      label: 'Conversion',
+      icon: '🎯',
+      order: 2,
+      defaultExpanded: true,
+      patterns: [/^Value$/, /^Order ID$/]
+    },
+    page: {
+      label: 'Page',
+      icon: '📄',
+      order: 3,
+      defaultExpanded: true,
+      patterns: [/^URL$/]
     }
   }
 };

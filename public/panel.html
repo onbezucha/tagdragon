@@ -717,15 +717,24 @@
 
     .pgroup-all:hover, .pgroup-none:hover { color: var(--text-0); background: var(--bg-3); }
 
+    .pgroup-pills-wrap {
+      display: grid;
+      grid-template-rows: 1fr;
+      transition: grid-template-rows 200ms ease;
+    }
+
+    .pgroup-pills-wrap.collapsed {
+      grid-template-rows: 0fr;
+    }
+
     .pgroup-pills {
       display: flex;
       gap: 4px;
       align-items: center;
       flex-wrap: wrap;
       padding: 4px 8px 6px 20px;
+      overflow: hidden;
     }
-
-    .pgroup-pills.collapsed { display: none; }
 
     .ppill.search-hidden { display: none; }
 
@@ -1064,8 +1073,8 @@
       padding: 0 8px;
       background-color: var(--bg-1);
       border-top: 1px solid var(--border);
-      font-size: 11px;
-      color: var(--text-2);
+      font-size: 12px;
+      color: var(--text-0);
     }
 
     .status-left {
@@ -1075,23 +1084,23 @@
     }
 
     .status-separator {
-      color: var(--text-3);
-      font-size: 10px;
+      color: var(--text-2);
+      font-size: 11px;
     }
 
     .status-label {
-      color: var(--text-2);
+      color: var(--text-0);
     }
 
     #size-badge .value,
     #time-badge .value {
-      color: var(--text-1);
+      color: var(--text-0);
       font-family: var(--font-mono);
     }
 
     .status-hint {
-      color: var(--text-2);
-      font-size: 10px;
+      color: var(--text-1);
+      font-size: 11px;
     }
   </style>
 </head>
@@ -1178,6 +1187,11 @@
             <path d="M5 9h4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
           </svg>
         </button>
+        <button id="btn-quick-compact" class="quick-btn" title="Kompaktní seznam">
+          <svg width="14" height="14" viewBox="0 0 14 14">
+            <path d="M2 3.5h10M2 6.5h10M2 9.5h10" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+          </svg>
+        </button>
       </div>
       <div class="toolbar-separator"></div>
       <button id="btn-providers" title="Filtr providerů">
@@ -1227,7 +1241,7 @@
         </div>
         <div style="display: flex; justify-content: space-between;">
           <span>Navigate list</span>
-          <kbd style="font-family: var(--font-mono); font-size: 12px; padding: 1px 5px; background: var(--bg-2); border: 1px solid var(--border); border-radius: 3px;">&uarr; &darr; / j k</kbd>
+          <kbd style="font-family: var(--font-mono); font-size: 12px; padding: 1px 5px; background: var(--bg-2); border: 1px solid var(--border); border-radius: 3px;">&uarr; &darr;</kbd>
         </div>
         <div style="display: flex; justify-content: space-between;">
           <span>Close panel</span>
@@ -1311,6 +1325,78 @@
           </svg>
           Automaticky rozbalit requesty
         </label>
+        <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-1); cursor: pointer; user-select: none; margin-top: 6px;">
+          <input type="checkbox" id="cfg-compact-rows" style="accent-color: var(--accent); cursor: pointer;">
+          <svg width="12" height="12" viewBox="0 0 14 14" style="margin-right: 6px; vertical-align: middle; opacity: 0.7;">
+            <path d="M2 4h10M2 7h10M2 10h10" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+          </svg>
+          Kompaktní seznam
+        </label>
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 8px;">
+          <span style="font-size: 13px; color: var(--text-1);">Výchozí tab</span>
+          <select id="cfg-default-tab" style="
+            background: var(--bg-2);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            color: var(--text-0);
+            font-size: 13px;
+            font-family: var(--font-mono);
+            padding: 2px 6px;
+            cursor: pointer;
+            outline: none;
+          ">
+            <option value="decoded">Decoded</option>
+            <option value="query">Query</option>
+            <option value="post">POST</option>
+            <option value="headers">Headers</option>
+            <option value="response">Response</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="settings-section">
+      <span class="settings-label">Časy</span>
+      <div style="margin-top: 4px;">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <span style="font-size: 13px; color: var(--text-1);">Formát času</span>
+          <select id="cfg-timestamp-format" style="
+            background: var(--bg-2);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            color: var(--text-0);
+            font-size: 13px;
+            font-family: var(--font-mono);
+            padding: 2px 6px;
+            cursor: pointer;
+            outline: none;
+          ">
+            <option value="absolute">Absolutní</option>
+            <option value="relative">Relativní</option>
+            <option value="elapsed">Od začátku</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="settings-section">
+      <span class="settings-label">Export</span>
+      <div style="margin-top: 4px;">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <span style="font-size: 13px; color: var(--text-1);">Formát exportu</span>
+          <select id="cfg-export-format" style="
+            background: var(--bg-2);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            color: var(--text-0);
+            font-size: 13px;
+            font-family: var(--font-mono);
+            padding: 2px 6px;
+            cursor: pointer;
+            outline: none;
+          ">
+            <option value="json">JSON</option>
+            <option value="csv">CSV</option>
+          </select>
+        </div>
       </div>
     </div>
     <div class="settings-section">

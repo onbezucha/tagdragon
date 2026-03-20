@@ -72,6 +72,10 @@ export interface AppConfig {
   autoExpand: boolean;
   collapsedGroups: string[];
   hiddenProviders: string[];
+  defaultTab: TabName;
+  compactRows: boolean;
+  timestampFormat: 'absolute' | 'relative' | 'elapsed';
+  exportFormat: 'json' | 'csv';
 }
 
 export interface PendingRequest {

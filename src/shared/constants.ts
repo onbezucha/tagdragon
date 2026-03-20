@@ -12,6 +12,10 @@ export interface AppConfig {
   autoExpand: boolean;
   collapsedGroups: string[];
   hiddenProviders: string[];
+  defaultTab: 'decoded' | 'query' | 'post' | 'headers' | 'response';
+  compactRows: boolean;
+  timestampFormat: 'absolute' | 'relative' | 'elapsed';
+  exportFormat: 'json' | 'csv';
 }
 
 export const DEFAULT_CONFIG: AppConfig = {
@@ -23,4 +27,8 @@ export const DEFAULT_CONFIG: AppConfig = {
   autoExpand: false,
   collapsedGroups: [],
   hiddenProviders: [],
+  defaultTab: 'decoded',
+  compactRows: false,
+  timestampFormat: 'absolute',
+  exportFormat: 'json',
 };
