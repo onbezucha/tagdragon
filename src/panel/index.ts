@@ -17,6 +17,7 @@ import { ensureProviderPill, updateProviderCounts, initProviderBarHandlers, upda
 import { updateActiveFilters, initFilterPopoverHandlers } from './components/filter-bar';
 import { updateStatusBar, showPruneNotification, clearPruneTimer } from './components/status-bar';
 import { initAdobeEnvSwitcher } from './components/adobe-env-switcher';
+import { initConsentPanel, clearAllCookies, clearConsentOverride } from './components/consent-panel';
 import { initTheme } from './theme';
 
 // Extend Window interface for receiveRequest
@@ -318,6 +319,7 @@ function initToolbarHandlers(): void {
   const chkPause = document.getElementById('chk-pause') as HTMLInputElement;
   const btnCloseDetail = document.getElementById('btn-close-detail') as HTMLButtonElement;
   const btnExport = document.getElementById('btn-export') as HTMLButtonElement;
+  const btnClearCookies = document.getElementById('btn-clear-cookies') as HTMLButtonElement;
   const btnSettings = document.getElementById('btn-settings') as HTMLButtonElement;
   const btnResetFilters = document.getElementById('btn-reset-filters') as HTMLButtonElement;
 
@@ -423,11 +425,34 @@ function initToolbarHandlers(): void {
     }
   });
 
+  // Clear cookies button
+  btnClearCookies?.addEventListener('click', async () => {
+    const originalHTML = btnClearCookies.innerHTML;
+    btnClearCookies.disabled = true;
+    btnClearCookies.querySelector('span')!.textContent = 'Mažu...';
+    try {
+      const count = await clearAllCookies();
+      await clearConsentOverride();
+      btnClearCookies.querySelector('span')!.textContent = `Smazáno ${count}`;
+      setTimeout(() => {
+        btnClearCookies.innerHTML = originalHTML;
+        btnClearCookies.disabled = false;
+      }, 2000);
+    } catch {
+      btnClearCookies.querySelector('span')!.textContent = 'Chyba';
+      setTimeout(() => {
+        btnClearCookies.innerHTML = originalHTML;
+        btnClearCookies.disabled = false;
+      }, 2000);
+    }
+  });
+
   // Settings popover
   btnSettings?.addEventListener('click', (e: MouseEvent) => {
     e.stopPropagation();
     DOM.settingsPopover?.classList.toggle('visible');
     DOM.providerPopover?.classList.remove('visible');
+    DOM.consentPopover?.classList.remove('visible');
   });
 
   document.addEventListener('click', (e: MouseEvent) => {
@@ -452,6 +477,7 @@ function initToolbarHandlers(): void {
     e.stopPropagation();
     DOM.providerPopover?.classList.toggle('visible');
     DOM.settingsPopover?.classList.remove('visible');
+    DOM.consentPopover?.classList.remove('visible');
   });
 
   // Reset filters button
@@ -698,6 +724,9 @@ async function init(): Promise<void> {
 
   // Initialize Adobe env switcher
   initAdobeEnvSwitcher();
+
+  // Initialize Consent Panel
+  void initConsentPanel();
 }
 
 // Start initialization

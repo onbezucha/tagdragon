@@ -4,7 +4,7 @@ Instructions for AI coding agents working in this repository.
 
 ## Project Overview
 
-**TagDragon v1.3.1** — Chrome DevTools extension (Manifest V3) for capturing and decoding marketing/analytics tracking requests. Built with TypeScript, Rollup (JS bundler) and Tailwind CSS.
+**TagDragon v1.3.3** — Chrome DevTools extension (Manifest V3) for capturing and decoding marketing/analytics tracking requests. Built with TypeScript, Rollup (JS bundler) and Tailwind CSS.
 
 ## Build Commands
 

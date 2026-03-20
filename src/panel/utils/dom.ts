@@ -70,6 +70,7 @@ interface DOMRefs {
   readonly envApply: HTMLElement | null;
   readonly envReset: HTMLElement | null;
   readonly envHostname: HTMLElement | null;
+  readonly consentPopover: HTMLElement | null;
 }
 
 export const DOM: DOMRefs = {
@@ -112,4 +113,5 @@ export const DOM: DOMRefs = {
   get envApply() { return $('env-apply'); },
   get envReset() { return $('env-reset'); },
   get envHostname() { return $('env-hostname'); },
+  get consentPopover() { return $('consent-popover'); },
 };

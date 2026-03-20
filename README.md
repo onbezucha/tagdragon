@@ -4,7 +4,7 @@
 
 **The dragon that sees every tag. Chrome DevTools extension for capturing and decoding marketing/analytics tracking requests.**
 
-[![Chrome Extension Version](https://img.shields.io/badge/version-1.3.1-blue.svg)](https://github.com/yourusername/TagDragon)
+[![Chrome Extension Version](https://img.shields.io/badge/version-1.3.3-blue.svg)](https://github.com/yourusername/TagDragon)
 [![License](https://img.shields.io/badge/license-ISC-green.svg)](LICENSE)
 [![Chrome](https://img.shields.io/badge/chrome-88+-brightgreen.svg)](https://www.google.com/chrome/)
 
@@ -16,7 +16,7 @@
 
 ## Overview
 
-**TagDragon v1.3.1** is a Chrome DevTools extension that captures network requests from analytics and marketing platforms, decodes them into human-readable format, and provides advanced filtering and search capabilities.
+**TagDragon v1.3.3** is a Chrome DevTools extension that captures network requests from analytics and marketing platforms, decodes them into human-readable format, and provides advanced filtering and search capabilities.
 
 ### Key Features
 
