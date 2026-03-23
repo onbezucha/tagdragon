@@ -7,7 +7,7 @@ import { GET_CONSENT_DATA_SCRIPT, ACCEPT_ALL_SCRIPT, REJECT_ALL_SCRIPT } from '@
 const STORAGE_KEY = 'rt_consent_override';
 const MAX_APPLY_ATTEMPTS = 6;
 const APPLY_RETRY_MS = 1500;   // interval mezi pokusy o aplikaci po navigaci
-const FIRST_ATTEMPT_MS = 1000; // čekání po navigaci před prvním pokusem
+const FIRST_ATTEMPT_MS = 1000; // delay after navigation before first attempt
 
 type ConsentOverride = 'accept_all' | 'reject_all' | null;
 
@@ -48,12 +48,12 @@ function applyOverrideWithRetry(override: ConsentOverride, attempt = 1): void {
 
   chrome.devtools.inspectedWindow.eval(script, (result: unknown) => {
     if (result && result !== false) {
-      // Úspěch — aktualizuj panel pokud je otevřený
+      // Success — refresh panel if open
       if (DOM.consentPopover?.classList.contains('visible')) {
         setTimeout(() => refreshConsentData(), 600);
       }
     } else if (attempt < MAX_APPLY_ATTEMPTS) {
-      // CMP ještě není inicializováno — zkus znovu
+      // CMP not yet initialized — retry
       setTimeout(() => applyOverrideWithRetry(override, attempt + 1), APPLY_RETRY_MS);
     }
   });
@@ -84,6 +84,7 @@ export async function initConsentPanel(): Promise<void> {
     $consentPopover.classList.toggle('visible', !isVisible);
     DOM.settingsPopover?.classList.remove('visible');
     DOM.providerPopover?.classList.remove('visible');
+    DOM.infoPopover?.classList.remove('visible');
 
     if (!isVisible) {
       renderOverrideBadge();
@@ -102,13 +103,13 @@ export async function initConsentPanel(): Promise<void> {
   const $rejectBtn = document.getElementById('consent-reject-all') as HTMLButtonElement | null;
 
   $acceptBtn?.addEventListener('click', () => {
-    setActionLoading($acceptBtn, '⏳ Aplikuji...');
-    runConsentAction(ACCEPT_ALL_SCRIPT, 'accept_all', $acceptBtn, '✓ Povolit vše');
+    setActionLoading($acceptBtn, '⏳ Applying...');
+    runConsentAction(ACCEPT_ALL_SCRIPT, 'accept_all', $acceptBtn, '✓ Accept all');
   });
 
   $rejectBtn?.addEventListener('click', () => {
-    setActionLoading($rejectBtn, '⏳ Aplikuji...');
-    runConsentAction(REJECT_ALL_SCRIPT, 'reject_all', $rejectBtn, '✕ Odmítnout vše');
+    setActionLoading($rejectBtn, '⏳ Applying...');
+    runConsentAction(REJECT_ALL_SCRIPT, 'reject_all', $rejectBtn, '✕ Reject all');
   });
 
   document.getElementById('consent-refresh')?.addEventListener('click', () => {
@@ -125,7 +126,7 @@ export async function initConsentPanel(): Promise<void> {
     void runClearCookies($clearCookiesBtn);
   });
 
-  // Zobraz aktuální stav při inicializaci
+  // Show current state on init
   renderOverrideBadge();
 }
 
@@ -152,12 +153,12 @@ function runConsentAction(
 
     const $status = document.getElementById('consent-action-status');
     if ($status) {
-      $status.textContent = apiCalled ? `✓ Voláno: ${result}` : '⚠️ CMP API nenalezeno';
+      $status.textContent = apiCalled ? `✓ Called: ${result}` : '⚠️ CMP API not found';
       $status.style.display = 'block';
     }
 
     if (apiCalled) {
-      // Ulož preferenci pro automatické aplikování po navigaci
+      // Save preference for auto-apply on navigation
       void saveOverride(override);
       renderOverrideBadge();
     }
@@ -172,7 +173,7 @@ function runConsentAction(
 // ─── CLEAR COOKIES ────────────────────────────────────────────────────────
 
 export async function clearAllCookies(): Promise<number> {
-  // Získej URL inspektované stránky
+  // Get URL of the inspected page
   const url = await new Promise<string>((resolve) => {
     chrome.devtools.inspectedWindow.eval('location.href', (result: unknown) => {
       resolve(typeof result === 'string' ? result : '');
@@ -181,61 +182,37 @@ export async function clearAllCookies(): Promise<number> {
 
   if (!url) return 0;
 
-  let urlObj: URL;
-  try { urlObj = new URL(url); } catch { return 0; }
-
-  // Získej cookies pro URL i pro doménu (včetně subdomain)
-  const [byCookies, byDomain] = await Promise.all([
-    chrome.cookies.getAll({ url }),
-    chrome.cookies.getAll({ domain: urlObj.hostname }),
-  ]);
-
-  // Deduplikace
-  const seen = new Set<string>();
-  const all = [...byCookies, ...byDomain].filter(c => {
-    const key = `${c.name}|${c.domain}|${c.path}|${c.storeId}`;
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
+  // Relay to background — chrome.cookies is not available in DevTools panels
+  return new Promise<number>((resolve) => {
+    chrome.runtime.sendMessage({ type: 'CLEAR_COOKIES', url }, (resp: any) => {
+      resolve(resp?.deleted ?? 0);
+    });
   });
-
-  // Smaž každou cookie
-  let deleted = 0;
-  for (const cookie of all) {
-    const domain = cookie.domain.startsWith('.') ? cookie.domain.slice(1) : cookie.domain;
-    const cookieUrl = `${cookie.secure ? 'https' : 'http'}://${domain}${cookie.path}`;
-    try {
-      await chrome.cookies.remove({ url: cookieUrl, name: cookie.name, storeId: cookie.storeId });
-      deleted++;
-    } catch { /* pokračuj i při chybě */ }
-  }
-
-  return deleted;
 }
 
 async function runClearCookies(btn: HTMLButtonElement): Promise<void> {
   btn.disabled = true;
-  btn.textContent = '⏳ Mažu...';
+  btn.textContent = '⏳ Deleting...';
 
   const $status = document.getElementById('consent-action-status');
 
   try {
     const count = await clearAllCookies();
     if ($status) {
-      $status.textContent = `🗑 Smazáno ${count} cookies`;
+      $status.textContent = `🗑 Deleted ${count} cookies`;
       $status.style.display = 'block';
     }
-    // Obnov panel — consent cookies jsou pryč
+    // Refresh panel — consent cookies are gone
     setTimeout(() => refreshConsentData(), 400);
   } catch (err) {
     if ($status) {
-      $status.textContent = '⚠️ Chyba při mazání cookies';
+      $status.textContent = '⚠️ Error deleting cookies';
       $status.style.display = 'block';
     }
     console.warn('TagDragon: clearAllCookies failed', err);
   } finally {
     btn.disabled = false;
-    btn.textContent = '🗑 Smazat cookies';
+    btn.textContent = '🗑 Delete cookies';
   }
 }
 
@@ -250,17 +227,17 @@ function renderOverrideBadge(): void {
     return;
   }
 
-  const label = consentOverride === 'accept_all' ? 'Vše povoleno' : 'Vše odmítnuto';
+  const label = consentOverride === 'accept_all' ? 'All accepted' : 'All rejected';
   const cls = consentOverride === 'accept_all' ? 'override-accept' : 'override-reject';
   $badge.className = `consent-override-badge ${cls}`;
   $badge.style.display = 'flex';
   $badge.innerHTML = `
     <span class="consent-override-icon">🔒</span>
     <span class="consent-override-label">Auto: ${label}</span>
-    <button id="consent-override-clear" class="consent-override-clear" title="Zrušit automatické aplikování">✕</button>
+    <button id="consent-override-clear" class="consent-override-clear" title="Cancel auto-apply">✕</button>
   `;
 
-  // Re-attach listener (innerHTML přepsal element)
+  // Re-attach listener (innerHTML replaced the element)
   document.getElementById('consent-override-clear')?.addEventListener('click', (e) => {
     e.stopPropagation();
     void saveOverride(null);
@@ -281,14 +258,14 @@ function refreshConsentData(): void {
     (result: unknown, isException: unknown) => {
       isRefreshing = false;
       if (isException || !result) {
-        renderNoData('Chyba při čtení consent dat');
+        renderNoData('Error reading consent data');
         return;
       }
       try {
         consentData = JSON.parse(result as string) as ConsentData;
         renderConsentPanel(consentData);
       } catch {
-        renderNoData('Nelze zpracovat consent data');
+        renderNoData('Cannot process consent data');
       }
     }
   );
@@ -299,7 +276,7 @@ function refreshConsentData(): void {
 function renderLoading(): void {
   const $cmpInfo = document.getElementById('consent-cmp-info');
   const $categories = document.getElementById('consent-categories');
-  if ($cmpInfo) $cmpInfo.innerHTML = '<span class="consent-loading">Načítám...</span>';
+  if ($cmpInfo) $cmpInfo.innerHTML = '<span class="consent-loading">Loading...</span>';
   if ($categories) $categories.innerHTML = '';
 }
 
@@ -310,12 +287,12 @@ function renderNoData(message: string): void {
   const $tcf = document.getElementById('consent-tcf');
   const $timestamp = document.getElementById('consent-timestamp');
 
-  if ($cmpInfo) $cmpInfo.innerHTML = '<span class="consent-no-cmp">❌ CMP nebyl detekován</span>';
+  if ($cmpInfo) $cmpInfo.innerHTML = '<span class="consent-no-cmp">❌ CMP not detected</span>';
   if ($categories) $categories.innerHTML = `
     <div class="consent-no-data">
       <div class="consent-no-data-icon">🍪</div>
       <div class="consent-no-data-text">${message}</div>
-      <div class="consent-no-data-hint">Otevřete stránku s CMP pro zobrazení consent dat</div>
+      <div class="consent-no-data-hint">Open a page with CMP to view consent data</div>
     </div>
   `;
   if ($actions) ($actions as HTMLElement).style.display = 'none';
@@ -334,7 +311,7 @@ function renderConsentPanel(data: ConsentData): void {
   if ($actionStatus) $actionStatus.style.display = 'none';
 
   if (!data.cmp) {
-    renderNoData('Žádný CMP nebyl detekován na této stránce');
+    renderNoData('No CMP detected on this page');
     return;
   }
 
@@ -343,13 +320,13 @@ function renderConsentPanel(data: ConsentData): void {
     $cmpInfo.innerHTML = `
       <span class="consent-cmp-name">${data.cmp.name}</span>
       <span class="consent-cmp-status ${data.cmp.isActive ? 'active' : 'inactive'}">
-        ${data.cmp.isActive ? '🟢 Aktivní' : '🔴 API'}
+        ${data.cmp.isActive ? '🟢 Active' : '🔴 API'}
       </span>
       ${data.cmp.hasTCF ? '<span class="consent-tcf-badge">TCF 2.0</span>' : ''}
     `;
   }
 
-  // Akční tlačítka — zobrazit vždy, jen disablovat pokud API není dostupné
+  // Action buttons — always show, just disable if API is unavailable
   if ($actions) {
     ($actions as HTMLElement).style.display = 'flex';
     const $acceptBtn = document.getElementById('consent-accept-all') as HTMLButtonElement | null;
@@ -357,11 +334,11 @@ function renderConsentPanel(data: ConsentData): void {
     const apiUnavailable = !data.cmp.isActive;
     if ($acceptBtn) {
       $acceptBtn.disabled = apiUnavailable;
-      $acceptBtn.title = apiUnavailable ? 'CMP API není dostupné' : '';
+      $acceptBtn.title = apiUnavailable ? 'CMP API not available' : '';
     }
     if ($rejectBtn) {
       $rejectBtn.disabled = apiUnavailable;
-      $rejectBtn.title = apiUnavailable ? 'CMP API není dostupné' : '';
+      $rejectBtn.title = apiUnavailable ? 'CMP API not available' : '';
     }
   }
 
@@ -377,7 +354,7 @@ function renderConsentPanel(data: ConsentData): void {
         </div>
       `).join('');
     } else {
-      $categories.innerHTML = '<div class="consent-no-data"><div class="consent-no-data-text">Kategorie nebyly nalezeny</div></div>';
+      $categories.innerHTML = '<div class="consent-no-data"><div class="consent-no-data-text">No categories found</div></div>';
     }
   }
 
@@ -388,8 +365,8 @@ function renderConsentPanel(data: ConsentData): void {
         <div class="consent-tcf-header">
           <span class="consent-label">📋 TCF 2.0 String</span>
           <div class="consent-tcf-actions">
-            <button class="consent-btn-small" id="consent-show-tcf">Zobrazit</button>
-            <button class="consent-btn-small" id="consent-copy-tcf">Kopírovat</button>
+            <button class="consent-btn-small" id="consent-show-tcf">Show</button>
+            <button class="consent-btn-small" id="consent-copy-tcf">Copy</button>
           </div>
         </div>
         <div class="consent-tcf-string" id="consent-tcf-value" style="display:none;">${data.tcf.tcString}</div>
@@ -402,13 +379,13 @@ function renderConsentPanel(data: ConsentData): void {
         navigator.clipboard.writeText(data.tcf!.tcString).catch(() => {});
       });
     } else {
-      $tcf.innerHTML = '<span class="consent-no-data-hint">TCF není podporováno</span>';
+      $tcf.innerHTML = '<span class="consent-no-data-hint">TCF not supported</span>';
     }
   }
 
   // Timestamp
   if ($timestamp && data.timestamp) {
     const date = new Date(data.timestamp);
-    $timestamp.textContent = `🕐 Načteno: ${date.toLocaleString('cs-CZ')}`;
+    $timestamp.textContent = `🕐 Loaded: ${date.toLocaleString('en-US')}`;
   }
 }

@@ -11,15 +11,32 @@ export const ga4: Provider = {
     const p = getParams(url, postBody);
     
     return {
+      // Hit Info
       'Event': p.en,
+      'Session ID': p.sid,
+      'Session Count': p.sct,
+      'Session Engaged': p.seg,
+      'Hit Sequence': p._s,
+      'Engagement': p._et ? `${p._et}ms` : undefined,
+      // User & Session
       'Client ID': p.cid,
       'User ID': p.uid,
-      'Measurement ID': p.tid,
+      // Page & Content
       'Page': p.dl ?? p.dp,
       'Page title': p.dt,
       'Referrer': p.dr,
-      'Session ID': p.sid,
-      'Engagement': p._et ? `${p._et}ms` : undefined,
+      // Measurement
+      'Measurement ID': p.tid,
+      'GTM Version': p.gtm,
+      // Consent & Privacy
+      'Consent State': p.gcs,
+      'Consent Defaults': p.gcd,
+      'Non-personalized Ads': p.npa,
+      'DMA Compliance': p.dma,
+      'DMA Consent': p.dma_cps,
+      // Device & Browser
+      'Screen Resolution': p.sr,
+      'User Language': p.ul,
     };
   },
 };

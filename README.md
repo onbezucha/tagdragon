@@ -4,7 +4,7 @@
 
 **The dragon that sees every tag. Chrome DevTools extension for capturing and decoding marketing/analytics tracking requests.**
 
-[![Chrome Extension Version](https://img.shields.io/badge/version-1.3.3-blue.svg)](https://github.com/yourusername/TagDragon)
+[![Chrome Extension Version](https://img.shields.io/badge/version-1.4.0-blue.svg)](https://github.com/yourusername/TagDragon)
 [![License](https://img.shields.io/badge/license-ISC-green.svg)](LICENSE)
 [![Chrome](https://img.shields.io/badge/chrome-88+-brightgreen.svg)](https://www.google.com/chrome/)
 
@@ -16,12 +16,12 @@
 
 ## Overview
 
-**TagDragon v1.3.3** is a Chrome DevTools extension that captures network requests from analytics and marketing platforms, decodes them into human-readable format, and provides advanced filtering and search capabilities.
+**TagDragon v1.4.0** is a Chrome DevTools extension that captures network requests from analytics and marketing platforms, decodes them into human-readable format, and provides advanced filtering and search capabilities.
 
 ### Key Features
 
 - **Real-time Request Capture** — Monitor tracking requests as they happen
-- **Multi-Provider Support** — Decode requests from 26 tracking platforms
+- **Multi-Provider Support** — Decode requests from 68 tracking platforms across 9 categories
 - **Provider Filter Popover** — Filter by provider via a toolbar icon; hidden providers persist across restarts
 - **Search & Advanced Filtering** — Filter by URL, parameter name/value, event type, HTTP method, status, user ID
 - **Active Filter Chips** — Visual chips for active filters (hidden providers, search text, etc.) with one-click removal
@@ -36,9 +36,10 @@
 
 ### From GitHub Release (no build required)
 
-1. Download `TagDragon-v1.3.3.zip` from the [Releases page](https://github.com/yourusername/TagDragon/releases)
+1. Download `TagDragon-v1.4.0.zip` from the [Releases page](https://github.com/yourusername/TagDragon/releases)
 2. Unzip the archive
 3. Open `chrome://extensions/`, enable **Developer mode**, click **Load unpacked**, and select the unzipped folder
+
 ### From Source
 
 ```bash
@@ -82,17 +83,16 @@ TagDragon/
 │   │   ├── state.ts            # Centralized state
 │   │   ├── theme.ts            # Dark/light theme
 │   │   └── index.ts            # Panel controller
-│   ├── providers/              # Tracking provider implementations
+│   ├── popup/                  # Extension popup
+│   ├── providers/              # 68 tracking provider implementations
 │   │   ├── google/             # GA4, UA, GTM, Google Ads
-│   │   ├── adobe/              # Adobe Analytics, AEP WebSDK
+│   │   ├── adobe/              # Adobe AA, AEP Web SDK, Target, AAM, ECID, Heartbeat, DTM, Launch (CN)
 │   │   ├── meta/               # Meta Pixel
 │   │   ├── microsoft/          # Bing Ads, Microsoft Clarity
-│   │   └── …                   # Hotjar, Tealium, LinkedIn, Sklik, DV360, Criteo, Scorecard,
-│   │                           #   Amplitude, Mixpanel, Matomo, TikTok, X, Pinterest, Segment,
-│   │                           #   The Trade Desk, Adform
+│   │   └── …                   # 50+ standalone providers
 │   ├── shared/                 # Constants, parameter categories, provider groups
 │   └── types/                  # TypeScript type definitions
-├── public/                     # Static assets (HTML, icons)
+├── public/                     # Static assets (HTML, icons, fonts)
 ├── styles/input.css            # Tailwind CSS source
 ├── dist/                       # Build output — never edit manually
 ├── manifest.json
@@ -102,6 +102,8 @@ TagDragon/
 
 ## Supported Providers
 
+68 providers across 9 categories.
+
 ### Analytics
 
 | Provider | URL Pattern |
@@ -109,11 +111,19 @@ TagDragon/
 | **Google Analytics 4** | `google-analytics.com/g/collect`, `analytics.google.com/g/collect` |
 | **Google Analytics UA** | `google-analytics.com/collect` |
 | **Adobe Analytics** | `sc.omtrdc.net`, `2o7.net`, `/b/ss/`, `demdex.net` |
-| **Adobe AEP WebSDK** | `/ee/*/v*/interact`, `*.adobedc.net` |
+| **Adobe AEP Web SDK** | `/ee/*/v*/interact`, `*.adobedc.net` |
 | **Amplitude** | `amplitude.com/2/httpapi`, `amplitude.com/batch` |
 | **Mixpanel** | `mixpanel.com/track`, `/engage`, `/import` |
 | **Matomo** | `/piwik.php`, `/matomo.php` |
-| **Scorecard** | `scorecardresearch.com/p` |
+| **Piwik PRO** | `*.piwik.pro/ppms.php` |
+| **AT Internet** | `ati-host.net`, `*.xiti.com` |
+| **Comscore** | `scorecardresearch.com/b`, `sb.scorecardresearch.com` |
+| **Parse.ly** | `srv.pixel.parsely.com`, `p.parsely.com/pixel` |
+| **Webtrends** | `statse.webtrendslive.com`, `webtrendslive.com/dcs` |
+| **Scorecard Research** | `scorecardresearch.com/p` |
+| **Medallia DXA** | `resources.digital.medallia.com`, `d.medallia.com` |
+| **Indicative** | `api.indicative.com/service/event` |
+| **RudderStack** | `*.rudderstack.com/v1/`, `hosted.rudderlabs.com/v1/` |
 
 ### Tag Managers
 
@@ -122,6 +132,8 @@ TagDragon/
 | **Google Tag Manager** | `googletagmanager.com/gtm.js`, `gtag/js` |
 | **Tealium** | `tags.tiqcdn.com`, `collect.tealiumiq.com` |
 | **Segment** | `api.segment.io`, `segmentapis.com` |
+| **Ensighten** | `nexus.ensighten.com` |
+| **Piwik PRO TM** | `*.piwik.pro/*.js` (container load) |
 
 ### Marketing & Advertising
 
@@ -131,13 +143,26 @@ TagDragon/
 | **Meta Pixel** | `facebook.com/tr` |
 | **Microsoft Bing Ads** | `bat.bing.com/action/0` |
 | **Adform** | `track.adform.net`, `a1.adform.net` |
-| **DV360** | `doubleclick.net` (excl. Google Ads paths) |
+| **DoubleClick (DV360)** | `doubleclick.net` (excl. Google Ads paths) |
 | **Criteo** | `dis.criteo.com`, `sslwidget.criteo.com` |
-| **Seznam Sklik** | `c.seznam.cz/retargeting`, `h.seznam.cz` (excl. `/sid`) |
+| **Seznam Sklik** | `c.seznam.cz/retargeting`, `h.seznam.cz` |
 | **TikTok Pixel** | `analytics.tiktok.com/api/v*` |
-| **X (Twitter) Pixel** | `analytics.twitter.com/i/adsct`, `t.co/i/adsct` |
-| **Pinterest Pixel** | `ct.pinterest.com/v3/` |
+| **X (Twitter) Pixel** | `analytics.twitter.com/i/adsct` |
+| **Pinterest Pixel** | `ct.pinterest.com/v3/`, `ct.pinterest.com/user/` |
 | **The Trade Desk** | `insight.adsrvr.org/track/` |
+| **Reddit Pixel** | `reddit.com/t.gif`, `ads.reddit.com` |
+| **Snapchat Pixel** | `tr.snapchat.com`, `snapkit.com/v1/advertising` |
+| **Spotify Pixel** | `ads.spotify.com/pixel`, `pixel.spotify.com` |
+| **Amazon Ads** | `amazon-adsystem.com/e/cm`, `amazon-adsystem.com/aax2` |
+| **Outbrain** | `tr.outbrain.com/unifiedPixel`, `amplify.outbrain.com/pixel` |
+| **Teads** | `t.teads.tv/page`, `p.teads.tv/` |
+| **RTB House** | `creative.rtbhouse.com` |
+| **Zemanta** | `p.zemanta.com` |
+| **Sojern** | `beacon.sojern.com` |
+| **Vibes** | `vibes.com/pixel` |
+| **Brevo** | `in-automate.brevo.com/p`, `in-automate.sendinblue.com/p` |
+| **Invoca** | `solutions.invoca.com/pixel` |
+| **HubSpot** | `track.hubspot.com/__ptq`, `forms.hubspot.com/submissions` |
 
 ### Session Replay
 
@@ -145,12 +170,51 @@ TagDragon/
 |----------|-------------|
 | **Hotjar** | `hotjar.com/h.js`, `hjboot`, `hj.` |
 | **Microsoft Clarity** | `clarity.ms/collect` |
+| **FullStory** | `fullstory.com/rec`, `rs.fullstory.com` |
+| **Crazy Egg** | `crazyegg.com/pages`, `script.crazyegg.com` |
+| **Glassbox** | `glassbox.com`, `gbtr.glassbox.com` |
+
+### A/B Testing & Experimentation
+
+| Provider | URL Pattern |
+|----------|-------------|
+| **Optimizely** | `*.optimizely.com/log/` |
+| **Dynamic Yield** | `dyntrk.com`, `cdn.dynamicyield.com/api` |
+| **Split** | `events.split.io/api/events` |
+| **Omniconvert** | `api.omniconvert.com` |
 
 ### Visitor Identification
 
 | Provider | URL Pattern |
 |----------|-------------|
 | **LinkedIn** | `linkedin.com/li/track`, `px.ads.linkedin.com` |
+| **Demandbase** | `tag.demandbase.com`, `api.demandbase.com` |
+| **6Sense** | `j.6sc.co`, `b.6sc.co` |
+
+### Customer Engagement
+
+| Provider | URL Pattern |
+|----------|-------------|
+| **Braze** | `sdk.*.braze.com`, `dev.appboy.com` |
+| **Lytics** | `c.lytics.io` |
+
+### CDP (Customer Data Platform)
+
+| Provider | URL Pattern |
+|----------|-------------|
+| **mParticle** | `nativesdks.mparticle.com/v2`, `api.mparticle.com/v2` |
+| **Tealium EventStream** | `collect.tealiumiq.com/event`, `data.cloud.tealium.com` |
+
+### Adobe Stack
+
+| Provider | URL Pattern |
+|----------|-------------|
+| **Adobe Target** | `tt.omtrdc.net` |
+| **Adobe Audience Manager** | `dpm.demdex.net` |
+| **Adobe ECID** | `demdex.net/id` |
+| **Adobe Heartbeat** | `*.hb.omtrdc.net` |
+| **Adobe DTM** | `assets.adobedtm.com/…/satelliteLib` |
+| **Adobe Launch (CN)** | `assets.adobedc.cn` |
 
 ## Keyboard Shortcuts
 
@@ -222,7 +286,7 @@ interface Provider {
 
 `getParams(url, postBody)` in `src/providers/url-parser.ts` merges URL query params and POST body (URLencoded or JSON) into one flat object for use inside `parseParams`.
 
-Provider order in `src/providers/index.ts` matters — first match wins. More specific patterns must come before broader ones (e.g. `googleAds` before `doubleclick`).
+Provider order in `src/providers/index.ts` matters — first match wins. Key ordering constraints: `tealiumEventstream` before `tealium`; Adobe stack ordered `adobeHeartbeat` → `adobeTarget` → `adobeECID` → `adobeAAM` → `adobeDTM` → `adobeAA`; `comscore` before `scorecard`; `googleAds` before `doubleclick`.
 
 ### Adobe Environment Redirect
 
@@ -237,11 +301,11 @@ Panel (adobe-env-switcher.ts)
 
 To add a new provider:
 
-1. Create a file in `src/providers/` (or a subdirectory)
-2. Implement the `Provider` interface
+1. Create a file in `src/providers/` (or a vendor subfolder: `google/`, `adobe/`, `meta/`, `microsoft/`)
+2. Implement the `Provider` interface; use `getParams(url, postBody)` for parameter extraction
 3. Import and add to `PROVIDERS` in `src/providers/index.ts` — place more specific patterns before broader ones
-4. Optionally assign the provider to a group in `src/shared/provider-groups.ts`
-5. Build and test with real tracking requests
+4. Add the provider `name` to the correct group in `src/shared/provider-groups.ts`
+5. Build (`npm run build`) and test with real tracking requests
 
 ### Code Style
 
@@ -249,7 +313,7 @@ To add a new provider:
 - DOM variables: `$` prefix (`$list`, `$envApply`)
 - Constants: `SCREAMING_SNAKE_CASE`
 - Section headers: `// ─── SECTION NAME ─────`
-- All UI strings in **Czech (cs-CZ)**
+- All UI strings in **English (en-US)**
 
 ## License
 

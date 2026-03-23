@@ -45,10 +45,10 @@ function formatDuration(ms: number): string {
 function formatRelativeTime(isoString: string | null): string {
   if (!isoString) return '-';
   const diff = Date.now() - new Date(isoString).getTime();
-  if (diff < 5000) return 'právě teď';
-  if (diff < 60000) return `před ${Math.floor(diff / 1000)} s`;
-  if (diff < 3600000) return `před ${Math.floor(diff / 60000)} min`;
-  return `před ${Math.floor(diff / 3600000)} h`;
+  if (diff < 5000) return 'just now';
+  if (diff < 60000) return `${Math.floor(diff / 1000)}s ago`;
+  if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
+  return `${Math.floor(diff / 3600000)}h ago`;
 }
 
 // ─── RENDER ───────────────────────────────────────────────────────────────────
@@ -60,10 +60,10 @@ function renderStats(stats: PopupStatsResponse): void {
   // Status bar
   const paused = stats.isPaused;
   $statusDot.className = `dot ${paused ? 'paused' : 'recording'}`;
-  $statusText.textContent = paused ? 'Pozastaveno' : 'Nahrávám';
+  $statusText.textContent = paused ? 'Paused' : 'Recording';
   $pauseIcon.textContent = paused ? '▶' : '⏸';
-  $pauseText.textContent = paused ? 'Pokračovat' : 'Pozastavit';
-  $btnPause.title = paused ? 'Pokračovat v nahrávání' : 'Pozastavit nahrávání';
+  $pauseText.textContent = paused ? 'Resume' : 'Pause';
+  $btnPause.title = paused ? 'Resume recording' : 'Pause recording';
 
   // Providers
   const providers: ProviderStats[] = showAllProviders
@@ -100,7 +100,7 @@ function renderProviderPill(provider: ProviderStats): HTMLElement {
   const pill = document.createElement('div');
   pill.className = 'provider-pill';
   pill.style.borderLeftColor = provider.color;
-  pill.title = `${provider.name}: ${provider.count} requestů`;
+  pill.title = `${provider.name}: ${provider.count} requests`;
 
   const nameEl = document.createElement('span');
   nameEl.className = 'provider-name';

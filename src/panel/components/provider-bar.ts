@@ -34,15 +34,15 @@ function ensureProviderGroup(groupId: string, groupLabel: string, applyFiltersCa
   $group.dataset.group = groupId;
   $group.innerHTML = `
     <div class="pgroup-header">
-      <button class="pgroup-toggle" aria-expanded="true" title="Rozbalit/sbalit skupinu">
+      <button class="pgroup-toggle" aria-expanded="true" title="Expand/collapse group">
         <svg class="pgroup-chevron" width="10" height="10" viewBox="0 0 10 10" fill="none">
           <path d="M2.5 3.5L5 6.5L7.5 3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </button>
       <span class="pgroup-label">${esc(groupLabel)}</span>
       <span class="pgroup-count"></span>
-      <button class="pgroup-all" title="Zobrazit vše ve skupině">✓</button>
-      <button class="pgroup-none" title="Skrýt vše ve skupině">—</button>
+      <button class="pgroup-all" title="Show all in group">✓</button>
+      <button class="pgroup-none" title="Hide all in group">—</button>
     </div>
     <div class="pgroup-pills-wrap"><div class="pgroup-pills"></div></div>
   `;
@@ -187,7 +187,7 @@ export function updateFilterBarVisibility(): void {
                      getFilterStatus() || getFilterMethod() || getFilterHasParam() ||
                      hiddenProviders.size > 0);
 
-  // Indikátor na tlačítku
+  // Indicator on the button
   const $btn = DOM.btnProviders;
   $btn?.classList.toggle('active', hiddenProviders.size > 0);
 

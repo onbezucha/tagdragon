@@ -4,7 +4,7 @@ Instructions for AI coding agents working in this repository.
 
 ## Project Overview
 
-**TagDragon v1.3.3** — Chrome DevTools extension (Manifest V3) for capturing and decoding marketing/analytics tracking requests. Built with TypeScript, Rollup (JS bundler) and Tailwind CSS.
+**TagDragon v1.4.0** — Chrome DevTools extension (Manifest V3) for capturing and decoding marketing/analytics tracking requests. Built with TypeScript, Rollup (JS bundler) and Tailwind CSS.
 
 ## Build Commands
 
@@ -41,6 +41,7 @@ Entry Points (edit these):          Build Output (never edit):
 ├── src/background/index.ts    →    dist/background.js
 ├── src/devtools/index.ts      →    dist/devtools.js
 ├── src/panel/index.ts         →    dist/panel.js
+├── src/popup/index.ts         →    dist/popup.js
 ├── styles/input.css           →    dist/panel.css
 └── public/panel.html               (static, includes inline CSS)
 ```
@@ -143,6 +144,8 @@ Strict mode enabled with these checks:
 
 ### Provider System
 
+The extension currently has **68 registered providers** across 9 UI groups (Analytics, Tag Manager, Marketing, Session Replay, A/B Testing, Visitor Identification, Customer Engagement, CDP, Adobe Stack).
+
 Providers are defined as objects with `name`, `color`, `pattern` (RegExp), and `parseParams()`:
 
 ```javascript
@@ -156,6 +159,20 @@ Providers are defined as objects with `name`, `color`, `pattern` (RegExp), and `
   }
 }
 ```
+
+**File locations:**
+- `src/providers/<name>.ts` — standalone providers (most)
+- `src/providers/google/`, `src/providers/adobe/`, `src/providers/meta/`, `src/providers/microsoft/` — vendor subfolders; use relative imports (`../../types/provider`, `../url-parser`)
+
+**To add a provider:** create the file → import in `src/providers/index.ts` → add to `PROVIDERS` array → add name to the correct group in `src/shared/provider-groups.ts`.
+
+**Ordering rules in `PROVIDERS` (first match wins):**
+- More specific patterns always before broader ones on the same domain
+- `tealiumEventstream` before `tealium` (`collect.tealiumiq.com/event` vs `collect.tealiumiq.com`)
+- `piwikProTm` before `piwikPro`
+- Adobe order (specific → broad): `adobeHeartbeat` → `adobeTarget` → `adobeECID` → `adobeAAM` → `adobeDTM` → `adobeLaunchChina` → `adobeAA`
+- `comscore` before `scorecard` (same domain `scorecardresearch.com`, different paths)
+- `googleAds` before `doubleclick`
 
 ### State Management
 
@@ -220,7 +237,7 @@ Hidden providers are persisted in `AppConfig.hiddenProviders` (restored on load 
 
 ## Localization
 
-**All UI strings are in Czech (cs-CZ).** Maintain this when adding/modifying UI text.
+**All UI strings are in English (en-US).** Maintain this when adding/modifying UI text.
 
 ## Key Files Reference
 

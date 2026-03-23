@@ -253,6 +253,7 @@ function setupEnvEventListeners(): void {
     $envBadge.addEventListener('click', (e: MouseEvent) => {
       e.stopPropagation();
       DOM.settingsPopover!.classList.remove('visible');
+      DOM.infoPopover?.classList.remove('visible');
       if (typeof closeFilterPopover === 'function') closeFilterPopover();
 
       if ($envPopover.classList.contains('visible')) {

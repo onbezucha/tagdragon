@@ -21,15 +21,34 @@ export const tiktokPixel: Provider = {
     const p = getParams(url, postRaw);
     const body = parseHARJson(postRaw);
 
-    // TikTok payload: {pixel_code, event, properties: {url, value, currency, ...}}
     const props = (body['properties'] as Record<string, unknown>) ?? {};
+    const ctx = (body['context'] as Record<string, unknown>) ?? {};
+    const ctxUser = (ctx['user'] as Record<string, unknown>) ?? {};
+    const ctxPage = (ctx['page'] as Record<string, unknown>) ?? {};
+
+    const str = (v: unknown): string | undefined => v != null ? String(v) : undefined;
 
     return {
-      'Event': body['event'] != null ? String(body['event']) : p['event'],
-      'Pixel Code': body['pixel_code'] != null ? String(body['pixel_code']) : p['pixel_code'],
-      'URL': props['url'] != null ? String(props['url']) : (p['url'] ?? url),
-      'Value': props['value'] != null ? String(props['value']) : p['value'],
-      'Currency': props['currency'] != null ? String(props['currency']) : p['currency'],
+      // Event
+      'Event': str(body['event']) ?? p['event'],
+      'Timestamp': str(body['timestamp']),
+      // Pixel Info
+      'Pixel Code': str(body['pixel_code']) ?? p['pixel_code'],
+      // Page
+      'URL': str(props['url']) ?? str(ctxPage['url']) ?? p['url'],
+      'Referrer': str(ctxPage['referrer']) || undefined,
+      // Ecommerce
+      'Value': str(props['value']) ?? p['value'],
+      'Currency': str(props['currency']) ?? p['currency'],
+      'Content ID': str(props['content_id']),
+      'Content Type': str(props['content_type']),
+      'Content Name': str(props['content_name']),
+      'Order ID': str(props['order_id']),
+      'Search Query': str(props['search_string']),
+      // User
+      'Click ID': str(ctxUser['ttclid']),
+      'User ID': str(ctxUser['external_id']),
+      'Locale': str(ctxUser['locale']),
     };
   },
 } as const;

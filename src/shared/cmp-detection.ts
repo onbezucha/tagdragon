@@ -33,7 +33,7 @@ export const GET_CONSENT_DATA_SCRIPT = `
     return null;
   }
 
-  // Pomocné pro parsování cookie hodnot
+  // Helper for parsing cookie values
   function parseCookieMap() {
     var map = {};
     document.cookie.split(';').forEach(function(c) {
@@ -54,22 +54,22 @@ export const GET_CONSENT_DATA_SCRIPT = `
     if (win.OneTrust || win.Optanon) {
       try {
         var stdOTGroups = [
-          { id: 'C0001', type: 'necessary',   label: 'Nezbytné',    desc: 'Nezbytné pro fungování stránky',  ro: true  },
-          { id: 'C0002', type: 'performance', label: 'Výkonnostní', desc: 'Statistiky návštěvnosti a výkon', ro: false },
-          { id: 'C0003', type: 'functional',  label: 'Funkční',     desc: 'Pamatuje si vaše preference',     ro: false },
-          { id: 'C0004', type: 'marketing',   label: 'Marketing',   desc: 'Cílená reklama a personalizace',  ro: false },
+          { id: 'C0001', type: 'necessary',   label: 'Necessary',    desc: 'Required for the site to function',   ro: true  },
+          { id: 'C0002', type: 'performance', label: 'Performance',  desc: 'Analytics and performance stats',     ro: false },
+          { id: 'C0003', type: 'functional',  label: 'Functional',   desc: 'Remembers your preferences',          ro: false },
+          { id: 'C0004', type: 'marketing',   label: 'Marketing',    desc: 'Targeted ads and personalization',    ro: false },
         ];
         var otCatMap = { C0001: 'necessary', C0002: 'performance', C0003: 'functional', C0004: 'marketing' };
 
-        // 1) window.OnetrustActiveGroups — okamžitě reflektuje změnu po AllowAll/RejectAll
-        //    Formát: ",C0001,C0002,C0003,C0004," nebo ",C0001,"
+        // 1) window.OnetrustActiveGroups — immediately reflects changes after AllowAll/RejectAll
+        //    Format: ",C0001,C0002,C0003,C0004," or ",C0001,"
         var activeStr = (win.OnetrustActiveGroups || '').replace(/\s/g, '');
         var isOTActive = function(id) {
           return activeStr.indexOf(',' + id + ',') !== -1 ||
                  activeStr.indexOf(id + ',') === 0;
         };
 
-        // 2) Pokus o získání názvů/popisů skupin z API
+        // 2) Attempt to fetch group names/descriptions from API
         var apiGroups = null;
         try {
           if (typeof win.OneTrust.GetDomainData === 'function') {
@@ -79,7 +79,7 @@ export const GET_CONSENT_DATA_SCRIPT = `
         } catch(e2) {}
 
         if (apiGroups) {
-          // Máme definice skupin z API — kombinujeme s live stavem z OnetrustActiveGroups
+          // Have group definitions from API — combine with live state from OnetrustActiveGroups
           apiGroups.forEach(function(g) {
             var id = g.CustomGroupId;
             var type = otCatMap[id] || 'functional';
@@ -99,7 +99,7 @@ export const GET_CONSENT_DATA_SCRIPT = `
             });
           });
         } else if (activeStr) {
-          // Nemáme definice skupin — použijeme standardní C0001–C0004 s live stavem
+          // No group definitions — use standard C0001–C0004 with live state
           stdOTGroups.forEach(function(g) {
             categories.push({
               type: g.type, label: g.label, description: g.desc,
@@ -108,7 +108,7 @@ export const GET_CONSENT_DATA_SCRIPT = `
             });
           });
         } else {
-          // Fallback: parsování OptanonConsent cookie
+          // Fallback: parse OptanonConsent cookie
           try {
             var cookieMap = parseCookieMap();
             var raw = cookieMap['OptanonConsent'];
@@ -143,11 +143,11 @@ export const GET_CONSENT_DATA_SCRIPT = `
     }
 
     // ── UserCentrics ──────────────────────────────────────────────────────────
-    // Priorita: 1) localStorage (UC ukládá consent tam, ne do cookies)
-    //           2) window.UC_UI synchronní API (UC v3)
+    // Priority: 1) localStorage (UC stores consent there, not in cookies)
+    //           2) window.UC_UI synchronous API (UC v3)
     if (categories.length === 0) {
       var ucTypeMap = { essential: 'necessary', functional: 'functional', marketing: 'marketing', analytics: 'performance', statistics: 'performance' };
-      var ucLabelMap = { necessary: 'Nezbytné', functional: 'Funkční', marketing: 'Marketing', performance: 'Výkonnostní' };
+      var ucLabelMap = { necessary: 'Necessary', functional: 'Functional', marketing: 'Marketing', performance: 'Performance' };
 
       // 1) localStorage
       try {
@@ -174,7 +174,7 @@ export const GET_CONSENT_DATA_SCRIPT = `
         }
       } catch(e) {}
 
-      // 2) UC_UI synchronní API (v3)
+      // 2) UC_UI synchronous API (v3)
       if (categories.length === 0 && win.UC_UI) {
         try {
           if (typeof win.UC_UI.getConsents === 'function') {
@@ -203,10 +203,10 @@ export const GET_CONSENT_DATA_SCRIPT = `
         var cyVal = ckMap['cookieyes-consent'] ? decodeURIComponent(ckMap['cookieyes-consent']) : '';
         if (cyVal) {
           var cyTypes = {
-            necessary:     { type: 'necessary',   label: 'Nezbytné',  desc: 'Nezbytné pro fungování stránky', ro: true  },
-            functional:    { type: 'functional',  label: 'Funkční',   desc: 'Pamatuje si vaše preference',    ro: false },
-            analytics:     { type: 'performance', label: 'Analytics', desc: 'Statistiky návštěvnosti',        ro: false },
-            advertisement: { type: 'marketing',   label: 'Marketing', desc: 'Cílená reklama',                 ro: false },
+            necessary:     { type: 'necessary',   label: 'Necessary',   desc: 'Required for the site to function', ro: true  },
+            functional:    { type: 'functional',  label: 'Functional',  desc: 'Remembers your preferences',       ro: false },
+            analytics:     { type: 'performance', label: 'Analytics',   desc: 'Analytics and performance stats',  ro: false },
+            advertisement: { type: 'marketing',   label: 'Marketing',   desc: 'Targeted ads',                     ro: false },
           };
           cyVal.split('|').forEach(function(part) {
             var kv = part.split(':');
@@ -230,10 +230,10 @@ export const GET_CONSENT_DATA_SCRIPT = `
             return _;
           });
           var cbDefs = [
-            { key: 'necessary',   type: 'necessary',   label: 'Nezbytné',   desc: 'Nezbytné pro fungování stránky', ro: true  },
-            { key: 'statistics',  type: 'performance', label: 'Statistiky', desc: 'Statistiky návštěvnosti',        ro: false },
-            { key: 'preferences', type: 'functional',  label: 'Preference', desc: 'Pamatuje si vaše preference',    ro: false },
-            { key: 'marketing',   type: 'marketing',   label: 'Marketing',  desc: 'Cílená reklama',                 ro: false },
+            { key: 'necessary',   type: 'necessary',   label: 'Necessary',    desc: 'Required for the site to function', ro: true  },
+            { key: 'statistics',  type: 'performance', label: 'Statistics',   desc: 'Analytics and performance stats', ro: false },
+            { key: 'preferences', type: 'functional',  label: 'Preferences',  desc: 'Remembers your preferences',      ro: false },
+            { key: 'marketing',   type: 'marketing',   label: 'Marketing',    desc: 'Targeted ads',                    ro: false },
           ];
           var hasCB = false;
           cbDefs.forEach(function(m) {
@@ -293,7 +293,7 @@ export const GET_CONSENT_DATA_SCRIPT = `
 export const ACCEPT_ALL_SCRIPT = `
 (function() {
   var win = window;
-  // OneTrust — různé verze mají různé názvy metod
+  // OneTrust — different versions use different method names
   if (win.OneTrust) {
     if (typeof win.OneTrust.AllowAll === 'function') { win.OneTrust.AllowAll(); return 'onetrust:AllowAll'; }
     if (typeof win.OneTrust.acceptAllCookies === 'function') { win.OneTrust.acceptAllCookies(); return 'onetrust:acceptAllCookies'; }
@@ -316,7 +316,7 @@ export const ACCEPT_ALL_SCRIPT = `
 export const REJECT_ALL_SCRIPT = `
 (function() {
   var win = window;
-  // OneTrust — různé verze mají různé názvy metod
+  // OneTrust — different versions use different method names
   if (win.OneTrust) {
     if (typeof win.OneTrust.RejectAll === 'function') { win.OneTrust.RejectAll(); return 'onetrust:RejectAll'; }
     if (typeof win.OneTrust.rejectAllCookies === 'function') { win.OneTrust.rejectAllCookies(); return 'onetrust:rejectAllCookies'; }

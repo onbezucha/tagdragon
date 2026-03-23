@@ -92,22 +92,30 @@ export const aepWebSDK: Provider = {
       }
     }
 
+    // Determine request type from URL path (more reliable than POST body)
+    const requestType = url.includes('/interact') ? 'interact' : url.includes('/collect') ? 'collect' : undefined;
+
+    const str = (v: unknown): string | undefined => {
+      if (v === undefined || v === null || v === '') return undefined;
+      return String(v);
+    };
+
     return {
       // Basic info
       'Datastream ID': datastreamId,
-      'Request type': payload.requestId ? 'interact' : 'collect',
-      'Event type': String(xdm.eventType ?? ''),
+      'Request type': requestType,
+      'Event type': str(xdm.eventType),
 
       // Adobe Analytics specifics (from __adobe.analytics)
-      'Page name': String(aa.pageName ?? ''),
-      'Page URL': String((aa.pageURL || pageDetails?.URL) ?? ''),
-      'Channel': String(aa.channel ?? ''),
-      'Server': String(aa.server ?? ''),
-      'Events': String(aa.events ?? ''),
-      'Link name': String(aa.linkName ?? ''),
-      'Link type': String(aa.linkType ?? ''),
-      'Campaign': String(aa.campaign ?? ''),
-      'Referrer': String((aa.referrer || referrer?.URL) ?? ''),
+      'Page name': str(aa.pageName),
+      'Page URL': str(aa.pageURL || pageDetails?.URL),
+      'Channel': str(aa.channel),
+      'Server': str(aa.server),
+      'Events': str(aa.events),
+      'Link name': str(aa.linkName),
+      'Link type': str(aa.linkType),
+      'Campaign': str(aa.campaign),
+      'Referrer': str(aa.referrer || referrer?.URL),
 
       // eVars and props
       ...eVars,
@@ -115,11 +123,11 @@ export const aepWebSDK: Provider = {
       ...lists,
 
       // XDM identity
-      'ECID': String(ecidObj.id ?? ''),
+      'ECID': str(ecidObj.id),
 
       // Device
       'Screen': screenDimensions,
-      'Screen orient': String(device.screenOrientation ?? ''),
+      'Screen orient': str(device.screenOrientation),
     };
   },
 };

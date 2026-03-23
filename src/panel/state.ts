@@ -459,11 +459,11 @@ export function removeHiddenProvider(name: string): void {
 }
 
 /**
- * Reset provider visibility state.
+ * Reset provider pill state (clears seen providers so pills are rebuilt on next request).
+ * Does NOT clear hiddenProviders — filter preferences persist across clears.
  */
 export function resetProviders(): void {
   activeProviders.clear();
-  hiddenProviders.clear();
 }
 
 /**

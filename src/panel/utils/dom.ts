@@ -71,6 +71,9 @@ interface DOMRefs {
   readonly envReset: HTMLElement | null;
   readonly envHostname: HTMLElement | null;
   readonly consentPopover: HTMLElement | null;
+  readonly infoPopover: HTMLElement | null;
+  readonly btnInfo: HTMLElement | null;
+  readonly infoProviderGroups: HTMLElement | null;
 }
 
 export const DOM: DOMRefs = {
@@ -114,4 +117,7 @@ export const DOM: DOMRefs = {
   get envReset() { return $('env-reset'); },
   get envHostname() { return $('env-hostname'); },
   get consentPopover() { return $('consent-popover'); },
+  get infoPopover() { return $('info-popover'); },
+  get btnInfo() { return $('btn-info'); },
+  get infoProviderGroups() { return $('info-provider-groups'); },
 };

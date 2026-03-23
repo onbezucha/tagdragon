@@ -8,20 +8,71 @@ export interface ProviderGroup {
   readonly providers: readonly string[];
 }
 
-// Skupiny dle kategorie (inspirováno Omnibug)
+// Groups by category (inspired by Omnibug)
 export const PROVIDER_GROUPS: readonly ProviderGroup[] = [
-  { id: 'analytics',  label: 'Analytics',             providers: ['GA4', 'GA (UA)', 'Adobe AA', 'AEP Web SDK', 'Scorecard', 'Amplitude', 'Mixpanel', 'Matomo'] },
-  { id: 'tagmanager', label: 'Tag Manager',            providers: ['GTM', 'Tealium', 'Segment'] },
-  { id: 'marketing',  label: 'Marketing',              providers: ['Google Ads', 'Meta Pixel', 'Bing Ads', 'Adform', 'DV360', 'Criteo', 'Sklik', 'TikTok Pixel', 'X (Twitter) Pixel', 'Pinterest Pixel', 'The Trade Desk'] },
-  { id: 'replay',     label: 'Session Replay',         providers: ['Hotjar', 'Microsoft Clarity'] },
-  { id: 'visitorid',  label: 'Visitor Identification', providers: ['LinkedIn'] },
+  {
+    id: 'analytics',
+    label: 'Analytics',
+    providers: [
+      'GA4', 'GA (UA)', 'Adobe AA', 'AEP Web SDK', 'Scorecard', 'Amplitude', 'Mixpanel', 'Matomo',
+      'Piwik PRO', 'AT Internet', 'Comscore', 'Parse.ly', 'Webtrends', 'Medallia DXA', 'Indicative', 'RudderStack',
+    ],
+  },
+  {
+    id: 'tagmanager',
+    label: 'Tag Manager',
+    providers: ['GTM', 'Tealium', 'Segment', 'Ensighten', 'Piwik PRO TM'],
+  },
+  {
+    id: 'marketing',
+    label: 'Marketing',
+    providers: [
+      'Google Ads', 'Meta Pixel', 'Bing Ads', 'Adform', 'DoubleClick', 'Criteo', 'Sklik',
+      'TikTok Pixel', 'X (Twitter) Pixel', 'Pinterest Pixel', 'The Trade Desk',
+      'Reddit Pixel', 'Snapchat Pixel', 'Amazon Ads', 'Outbrain', 'Teads', 'Spotify Pixel',
+      'RTB House', 'Zemanta', 'Sojern', 'Vibes', 'Brevo', 'Invoca', 'HubSpot',
+    ],
+  },
+  {
+    id: 'replay',
+    label: 'Session Replay',
+    providers: ['Hotjar', 'Microsoft Clarity', 'FullStory', 'Crazy Egg', 'Glassbox'],
+  },
+  {
+    id: 'abtesting',
+    label: 'A/B Testing',
+    providers: ['Optimizely', 'Dynamic Yield', 'Split', 'Omniconvert'],
+  },
+  {
+    id: 'visitorid',
+    label: 'Visitor Identification',
+    providers: ['LinkedIn', 'Demandbase', '6Sense'],
+  },
+  {
+    id: 'engagement',
+    label: 'Customer Engagement',
+    providers: ['Braze', 'Lytics'],
+  },
+  {
+    id: 'cdp',
+    label: 'CDP',
+    providers: ['mParticle', 'Tealium EventStream'],
+  },
+  {
+    id: 'adobe',
+    label: 'Adobe Stack',
+    providers: [
+      'Adobe Target', 'Adobe AAM', 'Adobe ECID', 'Adobe Heartbeat',
+      'Adobe DTM', 'Adobe Launch (CN)',
+    ],
+  },
 ];
 
-// Utility: najde skupinu pro daný provider name
+// Utility: finds the group for a given provider name
 export function getProviderGroup(providerName: string): ProviderGroup | undefined {
   return PROVIDER_GROUPS.find(g => (g.providers as readonly string[]).includes(providerName));
 }
 
-// Fallback skupina pro providery bez přiřazené skupiny
+// Fallback group for providers without an assigned group
 export const UNGROUPED_ID = 'other';
-export const UNGROUPED_LABEL = 'Ostatní';
+export const UNGROUPED_LABEL = 'Other';

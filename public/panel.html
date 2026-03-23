@@ -1457,6 +1457,264 @@
       background: var(--bg-3);
       border-radius: 3px;
     }
+
+    /* === INFO POPOVER === */
+    #info-popover {
+      position: absolute;
+      top: 40px;
+      right: 8px;
+      background-color: var(--bg-1);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      z-index: 1000;
+      min-width: 320px;
+      max-width: 380px;
+      max-height: calc(100vh - 60px);
+      overflow-y: auto;
+      padding: 0;
+      display: none;
+    }
+
+    #info-popover.visible {
+      display: block;
+    }
+
+    .info-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-2);
+      border-radius: 6px 6px 0 0;
+    }
+
+    .info-logo {
+      font-size: 18px;
+      line-height: 1;
+    }
+
+    .info-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-0);
+    }
+
+    .info-version {
+      margin-left: auto;
+      font-size: 12px;
+      font-family: var(--font-mono);
+      color: var(--text-2);
+      background: var(--bg-1);
+      padding: 2px 6px;
+      border-radius: 3px;
+    }
+
+    .info-description {
+      padding: 10px 14px;
+      font-size: 13px;
+      color: var(--text-1);
+      line-height: 1.5;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .info-section {
+      border-bottom: 1px solid var(--border);
+    }
+
+    .info-section:last-of-type {
+      border-bottom: none;
+    }
+
+    .info-section-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      padding: 9px 14px;
+      background: none;
+      border: none;
+      color: var(--text-0);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      text-align: left;
+      transition: background-color 150ms;
+    }
+
+    .info-section-header:hover {
+      background: var(--bg-2);
+    }
+
+    .info-chevron {
+      transition: transform 150ms;
+      flex-shrink: 0;
+      opacity: 0.6;
+    }
+
+    .info-section-header[aria-expanded="false"] .info-chevron {
+      transform: rotate(-90deg);
+    }
+
+    .info-section-content {
+      display: grid;
+      grid-template-rows: 1fr;
+      transition: grid-template-rows 200ms ease;
+    }
+
+    .info-section-header[aria-expanded="false"] + .info-section-content {
+      grid-template-rows: 0fr;
+    }
+
+    .info-section-content > div {
+      overflow: hidden;
+      padding: 0 14px 10px;
+    }
+
+    .info-section-header[aria-expanded="false"] + .info-section-content > div {
+      padding-bottom: 0;
+    }
+
+    #info-provider-groups {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .info-provider-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .info-provider-group-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      color: var(--text-2);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .info-provider-group-count {
+      font-weight: 400;
+      color: var(--text-3);
+      font-family: var(--font-mono);
+    }
+
+    .info-search-wrap {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--bg-0);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 4px 7px;
+      margin-bottom: 10px;
+    }
+
+    .info-search-wrap input {
+      flex: 1;
+      background: none;
+      border: none;
+      outline: none;
+      font-size: 13px;
+      color: var(--text-0);
+      font-family: inherit;
+    }
+
+    .info-search-wrap input::placeholder {
+      color: var(--text-3);
+    }
+
+    .info-search-clear {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-2);
+      font-size: 14px;
+      line-height: 1;
+      padding: 0 1px;
+      opacity: 0.7;
+    }
+
+    .info-search-clear:hover { opacity: 1; }
+    .info-search-clear.hidden { display: none; }
+
+    .info-no-results {
+      font-size: 13px;
+      color: var(--text-3);
+      text-align: center;
+      padding: 6px 0 2px;
+    }
+
+    .info-no-results.hidden { display: none; }
+
+    .info-provider-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 3px;
+    }
+
+    .info-provider-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 2px 8px 2px 5px;
+      font-size: 12px;
+      font-weight: 500;
+      border-radius: 10px;
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      color: var(--text-1);
+    }
+
+    .info-provider-pill.hidden { display: none; }
+
+    .info-pill-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .info-provider-group.hidden { display: none; }
+
+    .info-shortcuts {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .info-shortcut {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      color: var(--text-1);
+    }
+
+    .info-shortcut kbd {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      padding: 1px 5px;
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      color: var(--text-0);
+    }
+
+    .info-footer {
+      padding: 9px 14px;
+      font-size: 12px;
+      color: var(--text-2);
+      text-align: center;
+      background: var(--bg-0);
+      border-radius: 0 0 6px 6px;
+    }
   </style>
 </head>
 <body>
@@ -1470,7 +1728,7 @@
       </button>
       <div class="toolbar-separator"></div>
       <input type="checkbox" id="chk-pause">
-      <label for="chk-pause" title="Pozastavit zachytávání">
+      <label for="chk-pause" title="Pause capture">
         <!-- Pause icon (shown when recording) -->
         <svg class="pause-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/>
@@ -1479,8 +1737,8 @@
         <svg class="play-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <polygon points="6 3 20 12 6 21 6 3"/>
         </svg>
-        <span class="pause-text">Pozastavit</span>
-        <span class="play-text" style="display: none;">Pokračovat</span>
+        <span class="pause-text">Pause</span>
+        <span class="play-text" style="display: none;">Resume</span>
       </label>
       <div class="toolbar-separator"></div>
       <div class="filter-wrap">
@@ -1496,8 +1754,66 @@
       </div>
     </div>
     <div class="toolbar-section">
-      <!-- Theme Toggle Button -->
-      <button id="btn-theme-toggle" title="Přepnout světlý/tmavý režim">
+      <!-- Adobe Environment Switcher Badge -->
+      <div id="adobe-env-badge" class="env-badge hidden" title="Adobe environment">
+        <span class="env-badge-dot"></span>
+        <span class="env-badge-label">PROD</span>
+        <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="m6 9 6 6 6-6"/>
+        </svg>
+      </div>
+      <div class="toolbar-separator" id="env-separator" style="display:none;"></div>
+      <!-- Delete cookies + Cookie Consent -->
+      <button id="btn-clear-cookies" title="Delete all cookies on this site">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="m9 3 6 6"/><path d="M12 6 6.5 12.5a2 2 0 0 0 3 3L15 9"/><path d="M15 9l4.5 4.5"/><path d="M20 13.5a8.5 8.5 0 0 1-8.5 8.5c-1.5 0-4.5-1-6-2.5"/><path d="M14 19l2-2"/>
+        </svg>
+      </button>
+      <button id="btn-consent" title="Cookie Consent">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2a10 10 0 1 0 10 10 4 4 0 0 1-5-5 4 4 0 0 1-5-5"/><path d="M8.5 8.5v.01"/><path d="M16 15.5v.01"/><path d="M12 12v.01"/><path d="M11 17v.01"/><path d="M7 14v.01"/>
+        </svg>
+      </button>
+      <div class="toolbar-separator"></div>
+      <!-- Quick Actions + Provider filter + Settings -->
+      <div id="quick-actions">
+        <button id="btn-quick-sort" class="quick-btn" title="Sort: Newest first">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m21 16-4 4-4-4"/><path d="M17 20V4"/><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/>
+          </svg>
+        </button>
+        <button id="btn-quick-wrap" class="quick-btn" title="Wrap long values">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="3" x2="21" y1="6" y2="6"/><path d="M3 12h15a3 3 0 0 1 0 6h-4"/><polyline points="16 16 14 18 16 20"/><line x1="3" x2="10" y1="18" y2="18"/>
+          </svg>
+        </button>
+        <button id="btn-quick-expand" class="quick-btn" title="Auto-expand">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/>
+          </svg>
+        </button>
+        <button id="btn-quick-compact" class="quick-btn" title="Compact list">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <button id="btn-providers" title="Provider filter">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+        </svg>
+      </button>
+      <div class="toolbar-separator"></div>
+      <!-- Export -->
+      <button id="btn-export" title="Export as JSON">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/>
+        </svg>
+        <span>Export</span>
+      </button>
+      <div class="toolbar-separator"></div>
+      <!-- Theme + Settings + Info -->
+      <button id="btn-theme-toggle" title="Toggle light/dark mode">
         <!-- Sun icon (shown in dark mode) -->
         <svg class="theme-icon-sun" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>
@@ -1507,105 +1823,21 @@
           <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>
         </svg>
       </button>
-      <div class="toolbar-separator"></div>
-      <!-- Adobe Environment Switcher Badge -->
-      <div id="adobe-env-badge" class="env-badge hidden" title="Adobe prostředí">
-        <span class="env-badge-dot"></span>
-        <span class="env-badge-label">PROD</span>
-        <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="m6 9 6 6 6-6"/>
-        </svg>
-      </div>
-      <div class="toolbar-separator" id="env-separator" style="display:none;"></div>
-      <!-- Quick Actions -->
-      <div id="quick-actions">
-        <button id="btn-quick-sort" class="quick-btn" title="Řazení: Nejnovější nahoře">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="m21 16-4 4-4-4"/><path d="M17 20V4"/><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/>
-          </svg>
-        </button>
-        <button id="btn-quick-wrap" class="quick-btn" title="Zalamovat dlouhé hodnoty">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="3" x2="21" y1="6" y2="6"/><path d="M3 12h15a3 3 0 0 1 0 6h-4"/><polyline points="16 16 14 18 16 20"/><line x1="3" x2="10" y1="18" y2="18"/>
-          </svg>
-        </button>
-        <button id="btn-quick-expand" class="quick-btn" title="Automaticky rozbalit">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/>
-          </svg>
-        </button>
-        <button id="btn-quick-compact" class="quick-btn" title="Kompaktní seznam">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="18" y2="18"/>
-          </svg>
-        </button>
-      </div>
-      <div class="toolbar-separator"></div>
-      <button id="btn-providers" title="Filtr providerů">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
-        </svg>
-      </button>
-      <button id="btn-consent" title="Cookie Consent">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 2a10 10 0 1 0 10 10 4 4 0 0 1-5-5 4 4 0 0 1-5-5"/><path d="M8.5 8.5v.01"/><path d="M16 15.5v.01"/><path d="M12 12v.01"/><path d="M11 17v.01"/><path d="M7 14v.01"/>
-        </svg>
-      </button>
       <button id="btn-settings" title="Filters & settings">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>
         </svg>
       </button>
-      <button id="btn-export" title="Export as JSON">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/>
-        </svg>
-        <span>Export</span>
-      </button>
-      <div class="toolbar-separator"></div>
-      <button id="btn-clear-cookies" title="Smazat všechny cookies na tomto webu">
+      <button id="btn-info" title="About TagDragon">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 2a10 10 0 1 0 10 10 4 4 0 0 1-5-5 4 4 0 0 1-5-5"/><path d="M8.5 8.5v.01"/><path d="M16 15.5v.01"/><path d="M12 12v.01"/><path d="M11 17v.01"/><path d="M7 14v.01"/>
+          <circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="16" y2="12"/><line x1="12" x2="12.01" y1="8" y2="8"/>
         </svg>
-        <span>Smazat cookies</span>
       </button>
     </div>
   </div>
 
   <!-- SETTINGS POPOVER -->
   <div id="settings-popover">
-    <div class="settings-section">
-      <span class="settings-label">About</span>
-      <div style="font-size: 13px; color: var(--text-1); line-height: 1.5;">
-        TagDragon v1.3.3<br>
-        Captures and decodes network requests from marketing/analytics tracking services.
-      </div>
-    </div>
-    <div class="settings-section">
-      <span class="settings-label">Keyboard Shortcuts</span>
-      <div style="font-size: 13px; color: var(--text-1); line-height: 1.8;">
-        <div style="display: flex; justify-content: space-between;">
-          <span>Clear all</span>
-          <kbd style="font-family: var(--font-mono); font-size: 12px; padding: 1px 5px; background: var(--bg-2); border: 1px solid var(--border); border-radius: 3px;">Ctrl+L</kbd>
-        </div>
-        <div style="display: flex; justify-content: space-between;">
-          <span>Focus search</span>
-          <kbd style="font-family: var(--font-mono); font-size: 12px; padding: 1px 5px; background: var(--bg-2); border: 1px solid var(--border); border-radius: 3px;">Ctrl+F</kbd>
-        </div>
-        <div style="display: flex; justify-content: space-between;">
-          <span>Add filter</span>
-          <kbd style="font-family: var(--font-mono); font-size: 12px; padding: 1px 5px; background: var(--bg-2); border: 1px solid var(--border); border-radius: 3px;">Ctrl+Shift+F</kbd>
-        </div>
-        <div style="display: flex; justify-content: space-between;">
-          <span>Navigate list</span>
-          <kbd style="font-family: var(--font-mono); font-size: 12px; padding: 1px 5px; background: var(--bg-2); border: 1px solid var(--border); border-radius: 3px;">&uarr; &darr;</kbd>
-        </div>
-        <div style="display: flex; justify-content: space-between;">
-          <span>Close panel</span>
-          <kbd style="font-family: var(--font-mono); font-size: 12px; padding: 1px 5px; background: var(--bg-2); border: 1px solid var(--border); border-radius: 3px;">Esc</kbd>
-        </div>
-      </div>
-    </div>
     <div class="settings-section">
       <span class="settings-label">Performance</span>
       <div style="margin-top: 4px;">
@@ -1636,14 +1868,14 @@
       </div>
     </div>
     <div class="settings-section">
-      <span class="settings-label">Pořadí requestů</span>
+      <span class="settings-label">Request order</span>
       <div style="margin-top: 4px;">
         <div style="display: flex; align-items: center; justify-content: space-between;">
           <span style="font-size: 13px; color: var(--text-1); display: flex; align-items: center;">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px; vertical-align: middle; opacity: 0.7;">
               <path d="m21 16-4 4-4-4"/><path d="M17 20V4"/><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/>
             </svg>
-            Řazení
+            Sort
           </span>
           <select id="cfg-sort-order" style="
             background: var(--bg-2);
@@ -1656,38 +1888,38 @@
             cursor: pointer;
             outline: none;
           ">
-            <option value="asc">Nejstarší nahoře</option>
-            <option value="desc">Nejnovější nahoře</option>
+            <option value="asc">Oldest first</option>
+            <option value="desc">Newest first</option>
           </select>
         </div>
       </div>
     </div>
     <div class="settings-section">
-      <span class="settings-label">Zobrazení detailů</span>
+      <span class="settings-label">Details view</span>
       <div style="margin-top: 4px;">
         <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-1); cursor: pointer; user-select: none;">
           <input type="checkbox" id="cfg-wrap-values" style="accent-color: var(--accent); cursor: pointer;">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px; vertical-align: middle; opacity: 0.7;">
             <line x1="3" x2="21" y1="6" y2="6"/><path d="M3 12h15a3 3 0 0 1 0 6h-4"/><polyline points="16 16 14 18 16 20"/><line x1="3" x2="10" y1="18" y2="18"/>
           </svg>
-          Zalamovat dlouhé hodnoty
+          Wrap long values
         </label>
         <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-1); cursor: pointer; user-select: none; margin-top: 6px;">
           <input type="checkbox" id="cfg-auto-expand" style="accent-color: var(--accent); cursor: pointer;">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px; vertical-align: middle; opacity: 0.7;">
             <path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/>
           </svg>
-          Automaticky rozbalit requesty
+          Auto-expand requests
         </label>
         <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-1); cursor: pointer; user-select: none; margin-top: 6px;">
           <input type="checkbox" id="cfg-compact-rows" style="accent-color: var(--accent); cursor: pointer;">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px; vertical-align: middle; opacity: 0.7;">
             <line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="18" y2="18"/>
           </svg>
-          Kompaktní seznam
+          Compact list
         </label>
         <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 8px;">
-          <span style="font-size: 13px; color: var(--text-1);">Výchozí tab</span>
+          <span style="font-size: 13px; color: var(--text-1);">Default tab</span>
           <select id="cfg-default-tab" style="
             background: var(--bg-2);
             border: 1px solid var(--border);
@@ -1709,10 +1941,10 @@
       </div>
     </div>
     <div class="settings-section">
-      <span class="settings-label">Časy</span>
+      <span class="settings-label">Timestamps</span>
       <div style="margin-top: 4px;">
         <div style="display: flex; align-items: center; justify-content: space-between;">
-          <span style="font-size: 13px; color: var(--text-1);">Formát času</span>
+          <span style="font-size: 13px; color: var(--text-1);">Time format</span>
           <select id="cfg-timestamp-format" style="
             background: var(--bg-2);
             border: 1px solid var(--border);
@@ -1724,9 +1956,9 @@
             cursor: pointer;
             outline: none;
           ">
-            <option value="absolute">Absolutní</option>
-            <option value="relative">Relativní</option>
-            <option value="elapsed">Od začátku</option>
+            <option value="absolute">Absolute</option>
+            <option value="relative">Relative</option>
+            <option value="elapsed">From start</option>
           </select>
         </div>
       </div>
@@ -1735,7 +1967,7 @@
       <span class="settings-label">Export</span>
       <div style="margin-top: 4px;">
         <div style="display: flex; align-items: center; justify-content: space-between;">
-          <span style="font-size: 13px; color: var(--text-1);">Formát exportu</span>
+          <span style="font-size: 13px; color: var(--text-1);">Export format</span>
           <select id="cfg-export-format" style="
             background: var(--bg-2);
             border: 1px solid var(--border);
@@ -1754,19 +1986,19 @@
       </div>
     </div>
     <div class="settings-section">
-      <span class="settings-label">Motiv</span>
+      <span class="settings-label">Theme</span>
       <div style="display: flex; gap: 8px; margin-top: 4px;">
         <button id="theme-dark" class="theme-select-btn" data-theme="dark">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;">
             <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>
           </svg>
-          Tmavý
+          Dark
         </button>
         <button id="theme-light" class="theme-select-btn" data-theme="light">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;">
             <circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>
           </svg>
-          Světlý
+          Light
         </button>
       </div>
     </div>
@@ -1781,18 +2013,18 @@
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0; opacity:0.5;">
             <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
           </svg>
-          <input type="text" id="provider-search-input" placeholder="Hledat poskytovatele…">
+          <input type="text" id="provider-search-input" placeholder="Search providers…">
           <button id="btn-provider-search-clear" class="hidden">×</button>
         </div>
         <div style="display:flex; gap:2px;">
-          <button id="btn-providers-all" class="provider-bar-btn">Vše</button>
-          <button id="btn-providers-none" class="provider-bar-btn">Nic</button>
+          <button id="btn-providers-all" class="provider-bar-btn">All</button>
+          <button id="btn-providers-none" class="provider-bar-btn">None</button>
         </div>
       </div>
     </div>
     <div id="provider-group-list"></div>
     <div id="provider-popover-empty" style="padding:12px; font-size:13px; color:var(--text-2); text-align:center; display:none;">
-      Žádní poskytovatelé zatím nebyli zachyceni.
+      No providers captured yet.
     </div>
   </div>
 
@@ -1802,17 +2034,17 @@
       <div style="flex:1;">
         <span class="settings-label">Cookie Consent</span>
         <div id="consent-cmp-info" class="consent-cmp-info">
-          <span class="consent-loading">Načítám...</span>
+          <span class="consent-loading">Loading...</span>
         </div>
       </div>
-      <button id="consent-refresh" class="consent-btn-small" title="Obnovit" style="margin-top:2px; flex-shrink:0;">↻</button>
+      <button id="consent-refresh" class="consent-btn-small" title="Refresh" style="margin-top:2px; flex-shrink:0;">↻</button>
     </div>
 
     <div id="consent-override-badge" class="consent-override-badge" style="display:none;"></div>
 
     <div id="consent-actions" class="consent-actions" style="display:none;">
-      <button id="consent-accept-all" class="consent-btn consent-btn-accept">✓ Povolit vše</button>
-      <button id="consent-reject-all" class="consent-btn consent-btn-reject">✕ Odmítnout vše</button>
+      <button id="consent-accept-all" class="consent-btn consent-btn-accept">✓ Accept all</button>
+      <button id="consent-reject-all" class="consent-btn consent-btn-reject">✕ Reject all</button>
     </div>
     <div id="consent-action-status" class="consent-action-status" style="display:none;"></div>
 
@@ -1826,18 +2058,18 @@
 
     <div class="consent-section consent-danger-section">
       <button id="consent-clear-cookies" class="consent-btn-danger">
-        🗑 Smazat cookies
+        🗑 Delete cookies
       </button>
-      <span class="consent-danger-hint">Smaže všechny cookies na tomto webu</span>
+      <span class="consent-danger-hint">Deletes all cookies on this site</span>
     </div>
   </div>
 
   <!-- Adobe Environment Switcher Popover -->
   <div id="env-popover">
     <div class="settings-section">
-      <span class="settings-label">Adobe – přepínání prostředí</span>
+      <span class="settings-label">Adobe – Environment switcher</span>
       <div id="env-detected-info" class="env-detected">
-        <span class="env-detected-label">Detekováno:</span>
+        <span class="env-detected-label">Detected:</span>
         <span id="env-detected-url" class="env-detected-url">—</span>
         <span id="env-detected-type" class="env-detected-type"></span>
       </div>
@@ -1870,12 +2102,69 @@
           <span class="env-select-dot env-dot-prod"></span> PROD
         </button>
       </div>
-      <button id="env-apply" class="env-apply-btn" disabled>🔄 Přepnout &amp; reload</button>
-      <button id="env-reset" class="env-reset-btn">✕ Obnovit původní</button>
+      <button id="env-apply" class="env-apply-btn" disabled>🔄 Switch &amp; reload</button>
+      <button id="env-reset" class="env-reset-btn">✕ Restore original</button>
     </div>
 
     <div class="env-footer">
-      Konfigurace pro: <strong id="env-hostname">—</strong>
+      Configuration for: <strong id="env-hostname">—</strong>
+    </div>
+  </div>
+
+  <!-- INFO POPOVER -->
+  <div id="info-popover">
+    <div class="info-header">
+      <span class="info-logo">🐉</span>
+      <span class="info-title">TagDragon</span>
+      <span class="info-version" id="info-version">v1.4.0</span>
+    </div>
+
+    <div class="info-description">
+      Marketing &amp; Analytics Tracker — captures and decodes tracking requests from 68+ platforms.
+    </div>
+
+    <div class="info-section">
+      <button class="info-section-header" aria-expanded="true">
+        <svg class="info-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="m6 9 6 6 6-6"/>
+        </svg>
+        <span>📦 Supported platforms</span>
+      </button>
+      <div class="info-section-content">
+        <div>
+          <div class="info-search-wrap">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0; opacity:0.45;">
+              <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+            </svg>
+            <input type="text" id="info-search" placeholder="Search providers…" autocomplete="off">
+            <button id="btn-info-search-clear" class="info-search-clear hidden">×</button>
+          </div>
+          <div id="info-provider-groups"></div>
+          <div id="info-no-results" class="info-no-results hidden">No providers found.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="info-section">
+      <button class="info-section-header" aria-expanded="true">
+        <svg class="info-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="m6 9 6 6 6-6"/>
+        </svg>
+        <span>⌨️ Keyboard shortcuts</span>
+      </button>
+      <div class="info-section-content">
+        <div class="info-shortcuts">
+          <div class="info-shortcut"><span>Clear all</span><kbd>Ctrl+L</kbd></div>
+          <div class="info-shortcut"><span>Focus search</span><kbd>Ctrl+F</kbd></div>
+          <div class="info-shortcut"><span>Add filter</span><kbd>Ctrl+Shift+F</kbd></div>
+          <div class="info-shortcut"><span>Navigate list</span><kbd>↑ ↓</kbd></div>
+          <div class="info-shortcut"><span>Close panel</span><kbd>Esc</kbd></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="info-footer">
+      MIT License © 2025 Ondřej Bezucha
     </div>
   </div>
 

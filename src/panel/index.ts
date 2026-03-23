@@ -18,6 +18,7 @@ import { updateActiveFilters, initFilterPopoverHandlers } from './components/fil
 import { updateStatusBar, showPruneNotification, clearPruneTimer } from './components/status-bar';
 import { initAdobeEnvSwitcher } from './components/adobe-env-switcher';
 import { initConsentPanel, clearAllCookies, clearConsentOverride } from './components/consent-panel';
+import { initInfoPopover, closeInfoPopover } from './components/info-popover';
 import { initTheme } from './theme';
 
 // Extend Window interface for receiveRequest
@@ -427,21 +428,21 @@ function initToolbarHandlers(): void {
 
   // Clear cookies button
   btnClearCookies?.addEventListener('click', async () => {
-    const originalHTML = btnClearCookies.innerHTML;
+    const originalTitle = btnClearCookies.title;
     btnClearCookies.disabled = true;
-    btnClearCookies.querySelector('span')!.textContent = 'Mažu...';
+    btnClearCookies.title = 'Deleting...';
     try {
       const count = await clearAllCookies();
       await clearConsentOverride();
-      btnClearCookies.querySelector('span')!.textContent = `Smazáno ${count}`;
+      btnClearCookies.title = `Deleted ${count} cookies`;
       setTimeout(() => {
-        btnClearCookies.innerHTML = originalHTML;
+        btnClearCookies.title = originalTitle;
         btnClearCookies.disabled = false;
       }, 2000);
     } catch {
-      btnClearCookies.querySelector('span')!.textContent = 'Chyba';
+      btnClearCookies.title = 'Error';
       setTimeout(() => {
-        btnClearCookies.innerHTML = originalHTML;
+        btnClearCookies.title = originalTitle;
         btnClearCookies.disabled = false;
       }, 2000);
     }
@@ -453,6 +454,7 @@ function initToolbarHandlers(): void {
     DOM.settingsPopover?.classList.toggle('visible');
     DOM.providerPopover?.classList.remove('visible');
     DOM.consentPopover?.classList.remove('visible');
+    closeInfoPopover();
   });
 
   document.addEventListener('click', (e: MouseEvent) => {
@@ -469,6 +471,12 @@ function initToolbarHandlers(): void {
     ) {
       DOM.providerPopover?.classList.remove('visible');
     }
+    if (
+      !DOM.infoPopover?.contains(target) &&
+      !target.closest('#btn-info')
+    ) {
+      closeInfoPopover();
+    }
   });
 
   // Provider popover
@@ -478,6 +486,7 @@ function initToolbarHandlers(): void {
     DOM.providerPopover?.classList.toggle('visible');
     DOM.settingsPopover?.classList.remove('visible');
     DOM.consentPopover?.classList.remove('visible');
+    closeInfoPopover();
   });
 
   // Reset filters button
@@ -529,7 +538,7 @@ function syncQuickButtons(): void {
   }
   if (compactBtn) {
     compactBtn.classList.toggle('active', cfg.compactRows);
-    compactBtn.title = cfg.compactRows ? 'Kompaktní seznam: zapnuto' : 'Kompaktní seznam: vypnuto';
+    compactBtn.title = cfg.compactRows ? 'Compact list: on' : 'Compact list: off';
   }
 }
 
@@ -727,6 +736,9 @@ async function init(): Promise<void> {
 
   // Initialize Consent Panel
   void initConsentPanel();
+
+  // Initialize Info Popover
+  initInfoPopover();
 }
 
 // Start initialization

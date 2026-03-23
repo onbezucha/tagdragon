@@ -13,14 +13,14 @@ export const PROVIDER_CATEGORIES: AllProviderCategories = {
       icon: '📊',
       order: 1,
       defaultExpanded: true,
-      patterns: [/^en$/, /^Event$/, /^_et$/, /^Engagement$/, /^_s$/, /^_ss$/, /^_fv$/, /^_nsi$/, /^_ee$/, /^seg$/, /^sid$/, /^Session ID$/, /^sct$/]
+      patterns: [/^en$/, /^Event$/, /^_et$/, /^Engagement$/, /^_s$/, /^Hit Sequence$/, /^_ss$/, /^_fv$/, /^_nsi$/, /^_ee$/, /^seg$/, /^Session Engaged$/, /^sid$/, /^Session ID$/, /^sct$/, /^Session Count$/]
     },
     measurement: {
       label: 'Measurement',
       icon: '🔑',
       order: 2,
       defaultExpanded: true,
-      patterns: [/^tid$/, /^Measurement ID$/, /^v$/, /^_p$/, /^gtm$/, /^_gid$/, /^_dbg$/]
+      patterns: [/^tid$/, /^Measurement ID$/, /^v$/, /^_p$/, /^gtm$/, /^GTM Version$/, /^_gid$/, /^_dbg$/]
     },
     page: {
       label: 'Page & Content',
@@ -68,14 +68,14 @@ export const PROVIDER_CATEGORIES: AllProviderCategories = {
       icon: '🔒',
       order: 8,
       defaultExpanded: false,
-      patterns: [/^gcs$/, /^gcd$/, /^npa$/, /^dma$/, /^dma_cps$/, /^gdpr$/, /^gdpr_consent$/]
+      patterns: [/^gcs$/, /^Consent State$/, /^gcd$/, /^Consent Defaults$/, /^npa$/, /^Non-personalized Ads$/, /^dma$/, /^DMA Compliance$/, /^dma_cps$/, /^DMA Consent$/, /^gdpr$/, /^gdpr_consent$/]
     },
     device: {
       label: 'Device & Browser',
       icon: '💻',
       order: 9,
       defaultExpanded: false,
-      patterns: [/^sr$/, /^vp$/, /^sd$/, /^de$/, /^ul$/, /^je$/]
+      patterns: [/^sr$/, /^Screen Resolution$/, /^vp$/, /^sd$/, /^de$/, /^ul$/, /^User Language$/, /^je$/]
     }
   },
 
@@ -304,14 +304,80 @@ export const PROVIDER_CATEGORIES: AllProviderCategories = {
       icon: '🔑',
       order: 2,
       defaultExpanded: true,
-      patterns: [/^id$/, /^Pixel ID$/]
+      patterns: [/^id$/, /^Pixel ID$/, /^v$/, /^Pixel Version$/]
     },
     page: {
       label: 'Page',
       icon: '📄',
       order: 3,
       defaultExpanded: true,
-      patterns: [/^dl$/, /^URL$/, /^rl$/]
+      patterns: [/^dl$/, /^URL$/, /^rl$/, /^Referrer$/]
+    },
+    ecommerce: {
+      label: 'Ecommerce',
+      icon: '🛒',
+      order: 4,
+      defaultExpanded: true,
+      patterns: [/^Value$/, /^Currency$/, /^Content IDs$/, /^Content Type$/, /^Content Category$/]
+    },
+    tracking: {
+      label: 'Tracking',
+      icon: '🍪',
+      order: 5,
+      defaultExpanded: true,
+      patterns: [/^fbp$/, /^FBP$/, /^eid$/, /^Event ID$/]
+    },
+    technical: {
+      label: 'Technical',
+      icon: '⚙️',
+      order: 6,
+      defaultExpanded: false,
+      patterns: [/^ts$/, /^Timestamp$/, /^plt$/, /^Page Load Time$/, /^if$/, /^In iFrame$/, /^cdl$/, /^Consent Data Layer$/, /^cf$/, /^Consent Flag$/]
+    }
+  },
+
+  'Pinterest Pixel': {
+    event: {
+      label: 'Event',
+      icon: '⚡',
+      order: 1,
+      defaultExpanded: true,
+      patterns: [/^Event$/, /^Event Type$/]
+    },
+    pixel: {
+      label: 'Pixel Info',
+      icon: '🔑',
+      order: 2,
+      defaultExpanded: true,
+      patterns: [/^Tag ID$/, /^Network Provider$/, /^GTM Version$/]
+    },
+    page: {
+      label: 'Page',
+      icon: '📄',
+      order: 3,
+      defaultExpanded: true,
+      patterns: [/^URL$/, /^Referrer$/]
+    },
+    ecommerce: {
+      label: 'Ecommerce',
+      icon: '🛒',
+      order: 4,
+      defaultExpanded: true,
+      patterns: [/^Value$/, /^Currency$/]
+    },
+    device: {
+      label: 'Device',
+      icon: '💻',
+      order: 5,
+      defaultExpanded: false,
+      patterns: [/^Screen Resolution$/, /^Platform$/, /^Is EU$/]
+    },
+    technical: {
+      label: 'Technical',
+      icon: '⚙️',
+      order: 6,
+      defaultExpanded: false,
+      patterns: [/^Timestamp$/]
     }
   },
 
@@ -321,15 +387,24 @@ export const PROVIDER_CATEGORIES: AllProviderCategories = {
       icon: '📦',
       order: 1,
       defaultExpanded: true,
-      patterns: [/^id$/, /^Container ID$/, /^container_id$/],
-      prefixMatch: ['gtm']
+      patterns: [/^id$/, /^Container ID$/, /^container_id$/, /^gtm$/]
     },
-    page: {
-      label: 'Page',
-      icon: '📄',
+    preview: {
+      label: 'Preview Mode',
+      icon: '🔍',
       order: 2,
       defaultExpanded: true,
-      patterns: [/^URL$/]
+      patterns: [/^Preview Auth$/, /^Preview Env$/, /^Preview Cookies$/]
+    }
+  },
+
+  'DoubleClick': {
+    tracking: {
+      label: 'Tracking',
+      icon: '🎯',
+      order: 1,
+      defaultExpanded: true,
+      patterns: [/^Advertiser ID$/, /^Activity Type$/, /^Activity$/, /^Click ID$/, /^Order ID$/]
     }
   },
 
@@ -443,21 +518,21 @@ export const PROVIDER_CATEGORIES: AllProviderCategories = {
       icon: '🔗',
       order: 3,
       defaultExpanded: true,
-      patterns: [/^Google Click ID$/, /^GTM Container$/]
+      patterns: [/^Google Click ID$/, /^wbraid$/, /^gbraid$/, /^GTM Container$/]
     },
     consent: {
       label: 'Consent & Privacy',
       icon: '🔒',
       order: 4,
       defaultExpanded: false,
-      patterns: [/^Consent State$/, /^Consent Details$/, /^Non-Personalized$/]
+      patterns: [/^Consent State$/, /^Consent Details$/, /^Non-Personalized$/, /^DMA Compliance$/, /^DMA Consent$/]
     },
     technical: {
       label: 'Technical',
       icon: '🔧',
       order: 5,
       defaultExpanded: false,
-      patterns: [/^Random$/, /^URL$/]
+      patterns: [/^Cookie Present$/]
     }
   },
 
@@ -500,27 +575,86 @@ export const PROVIDER_CATEGORIES: AllProviderCategories = {
     }
   },
 
-  'Bing Ads': {
-    tag: {
-      label: 'Tag Info',
-      icon: '🔑',
-      order: 1,
-      defaultExpanded: true,
-      patterns: [/^ti$/, /^Tag ID$/]
-    },
+  'TikTok Pixel': {
     event: {
       label: 'Event',
       icon: '⚡',
+      order: 1,
+      defaultExpanded: true,
+      patterns: [/^Event$/, /^Timestamp$/]
+    },
+    pixel: {
+      label: 'Pixel Info',
+      icon: '🔑',
       order: 2,
       defaultExpanded: true,
-      patterns: [/^evt$/, /^Event$/]
+      patterns: [/^Pixel Code$/]
     },
     page: {
       label: 'Page',
       icon: '📄',
       order: 3,
       defaultExpanded: true,
-      patterns: [/^p$/, /^URL$/]
+      patterns: [/^URL$/, /^Referrer$/]
+    },
+    ecommerce: {
+      label: 'Ecommerce',
+      icon: '🛒',
+      order: 4,
+      defaultExpanded: true,
+      patterns: [/^Value$/, /^Currency$/, /^Content ID$/, /^Content Type$/, /^Content Name$/, /^Order ID$/, /^Search Query$/]
+    },
+    user: {
+      label: 'User',
+      icon: '👤',
+      order: 5,
+      defaultExpanded: true,
+      patterns: [/^Click ID$/, /^User ID$/, /^Locale$/]
+    }
+  },
+
+  'Bing Ads': {
+    event: {
+      label: 'Event',
+      icon: '⚡',
+      order: 1,
+      defaultExpanded: true,
+      patterns: [/^evt$/, /^Event$/]
+    },
+    tag: {
+      label: 'Tag Info',
+      icon: '🔑',
+      order: 2,
+      defaultExpanded: true,
+      patterns: [/^ti$/, /^Tag ID$/, /^tm$/, /^Tag Manager$/, /^Ver$/, /^UET Version$/]
+    },
+    page: {
+      label: 'Page',
+      icon: '📄',
+      order: 3,
+      defaultExpanded: true,
+      patterns: [/^p$/, /^URL$/, /^tl$/, /^Page Title$/, /^r$/, /^Referrer$/]
+    },
+    session: {
+      label: 'Session & Identity',
+      icon: '👤',
+      order: 4,
+      defaultExpanded: true,
+      patterns: [/^mid$/, /^Machine ID$/, /^sid$/, /^Session ID$/, /^vid$/, /^Visit ID$/, /^msclkid$/, /^Click ID$/]
+    },
+    device: {
+      label: 'Device',
+      icon: '💻',
+      order: 5,
+      defaultExpanded: false,
+      patterns: [/^Screen Resolution$/, /^Color Depth$/, /^lg$/, /^Language$/]
+    },
+    technical: {
+      label: 'Technical',
+      icon: '⚙️',
+      order: 6,
+      defaultExpanded: false,
+      patterns: [/^lt$/, /^Load Time$/, /^cdb$/, /^Consent$/]
     }
   },
 
@@ -707,30 +841,6 @@ export const PROVIDER_CATEGORIES: AllProviderCategories = {
     }
   },
 
-  'TikTok Pixel': {
-    event: {
-      label: 'Event',
-      icon: '⚡',
-      order: 1,
-      defaultExpanded: true,
-      patterns: [/^Event$/, /^Pixel Code$/]
-    },
-    ecommerce: {
-      label: 'Ecommerce',
-      icon: '🛒',
-      order: 2,
-      defaultExpanded: true,
-      patterns: [/^Value$/, /^Currency$/]
-    },
-    page: {
-      label: 'Page',
-      icon: '📄',
-      order: 3,
-      defaultExpanded: true,
-      patterns: [/^URL$/]
-    }
-  },
-
   'X (Twitter) Pixel': {
     tracking: {
       label: 'Tracking',
@@ -745,30 +855,6 @@ export const PROVIDER_CATEGORIES: AllProviderCategories = {
       order: 2,
       defaultExpanded: true,
       patterns: [/^Sale Amount$/, /^Order Quantity$/]
-    },
-    page: {
-      label: 'Page',
-      icon: '📄',
-      order: 3,
-      defaultExpanded: true,
-      patterns: [/^URL$/]
-    }
-  },
-
-  'Pinterest Pixel': {
-    tracking: {
-      label: 'Tracking',
-      icon: '🔑',
-      order: 1,
-      defaultExpanded: true,
-      patterns: [/^Tag ID$/, /^Event$/]
-    },
-    ecommerce: {
-      label: 'Ecommerce',
-      icon: '🛒',
-      order: 2,
-      defaultExpanded: true,
-      patterns: [/^Value$/, /^Currency$/]
     },
     page: {
       label: 'Page',

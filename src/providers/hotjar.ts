@@ -10,7 +10,6 @@ export const hotjar: Provider = {
     const p = getParams(url);
     return {
       'Site ID': p.hjid || p.siteId,
-      'URL': url,
     };
   },
 } as const;
