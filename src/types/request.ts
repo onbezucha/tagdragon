@@ -63,21 +63,6 @@ export interface StatsState {
   totalDuration: number;
 }
 
-export interface AppConfig {
-  maxRequests: number;
-  autoPrune: boolean;
-  pruneRatio: number;
-  sortOrder: 'asc' | 'desc';
-  wrapValues: boolean;
-  autoExpand: boolean;
-  collapsedGroups: string[];
-  hiddenProviders: string[];
-  defaultTab: TabName;
-  compactRows: boolean;
-  timestampFormat: 'absolute' | 'relative' | 'elapsed';
-  exportFormat: 'json' | 'csv';
-}
-
 export interface PendingRequest {
   data: ParsedRequest;
   isVisible: boolean;

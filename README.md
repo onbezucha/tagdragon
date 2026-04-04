@@ -4,7 +4,7 @@
 
 **The dragon that sees every tag. Chrome DevTools extension for capturing and decoding marketing/analytics tracking requests.**
 
-[![Chrome Extension Version](https://img.shields.io/badge/version-1.4.0-blue.svg)](https://github.com/yourusername/TagDragon)
+[![Chrome Extension Version](https://img.shields.io/badge/version-1.5.0-blue.svg)](https://github.com/yourusername/TagDragon)
 [![License](https://img.shields.io/badge/license-ISC-green.svg)](LICENSE)
 [![Chrome](https://img.shields.io/badge/chrome-88+-brightgreen.svg)](https://www.google.com/chrome/)
 
@@ -16,11 +16,12 @@
 
 ## Overview
 
-**TagDragon v1.4.0** is a Chrome DevTools extension that captures network requests from analytics and marketing platforms, decodes them into human-readable format, and provides advanced filtering and search capabilities.
+**TagDragon v1.5.0** is a Chrome DevTools extension that captures network requests from analytics and marketing platforms, decodes them into human-readable format, and provides advanced filtering and search capabilities.
 
 ### Key Features
 
 - **Real-time Request Capture** — Monitor tracking requests as they happen
+- **DataLayer Inspector** — Intercept and inspect data layer pushes from GTM, Tealium, Adobe, Segment, and W3C digitalData with diff view, cumulative state, and network correlation
 - **Multi-Provider Support** — Decode requests from 68 tracking platforms across 9 categories
 - **Provider Filter Popover** — Filter by provider via a toolbar icon; hidden providers persist across restarts
 - **Search & Advanced Filtering** — Filter by URL, parameter name/value, event type, HTTP method, status, user ID
@@ -34,12 +35,13 @@
 - **Adobe Environment Switcher** — Switch between DEV/ACC/PROD Adobe Launch environments using network-level redirects
 - **Performance Optimized** — Efficient handling of large request volumes with configurable auto-pruning
 - **Keyboard Shortcuts** — Power-user friendly navigation
+- **Extension Popup** — Live request stats, provider breakdown, and pause/clear controls from the extension icon
 
 ## Installation
 
 ### From GitHub Release (no build required)
 
-1. Download `TagDragon-v1.4.0.zip` from the [Releases page](https://github.com/yourusername/TagDragon/releases)
+1. Download `TagDragon-v1.5.0.zip` from the [Releases page](https://github.com/yourusername/TagDragon/releases)
 2. Unzip the archive
 3. Open `chrome://extensions/`, enable **Developer mode**, click **Load unpacked**, and select the unzipped folder
 
@@ -77,24 +79,47 @@ Runs CSS and JS watchers concurrently. After code changes, reload the extension 
 ```
 TagDragon/
 ├── src/                        # TypeScript source
-│   ├── background/             # Service worker (declarativeNetRequest rules)
+│   ├── background/             # Service worker (declarativeNetRequest, popup bridge, badge counter)
+│   │   ├── index.ts            # Message relay, DataLayer relay, cookie clearing, extension request relay
+│   │   ├── badge.ts            # Extension icon badge counter
+│   │   └── popup-bridge.ts     # Popup ↔ background messaging, DevTools status tracking
+│   ├── content/                # Content scripts (injected into inspected pages)
+│   │   ├── data-layer-main.ts  # MAIN world — intercepts data layer pushes
+│   │   └── data-layer-bridge.ts # ISOLATED world — relays postMessage to background
 │   ├── devtools/               # DevTools registration + network capture
+│   │   ├── index.ts            # Panel creation, DataLayer injection, port management
+│   │   ├── network-capture.ts  # Request matching and parsing
+│   │   ├── panel-bridge.ts     # Panel window message bridge
+│   │   └── data-layer-relay.ts # DataLayer push/source/snapshot relay to panel
 │   ├── panel/                  # Panel UI
 │   │   ├── components/         # UI components (provider-bar, filter-bar, detail-pane, request-list, status-bar, adobe-env-switcher, consent-panel, info-popover, …)
+│   │   ├── datalayer/          # DataLayer tab components
+│   │   │   ├── state.ts        # DataLayer push state management
+│   │   │   ├── push-list.ts    # Push list rendering
+│   │   │   ├── push-detail.ts  # Detail pane (4 sub-tabs)
+│   │   │   ├── diff-renderer.ts # Deep diff algorithm and rendering
+│   │   │   ├── ecommerce-formatter.ts # E-commerce detection and product tables
+│   │   │   └── correlation.ts  # Network request correlation engine
 │   │   ├── tabs/               # Detail tabs (decoded, query, POST, headers, response)
-│   │   ├── utils/              # DOM helpers, formatting, filtering, categorization
-│   │   ├── state.ts            # Centralized state
+│   │   ├── utils/              # DOM helpers, formatting, filtering, categorization, icons
+│   │   ├── state.ts            # Centralized state (network requests)
 │   │   ├── theme.ts            # Dark/light theme
 │   │   └── index.ts            # Panel controller
-│   ├── popup/                  # Extension popup
+│   ├── popup/                  # Extension popup (live stats)
 │   ├── providers/              # 68 tracking provider implementations
 │   │   ├── google/             # GA4, UA, GTM, Google Ads
-│   │   ├── adobe/              # Adobe AA, AEP Web SDK, Target, AAM, ECID, Heartbeat, DTM, Launch (CN)
+│   │   ├── adobe/              # Adobe Client-Side, Server-Side, Target, AAM, ECID, Heartbeat, DTM, Launch (CN)
 │   │   ├── meta/               # Meta Pixel
 │   │   ├── microsoft/          # Bing Ads, Microsoft Clarity
 │   │   └── …                   # 50+ standalone providers
-│   ├── shared/                 # Constants, parameter categories, provider groups
+│   ├── shared/                 # Constants, parameter categories, provider groups, CMP detection
 │   └── types/                  # TypeScript type definitions
+│       ├── request.ts          # ParsedRequest, UIState, FilterState, AppConfig, etc.
+│       ├── datalayer.ts        # DataLayerPush, DataLayerState, DiffEntry, message types
+│       ├── provider.ts         # Provider interface, ProviderRegistry
+│       ├── categories.ts       # CategoryConfig, ProviderCategories
+│       ├── consent.ts          # ConsentCategory, GoogleConsentMode, TCFData, CMPInfo
+│       └── popup.ts            # ProviderStats, TabPopupStats, PopupStatsResponse
 ├── public/                     # Static assets (HTML, icons, fonts)
 ├── styles/input.css            # Tailwind CSS source
 ├── dist/                       # Build output — never edit manually
@@ -113,8 +138,8 @@ TagDragon/
 |----------|-------------|
 | **Google Analytics 4** | `google-analytics.com/g/collect`, `analytics.google.com/g/collect` |
 | **Google Analytics UA** | `google-analytics.com/collect` |
-| **Adobe Analytics** | `sc.omtrdc.net`, `2o7.net`, `/b/ss/`, `demdex.net` |
-| **Adobe AEP Web SDK** | `/ee/*/v*/interact`, `*.adobedc.net` |
+| **Adobe Client-Side** | `sc.omtrdc.net`, `2o7.net`, `/b/ss/` |
+| **Adobe Server-Side** | `/ee/*/v*/interact`, `*.adobedc.net` |
 | **Amplitude** | `amplitude.com/2/httpapi`, `amplitude.com/batch` |
 | **Mixpanel** | `mixpanel.com/track`, `/engage`, `/import` |
 | **Matomo** | `/piwik.php`, `/matomo.php` |
@@ -191,6 +216,7 @@ TagDragon/
 | Provider | URL Pattern |
 |----------|-------------|
 | **LinkedIn** | `linkedin.com/li/track`, `px.ads.linkedin.com` |
+| **Merkury** | `d.merkury.com` |
 | **Demandbase** | `tag.demandbase.com`, `api.demandbase.com` |
 | **6Sense** | `j.6sc.co`, `b.6sc.co` |
 
@@ -218,12 +244,6 @@ TagDragon/
 | **Adobe Heartbeat** | `*.hb.omtrdc.net` |
 | **Adobe DTM** | `assets.adobedtm.com/…/satelliteLib` |
 | **Adobe Launch (CN)** | `assets.adobedc.cn` |
-
-### Other
-
-| Provider | URL Pattern |
-|----------|-------------|
-| **Merkury** | `d.merkury.com` |
 
 ## Keyboard Shortcuts
 
@@ -274,6 +294,29 @@ Appears below the toolbar when active filters are in effect. Shows removable chi
 
 Lets you inspect and override the consent/cookie state on the inspected page — useful for testing consent mode behavior without manually clearing cookies.
 
+### DataLayer Tab
+
+Separate panel tab that intercepts and displays data layer pushes in real-time:
+
+- **Supported sources**: GTM (`window.dataLayer`), Tealium (`window.utag`), Adobe (`adobeDataLayer` / `_satellite.track`), Segment (`window.analytics`), W3C digitalData
+- **Push list**: Color-coded by source, shows event name, push index, and timestamp
+- **Detail sub-tabs**:
+  1. **Push Data** — raw JSON of the pushed data object
+  2. **Diff** — deep diff from previous push (added/removed/changed keys)
+  3. **Current State** — cumulative merged state up to the selected push
+  4. **Correlation** — network requests within 2s of the push, sorted by delay
+- **E-commerce detection**: Automatically detects purchase, checkout, impression, promo, and refund events with formatted product tables
+- **Filters**: Text search, source filter, event name, key existence, e-commerce only
+
+### Extension Popup
+
+Click the TagDragon icon in the Chrome toolbar for a quick overview:
+- Live request count, total size, average duration, success rate
+- Top 5 providers by count with color-coded pills (expandable to all)
+- Pause/Resume and Clear buttons
+- Warning when DevTools is not open (requests cannot be captured)
+- Badge counter on the extension icon shows current request count
+
 ### Adobe Environment Switcher
 
 Detects the Adobe Launch/Tags library loaded on the inspected page and lets you switch between DEV/ACC/PROD environments. Uses Chrome's `declarativeNetRequest` API for network-level URL redirection — the redirect persists across page navigations and browser restarts. Configuration is stored per hostname.
@@ -311,6 +354,18 @@ Panel (adobe-env-switcher.ts)
   └─ chrome.runtime.sendMessage SET_ADOBE_REDIRECT
        └─ background/index.ts — declarativeNetRequest.updateDynamicRules (rule ID 1001)
             └─ chrome redirects all matching script requests at network level
+```
+
+### DataLayer Flow
+
+```
+content/data-layer-main.ts (MAIN world)
+  └─ intercepts dataLayer.push() / utag.link() / adobeDataLayer / analytics.track() / digitalData Proxy
+       └─ window.postMessage → content/data-layer-bridge.ts (ISOLATED world)
+            └─ chrome.runtime.sendMessage → background/index.ts
+                 └─ named port (devtools_<tabId>) → devtools/data-layer-relay.ts
+                      └─ panel window.receiveDataLayerPush() → datalayer/state.ts
+                           └─ batched DOM update via requestAnimationFrame
 ```
 
 ## Contributing

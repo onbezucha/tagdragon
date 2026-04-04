@@ -19,6 +19,7 @@ export interface DataLayerPush {
   readonly data: Record<string, unknown>;   // The pushed data object
   readonly cumulativeState: Record<string, unknown>; // Full state AFTER this push
   readonly diffFromPrevious: DiffEntry[] | null;     // Diff from previous push
+  readonly isReplay?: boolean;               // Whether this is a replay of existing dataLayer items
 
   // E-commerce detection (computed)
   readonly _ecommerceType?: 'purchase' | 'checkout' | 'impression' | 'promo' | 'refund' | null;

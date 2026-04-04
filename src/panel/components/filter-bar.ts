@@ -254,28 +254,11 @@ function updateFilterPopoverState(): void {
  * @param updateActiveFiltersCallback Callback to update active filters
  */
 export function initFilterPopoverHandlers(applyFiltersCallback: () => void, updateActiveFiltersCallback: () => void): void {
-  const $btnAddFilter = document.getElementById('btn-add-filter') as HTMLElement;
   const $filterPopover = DOM.filterPopover!;
   const $filterSubmenu = DOM.filterSubmenu!;
   const $filterSubmenuContent = DOM.filterSubmenuContent!;
   
-  if (!$btnAddFilter || !$filterPopover) return;
-  
-  $btnAddFilter.addEventListener('click', (e: MouseEvent) => {
-    e.stopPropagation();
-    DOM.settingsPopover!.classList.remove('visible');
-    
-    if ($filterPopover.classList.contains('visible')) {
-      closeFilterPopover();
-      return;
-    }
-    
-    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    $filterPopover.style.top = (rect.bottom + 4) + 'px';
-    $filterPopover.style.left = rect.left + 'px';
-    $filterPopover.classList.add('visible');
-    updateFilterPopoverState();
-  });
+  if (!$filterPopover) return;
   
   // Handle clicks on filter popover menu items
   $filterPopover.addEventListener('click', (e: MouseEvent) => {
@@ -299,8 +282,7 @@ export function initFilterPopoverHandlers(applyFiltersCallback: () => void, upda
   // Close on outside click
   document.addEventListener('click', (e: MouseEvent) => {
     if (!$filterPopover.contains(e.target as Node) && 
-        !$filterSubmenu.contains(e.target as Node) && 
-        !(e.target as HTMLElement).closest('#btn-add-filter')) {
+        !$filterSubmenu.contains(e.target as Node)) {
       closeFilterPopover();
     }
   });

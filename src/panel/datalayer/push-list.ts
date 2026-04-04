@@ -157,7 +157,7 @@ export function updateDlRowVisibility(): void {
 // ─── STATUS TEXT ─────────────────────────────────────────────────────────────
 
 export function updateDlStatusText(visible: number, total: number): void {
-  const $status = DOM.dlStatusText;
+  const $status = (document.getElementById('status-text') as HTMLElement);
   if ($status) {
     $status.textContent = `${visible} / ${total} pushes`;
   }

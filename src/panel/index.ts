@@ -1,75 +1,113 @@
 // ═══════════════════════════════════════════════════════════════════════════
 // REQUEST TRACKER v3.0 - PANEL CONTROLLER
-// Main entry point - initializes components and handles request flow
 // ═══════════════════════════════════════════════════════════════════════════
 
 import type { ParsedRequest } from '@/types/request';
 import type { DataLayerPush, DataLayerSource } from '@/types/datalayer';
-import { DOM, qsa } from './utils/dom';
-import { getEventName } from './utils/format';
-import { indexRequest } from './utils/categorize';
-import { applyFilters, matchesFilter } from './utils/filter';
-import * as state from './state';
 
-// Components
-import { createRequestRow, updateRowVisibility, navigateList, navigateToEdge } from './components/request-list';
+import * as state from './state';
+import * as dlState from './datalayer/state';
+import { DOM } from './utils/dom';
+import { getEventName, formatBytes } from './utils/format';
+import { createRequestRow, navigateList, navigateToEdge, updateRowVisibility } from './components/request-list';
 import { selectRequest, initTabHandlers, closeDetailPane, clearTabCache } from './components/detail-pane';
-import { ensureProviderPill, updateProviderCounts, initProviderBarHandlers, updateFilterBarVisibility } from './components/provider-bar';
-import { updateActiveFilters, initFilterPopoverHandlers } from './components/filter-bar';
-import { updateStatusBar, showPruneNotification, clearPruneTimer } from './components/status-bar';
+import { updateStatusBar } from './components/status-bar';
+import { ensureProviderPill, initProviderBarHandlers, updateProviderCounts, updateFilterBarVisibility } from './components/provider-bar';
+import { initFilterPopoverHandlers, updateActiveFilters } from './components/filter-bar';
 import { initAdobeEnvSwitcher } from './components/adobe-env-switcher';
 import { initConsentPanel, clearAllCookies, clearConsentOverride } from './components/consent-panel';
 import { initInfoPopover, closeInfoPopover } from './components/info-popover';
-import { initTheme } from './theme';
-import {
-  getAllDlPushes,
-  addDlPush,
-  clearDlPushes,
-  getDlIsPaused,
-  setDlIsPaused,
-  getDlSelectedId,
-  setDlSelectedId,
-  getDlPushById,
-  getDlFilteredIds,
-  addDlFilteredId,
-  clearDlFilteredIds,
-  getDlFilterText,
-  setDlFilterText,
-  getDlFilterSource,
-  setDlFilterSource,
-  getDlFilterEventName,
-  getDlFilterHasKey,
-  getDlEcommerceOnly,
-  resetDlFilters,
-  addDlSource,
-  getDlVisibleCount,
-  getDlTotalCount,
-} from './datalayer/state';
-import {
-  createDlPushRow,
-  setActiveDlRow,
-  updateDlStatusText,
-  exportDlJson,
-  exportDlCsv,
-  dlMatchesFilter,
-  getSourceColor,
-} from './datalayer/push-list';
+import { applyFilters, matchesFilter } from './utils/filter';
+import { createDlPushRow, getSourceColor, setActiveDlRow, updateDlStatusText, dlMatchesFilter, exportDlJson, exportDlCsv } from './datalayer/push-list';
 import { selectDlPush, closeDlDetail, initDlDetailTabHandlers } from './datalayer/push-detail';
+import { initTheme } from './theme';
 
-// Extend Window interface for receiveRequest and DataLayer receivers
-declare global {
-  interface Window {
-    receiveRequest: (data: ParsedRequest) => void;
-    receiveDataLayerPush: (push: DataLayerPush) => void;
-    receiveDataLayerSources: (sources: DataLayerSource[], labels: Record<DataLayerSource, string>) => void;
-    receiveDataLayerSnapshot: (data: Record<string, unknown>) => void;
-    clearDataLayer: () => void;
-    _clearHeavyData?: () => void;
-    _deleteHeavyData?: (ids: number[]) => void;
+// ─── LOCAL HELPERS ───────────────────────────────────────────────────────────
+
+/**
+ * Pre-index a request for fast filtering and display.
+ * Computes _searchIndex, _eventName, _hasUserId, _statusPrefix once.
+ */
+function indexRequest(data: ParsedRequest, getEventNameFn: (d: ParsedRequest) => string): void {
+  data._searchIndex = [
+    data.url || '',
+    data.provider || '',
+    ...Object.keys(data.allParams || {}),
+    ...Object.values(data.allParams || {}).map(String),
+    ...Object.keys(data.decoded || {}),
+    ...Object.values(data.decoded || {}).map(String),
+  ]
+    .join('\0')
+    .toLowerCase();
+
+  if (getEventNameFn) {
+    data._eventName = getEventNameFn(data);
   }
+
+  data._hasUserId = !!(
+    data.decoded?.client_id ||
+    data.decoded?.['Client ID'] ||
+    data.allParams?.cid ||
+    data.allParams?.uid ||
+    data.allParams?.user_id ||
+    data.allParams?.client_id
+  );
+
+  data._statusPrefix = data.status ? String(data.status)[0] : null;
+}
+
+/**
+ * Update the status bar with DataLayer-specific info.
+ */
+function updateDlStatusBar(): void {
+  const $statusText = DOM.statusText;
+  if (!$statusText) return;
+
+  const visible = dlState.getDlVisibleCount();
+  const total = dlState.getDlTotalCount();
+  const pushes = dlState.getAllDlPushes();
+  const parts = [`${visible} / ${total} pushes`];
+
+  const ecCount = pushes.filter(p => p._ecommerceType).length;
+  if (ecCount > 0) {
+    parts.push(`${ecCount} e-commerce`);
+  }
+
+  $statusText.textContent = parts.join(' · ');
+  $statusText.style.color = '';
+}
+
+/**
+ * Show prune notification in status bar.
+ */
+let pruneNotificationTimer: ReturnType<typeof setTimeout>;
+
+function showPruneNotification(count: number): void {
+  const $statusText = DOM.statusText;
+  if (!$statusText) return;
+
+  const visibleCount = state.getStatsVisibleCount();
+  const totalSize = state.getStatsTotalSize();
+  const totalDuration = state.getStatsTotalDuration();
+  const avgTime = visibleCount > 0 ? Math.round(totalDuration / visibleCount) : 0;
+  const allRequests = state.getAllRequests();
+
+  $statusText.textContent = `${visibleCount} / ${allRequests.length} requests · ${formatBytes(totalSize)} · Avg ${avgTime > 0 ? avgTime + 'ms' : '—'} · (${count} oldest removed)`;
+  $statusText.style.color = 'var(--orange)';
+
+  clearTimeout(pruneNotificationTimer);
+  pruneNotificationTimer = setTimeout(() => {
+    $statusText.style.color = '';
+    updateStatusBar(visibleCount, totalSize, totalDuration);
+  }, 3000);
+}
+
+function clearPruneTimer(): void {
+  clearTimeout(pruneNotificationTimer);
 }
 
 // ─── MEMORY BUDGET ───────────────────────────────────────────────────────────
+
 function pruneIfNeeded(): void {
   if (!state.getConfig().autoPrune || state.getConfig().maxRequests === 0) return;
   if (state.getAllRequests().length <= state.getConfig().maxRequests) return;
@@ -97,7 +135,7 @@ function pruneIfNeeded(): void {
   const rows = $list.querySelectorAll('.req-row');
   let domRemoved = 0;
   for (let i = 0; i < rows.length && domRemoved < removeCount; i++) {
-    const id = (rows[i] as HTMLElement).dataset.id;
+    const id = rows[i].dataset.id;
     if (id && !state.hasRequest(id)) {
       rows[i].remove();
       domRemoved++;
@@ -110,7 +148,7 @@ function pruneIfNeeded(): void {
     state.setSelectedId(null);
     const detail = DOM.detail;
     if (detail) detail.classList.add('hidden');
-    qsa('.req-row.active').forEach((r) => r.classList.remove('active'));
+    document.querySelectorAll('.req-row.active').forEach((r) => r.classList.remove('active'));
   }
 
   // Update provider counts
@@ -129,21 +167,19 @@ function pruneIfNeeded(): void {
     }
   }
   state.updateStats(visibleCount, totalSize, totalDuration);
-
   showPruneNotification(removeCount);
 }
 
 // ─── BATCHED RENDERING ───────────────────────────────────────────────────────
+
 function flushPendingRequests(): void {
   state.setRafId(null);
-
   if (state.getPendingRequests().length === 0) return;
 
   const empty = DOM.empty;
   if (empty) empty.style.display = 'none';
 
   const fragment = document.createDocumentFragment();
-
   for (const { data, isVisible } of state.getPendingRequests()) {
     ensureProviderPill(data, doApplyFilters, doUpdateActiveFilters);
     const row = createRequestRow(data, isVisible);
@@ -158,13 +194,18 @@ function flushPendingRequests(): void {
       list.appendChild(fragment);
     }
   }
-  state.clearPendingRequests();
 
+  state.clearPendingRequests();
   const stats = state.getStats();
   updateStatusBar(stats.visibleCount, stats.totalSize, stats.totalDuration);
+
+  // Update network tab badge
+  const $networkBadge = DOM.tabBadgeNetwork;
+  if ($networkBadge) $networkBadge.textContent = String(state.getAllRequests().length);
 }
 
 // ─── CALLBACKS ───────────────────────────────────────────────────────────────
+
 function doApplyFilters(): void {
   applyFilters(updateRowVisibility, updateStatusBar);
 }
@@ -178,50 +219,75 @@ function doSelectRequest(data: ParsedRequest, row: HTMLElement): void {
 }
 
 // ─── VIEW SWITCHING ───────────────────────────────────────────────────────────
+
 let activeView: 'network' | 'datalayer' = 'network';
 
 function switchView(view: 'network' | 'datalayer'): void {
   activeView = view;
-  const $networkToolbar = document.getElementById('network-toolbar');
-  const $dlToolbar = document.getElementById('datalayer-toolbar');
+
+  // Toggle context toolbars
+  const $networkCtx = DOM.networkContext;
+  const $dlCtx = DOM.datalayerContext;
+  if ($networkCtx) $networkCtx.style.display = view === 'network' ? '' : 'none';
+  if ($dlCtx) $dlCtx.style.display = view === 'datalayer' ? '' : 'none';
+
+  // Toggle main views
   const $main = DOM.main;
   const $dlView = DOM.dlView;
-  const $filterBar = DOM.filterBar;
-  const $dlFilterBar = DOM.dlFilterBar;
-
-  if ($networkToolbar) $networkToolbar.style.display = view === 'network' ? '' : 'none';
-  if ($dlToolbar) $dlToolbar.style.display = view === 'datalayer' ? '' : 'none';
   if ($main) $main.style.display = view === 'network' ? '' : 'none';
   if ($dlView) $dlView.style.display = view === 'datalayer' ? 'block' : 'none';
+
+  // Toggle filter bars
+  const $filterBar = DOM.filterBar;
+  const $dlFilterBar = DOM.dlFilterBar;
   if ($filterBar) $filterBar.style.display = view === 'network' ? '' : 'none';
   if ($dlFilterBar) $dlFilterBar.style.display = view === 'datalayer' ? '' : 'none';
 
+  // Update tab buttons
   document.querySelectorAll('.tab-btn[data-view]').forEach((btn) => {
     (btn as HTMLElement).classList.toggle('active', (btn as HTMLElement).dataset['view'] === view);
   });
+
+  // Update status bar
+  if (view === 'network') {
+    const stats = state.getStats();
+    updateStatusBar(stats.visibleCount, stats.totalSize, stats.totalDuration);
+  } else {
+    updateDlStatusBar();
+  }
 }
 
 // ─── DATALAYER CLEAR ──────────────────────────────────────────────────────────
+
 function dlClearAll(): void {
-  clearDlPushes();
-  clearDlFilteredIds();
+  dlState.clearDlPushes();
+  dlState.clearDlFilteredIds();
+
   const $list = DOM.dlPushList;
   if ($list) $list.innerHTML = '';
+
   const $empty = DOM.dlEmptyState;
   if ($empty) $empty.style.display = '';
+
   closeDlDetail();
   updateDlStatusText(0, 0);
+
+  const $dlBadge = DOM.tabBadgeDatalayer;
+  if ($dlBadge) $dlBadge.textContent = '0';
+
   const $count = document.getElementById('dl-push-count');
   if ($count) $count.textContent = '0 pushes';
 }
 
 // ─── DATALAYER FILTER ─────────────────────────────────────────────────────────
+
 function dlApplyFilter(): void {
-  const text = getDlFilterText();
-  clearDlFilteredIds();
-  for (const push of getAllDlPushes()) {
-    if (dlMatchesFilter(push, text, getDlFilterSource(), getDlFilterEventName(), getDlFilterHasKey(), getDlEcommerceOnly())) {
-      addDlFilteredId(push.id);
+  const text = dlState.getDlFilterText();
+  dlState.clearDlFilteredIds();
+
+  for (const push of dlState.getAllDlPushes()) {
+    if (dlMatchesFilter(push, text, dlState.getDlFilterSource(), dlState.getDlFilterEventName(), dlState.getDlFilterHasKey(), dlState.getDlEcommerceOnly())) {
+      dlState.addDlFilteredId(push.id);
     }
   }
 
@@ -229,23 +295,25 @@ function dlApplyFilter(): void {
   if ($list) {
     $list.querySelectorAll('.dl-push-row').forEach((row) => {
       const id = Number((row as HTMLElement).dataset['id']);
-      (row as HTMLElement).style.display = getDlFilteredIds().has(id) ? '' : 'none';
+      (row as HTMLElement).style.display = dlState.getDlFilteredIds().has(id) ? '' : 'none';
     });
   }
 
   const $empty = DOM.dlEmptyState;
   if ($empty) {
-    $empty.style.display = getDlVisibleCount() === 0 && getDlTotalCount() === 0 ? '' : 'none';
+    $empty.style.display = dlState.getDlVisibleCount() === 0 && dlState.getDlTotalCount() === 0 ? '' : 'none';
   }
-  updateDlStatusText(getDlVisibleCount(), getDlTotalCount());
+
+  updateDlStatusText(dlState.getDlVisibleCount(), dlState.getDlTotalCount());
 }
 
 // ─── DATALAYER RECEIVERS ──────────────────────────────────────────────────────
+
 window.receiveDataLayerPush = function (push: DataLayerPush): void {
-  if (getDlIsPaused()) return;
+  if (dlState.getDlIsPaused()) return;
 
   // Compute cumulative state
-  const allPushes = getAllDlPushes();
+  const allPushes = dlState.getAllDlPushes();
   const prevState = allPushes.length > 0 ? allPushes[allPushes.length - 1].cumulativeState : {};
   const cumulativeState: Record<string, unknown> = { ...prevState };
   for (const [k, v] of Object.entries(push.data)) {
@@ -256,30 +324,44 @@ window.receiveDataLayerPush = function (push: DataLayerPush): void {
     ...push,
     cumulativeState,
     diffFromPrevious: null,
-    _eventName: push._eventName ?? (typeof push.data['event'] === 'string' ? push.data['event'] as string : undefined),
+    _eventName: push._eventName ?? (typeof push.data['event'] === 'string' ? push.data['event'] : undefined),
     sourceLabel: push.sourceLabel || push.source.toUpperCase(),
   };
 
-  addDlPush(enrichedPush);
+  dlState.addDlPush(enrichedPush);
 
-  const filterText = getDlFilterText();
-  const isVisible = dlMatchesFilter(enrichedPush, filterText, getDlFilterSource(), getDlFilterEventName(), getDlFilterHasKey(), getDlEcommerceOnly());
-  if (isVisible) addDlFilteredId(push.id);
+  const filterText = dlState.getDlFilterText();
+  const isVisible = dlMatchesFilter(enrichedPush, filterText, dlState.getDlFilterSource(), dlState.getDlFilterEventName(), dlState.getDlFilterHasKey(), dlState.getDlEcommerceOnly());
+  if (isVisible) dlState.addDlFilteredId(push.id);
 
   // Render row synchronously — avoids RAF throttling (DevTools window may be in background
   // when user reloads the page, causing requestAnimationFrame to never fire)
   const $list = DOM.dlPushList;
   const $empty = DOM.dlEmptyState;
-  if ($empty && getDlTotalCount() > 0) {
+  if ($empty && dlState.getDlTotalCount() > 0) {
     $empty.style.display = 'none';
   }
   if ($list) {
     try {
       const row = createDlPushRow(enrichedPush, isVisible, (p, r) => {
-        setDlSelectedId(p.id);
+        dlState.setDlSelectedId(p.id);
         setActiveDlRow(r);
-        selectDlPush(p, r, (_reqId) => {
+        selectDlPush(p, r, (reqId) => {
           switchView('network');
+
+          const reqData = state.getRequestMap().get(String(reqId));
+          if (!reqData) return;
+
+          const row = document.querySelector(`.req-row[data-id="${reqId}"]`) as HTMLElement | null;
+          if (!row) return;
+
+          // Make row visible if hidden by filter or provider filter
+          if (row.classList.contains('filtered-out') || row.classList.contains('provider-hidden')) {
+            row.classList.remove('filtered-out', 'provider-hidden');
+            row.style.display = '';
+          }
+
+          selectRequest(reqData, row);
         });
       });
       $list.appendChild(row);
@@ -287,18 +369,20 @@ window.receiveDataLayerPush = function (push: DataLayerPush): void {
       console.warn('[TagDragon] Failed to create push row:', e);
     }
   }
-  updateDlStatusText(getDlVisibleCount(), getDlTotalCount());
+  updateDlStatusText(dlState.getDlVisibleCount(), dlState.getDlTotalCount());
 
-  // Update push counter
+  // Update datalayer tab badge
+  const $dlBadge = DOM.tabBadgeDatalayer;
+  if ($dlBadge) $dlBadge.textContent = String(dlState.getDlTotalCount());
   const $count = document.getElementById('dl-push-count');
   if ($count) {
-    const n = getDlTotalCount();
+    const n = dlState.getDlTotalCount();
     $count.textContent = `${n} push${n !== 1 ? 'es' : ''}`;
   }
 };
 
 window.receiveDataLayerSources = function (sources: DataLayerSource[], labels: Record<DataLayerSource, string>): void {
-  sources.forEach((s) => addDlSource(s));
+  sources.forEach((s) => dlState.addDlSource(s));
   const $status = document.getElementById('dl-source-status');
   if (!$status) return;
   $status.innerHTML = '';
@@ -316,12 +400,13 @@ window.receiveDataLayerSnapshot = function (_data: Record<string, unknown>): voi
 };
 
 window.clearDataLayer = function (): void {
-  dlClearAll();
   const $status = document.getElementById('dl-source-status');
   if ($status) $status.innerHTML = '';
+  dlClearAll();
 };
 
 // ─── ENTRY POINT (from devtools.js) ──────────────────────────────────────────
+
 window.receiveRequest = function (data: ParsedRequest): void {
   try {
     if (state.getIsPaused()) return;
@@ -334,9 +419,7 @@ window.receiveRequest = function (data: ParsedRequest): void {
     pruneIfNeeded();
 
     // Incremental filter
-    const isVisible =
-      !state.isProviderHidden(data.provider) && matchesFilter(data);
-
+    const isVisible = !state.isProviderHidden(data.provider) && matchesFilter(data);
     if (isVisible) {
       state.addFilteredId(String(data.id));
       state.incrementStats(data.size, data.duration);
@@ -344,7 +427,6 @@ window.receiveRequest = function (data: ParsedRequest): void {
 
     // Queue for batched rendering
     state.addPendingRequest({ data, isVisible });
-
     if (!state.getRafId()) {
       state.setRafId(requestAnimationFrame(flushPendingRequests));
     }
@@ -354,19 +436,19 @@ window.receiveRequest = function (data: ParsedRequest): void {
 };
 
 // ─── SPLITTER DRAG ───────────────────────────────────────────────────────────
+
 let isDragging = false;
 
 function initSplitter(): void {
   const $splitter = DOM.splitter;
   const $main = DOM.main;
-
   if (!$splitter || !$main) return;
 
-  $splitter.addEventListener('mousedown', (e: MouseEvent) => {
+  $splitter.addEventListener('mousedown', (e: Event) => {
     isDragging = true;
     document.body.style.cursor = 'col-resize';
     document.body.style.userSelect = 'none';
-    e.preventDefault();
+    (e as MouseEvent).preventDefault();
   });
 
   document.addEventListener('mousemove', (e: MouseEvent) => {
@@ -391,33 +473,34 @@ function initSplitter(): void {
 }
 
 // ─── KEYBOARD NAVIGATION ─────────────────────────────────────────────────────
+
 function initKeyboardHandlers(): void {
   document.addEventListener('keydown', (e: KeyboardEvent) => {
     // Ctrl+L = clear
     if (e.ctrlKey && e.key === 'l') {
       e.preventDefault();
-      (document.getElementById('btn-clear') as HTMLButtonElement)?.click();
-      return;
-    }
-
-    // Ctrl+Shift+F = open filter popover
-    if (e.ctrlKey && e.shiftKey && e.key === 'F') {
-      e.preventDefault();
-      (document.getElementById('btn-add-filter') as HTMLButtonElement)?.click();
+      if (activeView === 'network') {
+        document.getElementById('btn-clear')?.click();
+      } else {
+        document.getElementById('dl-btn-clear')?.click();
+      }
       return;
     }
 
     // Ctrl+F = focus search
     if (e.ctrlKey && e.key === 'f') {
       e.preventDefault();
-      DOM.filterInput?.focus();
+      if (activeView === 'network') {
+        DOM.filterInput?.focus();
+      } else {
+        DOM.dlFilterInput?.focus();
+      }
       return;
     }
 
     // Escape
     if (e.key === 'Escape') {
       if (DOM.filterPopover?.classList.contains('visible')) return;
-
       if (document.activeElement === DOM.filterInput) {
         state.setFilterText('');
         if (DOM.filterInput) DOM.filterInput.value = '';
@@ -431,31 +514,20 @@ function initKeyboardHandlers(): void {
     }
 
     // Arrow keys for list navigation
-    if (
-      (e.key === 'ArrowDown' || e.key === 'ArrowUp') &&
-      document.activeElement !== DOM.filterInput
-    ) {
+    if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') &&
+        document.activeElement !== DOM.filterInput) {
       e.preventDefault();
-      navigateList(
-        e.key === 'ArrowDown' ? 1 : -1,
-        doSelectRequest
-      );
+      navigateList(e.key === 'ArrowDown' ? 1 : -1, doSelectRequest);
       return;
     }
 
     // Home/End
-    if (
-      e.key === 'Home' &&
-      document.activeElement !== DOM.filterInput
-    ) {
+    if (e.key === 'Home' && document.activeElement !== DOM.filterInput) {
       e.preventDefault();
       navigateToEdge('first', doSelectRequest);
       return;
     }
-    if (
-      e.key === 'End' &&
-      document.activeElement !== DOM.filterInput
-    ) {
+    if (e.key === 'End' && document.activeElement !== DOM.filterInput) {
       e.preventDefault();
       navigateToEdge('last', doSelectRequest);
       return;
@@ -464,6 +536,7 @@ function initKeyboardHandlers(): void {
 }
 
 // ─── CSV EXPORT ──────────────────────────────────────────────────────────────
+
 function exportCsv(): void {
   const requests = state.getAllRequests();
   if (requests.length === 0) return;
@@ -498,14 +571,14 @@ function exportCsv(): void {
 }
 
 // ─── TOOLBAR EVENTS ──────────────────────────────────────────────────────────
+
 function initToolbarHandlers(): void {
-  const btnClear = document.getElementById('btn-clear') as HTMLButtonElement;
-  const chkPause = document.getElementById('chk-pause') as HTMLInputElement;
-  const btnCloseDetail = document.getElementById('btn-close-detail') as HTMLButtonElement;
-  const btnExport = document.getElementById('btn-export') as HTMLButtonElement;
-  const btnClearCookies = document.getElementById('btn-clear-cookies') as HTMLButtonElement;
-  const btnSettings = document.getElementById('btn-settings') as HTMLButtonElement;
-  const btnResetFilters = document.getElementById('btn-reset-filters') as HTMLButtonElement;
+  const btnClear = document.getElementById('btn-clear');
+  const btnCloseDetail = document.getElementById('btn-close-detail');
+  const btnExport = document.getElementById('btn-export');
+  const btnClearCookies = document.getElementById('btn-clear-cookies');
+  const btnSettings = document.getElementById('btn-settings');
+  const btnResetFilters = document.getElementById('btn-reset-filters');
 
   // Clear button
   btnClear?.addEventListener('click', () => {
@@ -522,42 +595,59 @@ function initToolbarHandlers(): void {
     }
 
     if (DOM.filterInput) DOM.filterInput.value = '';
+
     const clearFilter = DOM.clearFilter;
     if (clearFilter) clearFilter.style.display = 'none';
+
     const list = DOM.list;
     if (list) {
       list.innerHTML = '';
       const empty = DOM.empty;
       if (empty) list.appendChild(empty);
     }
+
     const empty = DOM.empty;
     if (empty) empty.style.display = '';
+
     const detail = DOM.detail;
     if (detail) detail.classList.add('hidden');
+
     const groupList = DOM.providerGroupList;
     if (groupList) groupList.innerHTML = '';
+
     const searchInput = DOM.providerSearchInput;
     if (searchInput) searchInput.value = '';
+
     const filters = DOM.activeFilters;
     if (filters) filters.innerHTML = '';
 
     clearPruneTimer();
     clearTabCache();
+
     if (window._clearHeavyData) window._clearHeavyData();
 
     DOM.providerPopover?.classList.remove('visible');
     DOM.btnProviders?.classList.remove('active');
+
     const filterBar = DOM.filterBar;
     if (filterBar) filterBar.classList.remove('visible');
+
     updateStatusBar(0, 0, 0);
     updateFilterBarVisibility();
   });
 
-  // Pause checkbox
-  chkPause?.addEventListener('change', (e: Event) => {
-    const checked = (e.target as HTMLInputElement).checked;
-    state.setIsPaused(checked);
-    document.body.classList.toggle('paused', checked);
+  // Pause button
+  const btnPause = document.getElementById('btn-pause');
+  btnPause?.addEventListener('click', () => {
+    const isPaused = !state.getIsPaused();
+    state.setIsPaused(isPaused);
+    document.body.classList.toggle('paused', isPaused);
+    btnPause.classList.toggle('active', isPaused);
+    (btnPause.querySelector('.pause-icon') as HTMLElement).style.display = isPaused ? 'none' : '';
+    (btnPause.querySelector('.play-icon') as HTMLElement).style.display = isPaused ? '' : 'none';
+    (btnPause.querySelector('.pause-text') as HTMLElement).style.display = isPaused ? 'none' : '';
+    (btnPause.querySelector('.play-text') as HTMLElement).style.display = isPaused ? '' : 'none';
+    btnPause.title = isPaused ? 'Resume capture' : 'Pause capture';
   });
 
   // Search input
@@ -598,10 +688,7 @@ function initToolbarHandlers(): void {
     if (state.getConfig().exportFormat === 'csv') {
       exportCsv();
     } else {
-      const blob = new Blob(
-        [JSON.stringify(state.getAllRequests(), null, 2)],
-        { type: 'application/json' }
-      );
+      const blob = new Blob([JSON.stringify(state.getAllRequests(), null, 2)], { type: 'application/json' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
       a.download = `requests-${Date.now()}.json`;
@@ -632,7 +719,7 @@ function initToolbarHandlers(): void {
   });
 
   // Settings popover
-  btnSettings?.addEventListener('click', (e: MouseEvent) => {
+  btnSettings?.addEventListener('click', (e: Event) => {
     e.stopPropagation();
     DOM.settingsPopover?.classList.toggle('visible');
     DOM.providerPopover?.classList.remove('visible');
@@ -640,31 +727,22 @@ function initToolbarHandlers(): void {
     closeInfoPopover();
   });
 
-  document.addEventListener('click', (e: MouseEvent) => {
+  document.addEventListener('click', (e: Event) => {
     const target = e.target as HTMLElement;
-    if (
-      !DOM.settingsPopover?.contains(target) &&
-      !target.closest('#btn-settings')
-    ) {
+    if (!DOM.settingsPopover?.contains(target) && !target.closest('#btn-settings')) {
       DOM.settingsPopover?.classList.remove('visible');
     }
-    if (
-      !DOM.providerPopover?.contains(target) &&
-      !target.closest('#btn-providers')
-    ) {
+    if (!DOM.providerPopover?.contains(target) && !target.closest('#btn-providers')) {
       DOM.providerPopover?.classList.remove('visible');
     }
-    if (
-      !DOM.infoPopover?.contains(target) &&
-      !target.closest('#btn-info')
-    ) {
+    if (!DOM.infoPopover?.contains(target) && !target.closest('#btn-info')) {
       closeInfoPopover();
     }
   });
 
   // Provider popover
-  const btnProviders = document.getElementById('btn-providers') as HTMLButtonElement;
-  btnProviders?.addEventListener('click', (e: MouseEvent) => {
+  const btnProviders = document.getElementById('btn-providers');
+  btnProviders?.addEventListener('click', (e: Event) => {
     e.stopPropagation();
     DOM.providerPopover?.classList.toggle('visible');
     DOM.settingsPopover?.classList.remove('visible');
@@ -680,9 +758,7 @@ function initToolbarHandlers(): void {
     if (DOM.filterInput) DOM.filterInput.value = '';
     const clearFilter = DOM.clearFilter;
     if (clearFilter) clearFilter.style.display = 'none';
-    qsa('.ppill.inactive').forEach((p) =>
-      p.classList.replace('inactive', 'active')
-    );
+    document.querySelectorAll('.ppill.inactive').forEach((p) => p.classList.replace('inactive', 'active'));
     DOM.btnProviders?.classList.remove('active');
     doApplyFilters();
     doUpdateActiveFilters();
@@ -691,6 +767,7 @@ function initToolbarHandlers(): void {
 }
 
 // ─── QUICK ACTIONS ───────────────────────────────────────────────────────────
+
 function applyWrapValuesClass(): void {
   document.body.classList.toggle('wrap-values', state.getConfig().wrapValues);
 }
@@ -700,11 +777,10 @@ function applyCompactRowsClass(): void {
 }
 
 function syncQuickButtons(): void {
-  const sortBtn = document.getElementById('btn-quick-sort') as HTMLButtonElement | null;
-  const wrapBtn = document.getElementById('btn-quick-wrap') as HTMLButtonElement | null;
-  const expandBtn = document.getElementById('btn-quick-expand') as HTMLButtonElement | null;
-  const compactBtn = document.getElementById('btn-quick-compact') as HTMLButtonElement | null;
-
+  const sortBtn = document.getElementById('btn-quick-sort');
+  const wrapBtn = document.getElementById('btn-quick-wrap');
+  const expandBtn = document.getElementById('btn-quick-expand');
+  const compactBtn = document.getElementById('btn-quick-compact');
   const cfg = state.getConfig();
 
   if (sortBtn) {
@@ -751,9 +827,10 @@ function initQuickActions(): void {
 }
 
 // ─── CONFIG UI ───────────────────────────────────────────────────────────────
+
 function initConfigUI(): void {
-  const cfgMaxEl = document.getElementById('cfg-max-requests') as HTMLInputElement;
-  const cfgPruneEl = document.getElementById('cfg-auto-prune') as HTMLInputElement;
+  const cfgMaxEl = document.getElementById('cfg-max-requests') as HTMLInputElement | null;
+  const cfgPruneEl = document.getElementById('cfg-auto-prune') as HTMLInputElement | null;
 
   if (cfgMaxEl) {
     cfgMaxEl.value = String(state.getConfig().maxRequests);
@@ -776,7 +853,7 @@ function initConfigUI(): void {
   if (cfgSortEl) {
     cfgSortEl.value = state.getConfig().sortOrder;
     cfgSortEl.addEventListener('change', (e: Event) => {
-      const value = (e.target as HTMLSelectElement).value as 'asc' | 'desc';
+      const value = (e.target as HTMLSelectElement).value;
       state.updateConfig('sortOrder', value);
       syncQuickButtons();
     });
@@ -807,7 +884,7 @@ function initConfigUI(): void {
   if (cfgDefaultTabEl) {
     cfgDefaultTabEl.value = state.getConfig().defaultTab;
     cfgDefaultTabEl.addEventListener('change', (e: Event) => {
-      const value = (e.target as HTMLSelectElement).value as 'decoded' | 'query' | 'post' | 'headers' | 'response';
+      const value = (e.target as HTMLSelectElement).value;
       state.updateConfig('defaultTab', value);
     });
   }
@@ -826,7 +903,7 @@ function initConfigUI(): void {
   if (cfgTimestampEl) {
     cfgTimestampEl.value = state.getConfig().timestampFormat;
     cfgTimestampEl.addEventListener('change', (e: Event) => {
-      const value = (e.target as HTMLSelectElement).value as 'absolute' | 'relative' | 'elapsed';
+      const value = (e.target as HTMLSelectElement).value;
       state.updateConfig('timestampFormat', value);
     });
   }
@@ -835,24 +912,27 @@ function initConfigUI(): void {
   if (cfgExportFmtEl) {
     cfgExportFmtEl.value = state.getConfig().exportFormat;
     cfgExportFmtEl.addEventListener('change', (e: Event) => {
-      const value = (e.target as HTMLSelectElement).value as 'json' | 'csv';
+      const value = (e.target as HTMLSelectElement).value;
       state.updateConfig('exportFormat', value);
     });
   }
 }
 
 // ─── CATEGORY TOGGLE ─────────────────────────────────────────────────────────
+
 function initCategoryToggle(): void {
-  document.addEventListener('click', (e: MouseEvent) => {
+  document.addEventListener('click', (e: Event) => {
     const header = (e.target as HTMLElement).closest('.category-header');
     if (!header) return;
+
     header.classList.toggle('collapsed');
     const content = header.nextElementSibling;
     if (content && content.classList.contains('category-content')) {
       content.classList.toggle('collapsed');
     }
+
     // Persist collapsed state
-    const catKey = (header.closest('.category-section') as HTMLElement)?.dataset.category;
+    const catKey = header.closest('.category-section')?.dataset.category;
     if (catKey) {
       const isNowCollapsed = header.classList.contains('collapsed');
       const current = new Set(state.getConfig().collapsedGroups);
@@ -864,12 +944,15 @@ function initCategoryToggle(): void {
 }
 
 // ─── COPY TO CLIPBOARD ───────────────────────────────────────────────────────
+
 function initCopyHandler(): void {
-  document.addEventListener('click', (e: MouseEvent) => {
+  document.addEventListener('click', (e: Event) => {
     const copyBtn = (e.target as HTMLElement).closest('.param-copy-btn');
     if (!copyBtn) return;
+
     const value = (copyBtn as HTMLElement).dataset.copy;
     if (!value) return;
+
     navigator.clipboard
       .writeText(value)
       .then(() => {
@@ -881,8 +964,9 @@ function initCopyHandler(): void {
 }
 
 // ─── REQUEST LIST CLICK ──────────────────────────────────────────────────────
+
 function initRequestListHandler(): void {
-  DOM.list?.addEventListener('click', (e: MouseEvent) => {
+  DOM.list?.addEventListener('click', (e: Event) => {
     const row = (e.target as HTMLElement).closest('.req-row');
     if (!row) return;
     const id = (row as HTMLElement).dataset.id;
@@ -893,6 +977,7 @@ function initRequestListHandler(): void {
 }
 
 // ─── DATALAYER HANDLERS ───────────────────────────────────────────────────────
+
 function initDatalayerHandlers(): void {
   // View switching
   document.querySelectorAll('.tab-btn[data-view]').forEach((btn) => {
@@ -905,10 +990,17 @@ function initDatalayerHandlers(): void {
   // DL Clear button
   document.getElementById('dl-btn-clear')?.addEventListener('click', dlClearAll);
 
-  // DL Pause checkbox
-  const $dlPause = document.getElementById('dl-chk-pause') as HTMLInputElement | null;
-  $dlPause?.addEventListener('change', () => {
-    setDlIsPaused($dlPause.checked);
+  // DL Pause button
+  const $dlPause = document.getElementById('dl-btn-pause');
+  $dlPause?.addEventListener('click', () => {
+    const isPaused = !dlState.getDlIsPaused();
+    dlState.setDlIsPaused(isPaused);
+    $dlPause.classList.toggle('active', isPaused);
+    ($dlPause.querySelector('.pause-icon') as HTMLElement).style.display = isPaused ? 'none' : '';
+    ($dlPause.querySelector('.play-icon') as HTMLElement).style.display = isPaused ? '' : 'none';
+    ($dlPause.querySelector('.pause-text') as HTMLElement).style.display = isPaused ? 'none' : '';
+    ($dlPause.querySelector('.play-text') as HTMLElement).style.display = isPaused ? '' : 'none';
+    $dlPause.title = isPaused ? 'Resume DataLayer capture' : 'Pause DataLayer capture';
   });
 
   // DL active filter pills
@@ -916,15 +1008,19 @@ function initDatalayerHandlers(): void {
     const $bar = document.getElementById('dl-filter-bar');
     if (!$bar) return;
     $bar.innerHTML = '';
+
     const pills: { label: string; onRemove: () => void }[] = [];
 
-    const text = getDlFilterText();
+    const text = dlState.getDlFilterText();
+    const $dlInput = DOM.dlFilterInput;
+    const $dlClearBtn = document.getElementById('dl-clear-filter');
+
     if (text) {
       pills.push({
         label: `"${text}"`,
         onRemove: () => {
-          setDlFilterText('');
-          ($dlInput as HTMLInputElement).value = '';
+          dlState.setDlFilterText('');
+          if ($dlInput) $dlInput.value = '';
           if ($dlClearBtn) $dlClearBtn.style.display = 'none';
           dlApplyFilter();
           updateDlActiveFilters();
@@ -932,14 +1028,14 @@ function initDatalayerHandlers(): void {
       });
     }
 
-    const src = getDlFilterSource();
+    const src = dlState.getDlFilterSource();
     const srcLabels: Record<string, string> = { gtm: 'GTM', digitalData: 'W3C', tealium: 'Tealium', adobe: 'Adobe', segment: 'Segment' };
     if (src) {
       pills.push({
         label: `Source: ${srcLabels[src] ?? src}`,
         onRemove: () => {
-          setDlFilterSource('');
-          const $sel = document.getElementById('dl-filter-source') as HTMLSelectElement | null;
+          dlState.setDlFilterSource('');
+          const $sel = document.getElementById('dl-filter-source');
           if ($sel) $sel.value = '';
           dlApplyFilter();
           updateDlActiveFilters();
@@ -951,7 +1047,7 @@ function initDatalayerHandlers(): void {
       const el = document.createElement('span');
       el.className = 'filter-pill filter-pill--search';
       el.innerHTML = `<span class="filter-pill-label" style="font-size:11px">${p.label}</span><span class="filter-pill-remove" style="margin-left:4px;cursor:pointer;opacity:0.6">&times;</span>`;
-      el.querySelector('.filter-pill-remove')!.addEventListener('click', p.onRemove);
+      el.querySelector('.filter-pill-remove')?.addEventListener('click', p.onRemove);
       $bar.appendChild(el);
     });
 
@@ -963,9 +1059,9 @@ function initDatalayerHandlers(): void {
   const $dlClearBtn = document.getElementById('dl-clear-filter');
   if ($dlInput) {
     $dlInput.addEventListener('input', () => {
-      const hasText = ($dlInput as HTMLInputElement).value.length > 0;
+      const hasText = $dlInput.value.length > 0;
       if ($dlClearBtn) $dlClearBtn.style.display = hasText ? '' : 'none';
-      setDlFilterText(($dlInput as HTMLInputElement).value);
+      dlState.setDlFilterText($dlInput.value);
       dlApplyFilter();
       updateDlActiveFilters();
     });
@@ -973,9 +1069,9 @@ function initDatalayerHandlers(): void {
 
   // DL clear filter button (✕ inside filter input)
   $dlClearBtn?.addEventListener('click', () => {
-    if ($dlInput) ($dlInput as HTMLInputElement).value = '';
+    if ($dlInput) $dlInput.value = '';
     $dlClearBtn.style.display = 'none';
-    setDlFilterText('');
+    dlState.setDlFilterText('');
     dlApplyFilter();
     updateDlActiveFilters();
   });
@@ -983,15 +1079,25 @@ function initDatalayerHandlers(): void {
   // DL source filter select
   const $dlSourceSelect = document.getElementById('dl-filter-source') as HTMLSelectElement | null;
   $dlSourceSelect?.addEventListener('change', () => {
-    setDlFilterSource($dlSourceSelect.value as Parameters<typeof setDlFilterSource>[0]);
+    dlState.setDlFilterSource($dlSourceSelect.value);
     dlApplyFilter();
     updateDlActiveFilters();
   });
 
+  // DL E-commerce toggle button
+  document.getElementById('dl-ecommerce-toggle')?.addEventListener('click', () => {
+    const current = dlState.getDlEcommerceOnly();
+    dlState.setDlEcommerceOnly(!current);
+    dlApplyFilter();
+    updateDlActiveFilters();
+    document.getElementById('dl-ecommerce-toggle')?.classList.toggle('active', !current);
+    updateDlStatusBar();
+  });
+
   // DL Export button — respects AppConfig.exportFormat (json or csv), exports only visible pushes
   document.getElementById('dl-btn-export')?.addEventListener('click', () => {
-    const filteredIds = getDlFilteredIds();
-    const pushes = getAllDlPushes().filter(p => filteredIds.has(p.id));
+    const filteredIds = dlState.getDlFilteredIds();
+    const pushes = dlState.getAllDlPushes().filter(p => filteredIds.has(p.id));
     const fmt = state.getConfig().exportFormat;
     if (fmt === 'csv') exportDlCsv(pushes);
     else exportDlJson(pushes);
@@ -999,23 +1105,37 @@ function initDatalayerHandlers(): void {
 
   // DL Re-inject button (shown in empty state)
   document.getElementById('dl-btn-reinject')?.addEventListener('click', () => {
-    (window as Record<string, unknown>)['triggerReinject']?.();
+    window['triggerReinject']?.();
   });
 
   // DL Detail close button
   document.getElementById('dl-detail-close')?.addEventListener('click', () => {
     closeDlDetail();
-    setDlSelectedId(null);
+    dlState.setDlSelectedId(null);
   });
 
   // DL Detail tab handlers
   const currentPushGetter = (): DataLayerPush | null => {
-    const id = getDlSelectedId();
+    const id = dlState.getDlSelectedId();
     if (id == null) return null;
-    return getDlPushById(id) ?? null;
+    return dlState.getDlPushById(id) ?? null;
   };
-  initDlDetailTabHandlers(currentPushGetter, (_reqId) => {
+  initDlDetailTabHandlers(currentPushGetter, (reqId) => {
     switchView('network');
+
+    const reqData = state.getRequestMap().get(String(reqId));
+    if (!reqData) return;
+
+    const row = document.querySelector(`.req-row[data-id="${reqId}"]`) as HTMLElement | null;
+    if (!row) return;
+
+    // Make row visible if hidden by filter or provider filter
+    if (row.classList.contains('filtered-out') || row.classList.contains('provider-hidden')) {
+      row.classList.remove('filtered-out', 'provider-hidden');
+      row.style.display = '';
+    }
+
+    selectRequest(reqData, row);
   });
 
   // DL Splitter drag
@@ -1042,11 +1162,14 @@ function initDatalayerHandlers(): void {
       document.body.style.userSelect = '';
     });
     const savedWidth = localStorage.getItem('rt-dl-list-width');
-    if (savedWidth) $dlMain.style.gridTemplateColumns = `${savedWidth}px 6px 1fr`;
+    if (savedWidth) {
+      $dlMain.style.gridTemplateColumns = `${savedWidth}px 6px 1fr`;
+    }
   }
 }
 
 // ─── INITIALIZE ──────────────────────────────────────────────────────────────
+
 async function init(): Promise<void> {
   // Load config first
   await state.loadConfig();

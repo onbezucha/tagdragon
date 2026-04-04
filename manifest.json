@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "TagDragon",
-  "version": "1.4.1",
+  "version": "1.5.0",
   "description": "The dragon that sees every tag. Captures and decodes network requests from analytics, tracking, and marketing tags.",
 
   "action": {

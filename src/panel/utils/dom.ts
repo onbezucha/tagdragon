@@ -31,6 +31,12 @@ export function qsa<T extends Element = Element>(
 // Cached DOM references for performance
 
 interface DOMRefs {
+  // ─── TOOLBAR REFS ──────────────────────────────────────────────────────
+  readonly globalTabBar: HTMLElement | null;
+  readonly tabBadgeNetwork: HTMLElement | null;
+  readonly tabBadgeDatalayer: HTMLElement | null;
+  readonly networkContext: HTMLElement | null;
+  readonly datalayerContext: HTMLElement | null;
   // ─── NETWORK REFS ───────────────────────────────────────────────────────
   readonly list: HTMLElement | null;
   readonly empty: HTMLElement | null;
@@ -39,7 +45,7 @@ interface DOMRefs {
   readonly detailUrl: HTMLElement | null;
   readonly detailContent: HTMLElement | null;
   readonly detailTabs: HTMLElement | null;
-  readonly statusStats: HTMLElement | null;
+  readonly statusText: HTMLElement | null;
   readonly filterInput: HTMLInputElement | null;
   readonly clearFilter: HTMLElement | null;
   readonly metaMethod: HTMLElement | null;
@@ -85,7 +91,6 @@ interface DOMRefs {
   readonly dlBtnExport: HTMLElement | null;
   readonly dlView: HTMLElement | null;
   readonly dlFilterBar: HTMLElement | null;
-  readonly dlStatusText: HTMLElement | null;
   readonly dlMain: HTMLElement | null;
   readonly dlDetailContent: HTMLElement | null;
   readonly dlDetailTabs: HTMLElement | null;
@@ -94,6 +99,13 @@ interface DOMRefs {
 }
 
 export const DOM: DOMRefs = {
+  // ─── TOOLBAR REFS ──────────────────────────────────────────────────────
+  get globalTabBar() { return $('global-tab-bar'); },
+  get tabBadgeNetwork() { return $('tab-badge-network'); },
+  get tabBadgeDatalayer() { return $('tab-badge-datalayer'); },
+  get networkContext() { return $('network-context'); },
+  get datalayerContext() { return $('datalayer-context'); },
+  // ─── NETWORK REFS ───────────────────────────────────────────────────────
   get list() { return $('request-list'); },
   get empty() { return $('empty-state'); },
   get detail() { return $('detail-pane'); },
@@ -101,7 +113,7 @@ export const DOM: DOMRefs = {
   get detailUrl() { return $('detail-url'); },
   get detailContent() { return $('detail-content'); },
   get detailTabs() { return $('detail-tabs'); },
-  get statusStats() { return $('status-stats'); },
+  get statusText() { return $('status-text'); },
   get filterInput() { return $<HTMLInputElement>('filter-input'); },
   get clearFilter() { return $('btn-clear-filter'); },
   get metaMethod() { return $('meta-method'); },
@@ -147,7 +159,6 @@ export const DOM: DOMRefs = {
   get dlBtnExport() { return $('dl-btn-export'); },
   get dlView() { return $('datalayer-view'); },
   get dlFilterBar() { return $('dl-filter-bar'); },
-  get dlStatusText() { return $('dl-status-text'); },
   get dlMain() { return $('dl-main'); },
   get dlDetailContent() { return $('dl-detail-content'); },
   get dlDetailTabs() { return $('dl-detail-tabs'); },

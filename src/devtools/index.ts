@@ -69,15 +69,15 @@ chrome.devtools.panels.create(
       // Expose re-inject helper so panel.js can trigger injection on demand
       (win as Record<string, unknown>)['triggerReinject'] = () => {
         chrome.runtime.sendMessage({ type: 'INJECT_DATALAYER', tabId }).catch(() => {});
-        chrome.runtime.sendMessage({ type: 'DATALAYER_SNAPSHOT_REQUEST', tabId }).catch(() => {});
       };
       // Flush any DataLayer pushes that arrived before the panel was visible
       flushDataLayerBuffer();
-      // Inject DataLayer content scripts into inspected tab (idempotent)
+      // Inject DataLayer content scripts into inspected tab (idempotent).
+      // Bridge is injected and awaited BEFORE main, so bridge's message listener
+      // is ready when main runs and sends TAGDRAGON_DL_PUSH via postMessage.
+      // The TAGDRAGON_BRIDGE_READY mechanism inside the scripts handles replay
+      // of existing data — no separate DATALAYER_SNAPSHOT_REQUEST needed.
       chrome.runtime.sendMessage({ type: 'INJECT_DATALAYER', tabId }).catch(() => { /* ignore */ });
-      // Ask content script to replay current dataLayer state (handles case where
-      // MAIN world script ran before panel was open and replayed items were dropped)
-      chrome.runtime.sendMessage({ type: 'DATALAYER_SNAPSHOT_REQUEST', tabId }).catch(() => { /* ignore */ });
     });
 
     // Re-inject on navigation — panel.onShown does not fire on page navigation,

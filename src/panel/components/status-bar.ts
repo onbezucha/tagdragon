@@ -9,33 +9,60 @@ import {
   getStatsTotalSize,
   getStatsTotalDuration,
 } from '../state';
+import { getAllDlPushes, getDlVisibleCount, getDlTotalCount } from '../datalayer/state';
 
 let pruneNotificationTimer: NodeJS.Timeout | null = null;
 
 /**
- * Update the status bar display.
+ * Update the network status bar display.
  * @param visibleCount Number of visible requests
  * @param totalSize Total size in bytes
  * @param totalDuration Total duration in milliseconds
  */
 export function updateStatusBar(visibleCount: number, totalSize: number, totalDuration: number): void {
+  const $statusText = DOM.statusText;
+  if (!$statusText) return;
+
   const avgTime = visibleCount > 0 ? Math.round(totalDuration / visibleCount) : 0;
   const allRequests = getAllRequests();
   const config = getConfig();
-  
-  DOM.statusStats!.textContent = `${visibleCount} / ${allRequests.length} requests · ${formatBytes(totalSize)} · Avg ${avgTime > 0 ? avgTime + 'ms' : '—'}`;
-  
+
+  $statusText.textContent = `${visibleCount} / ${allRequests.length} requests · ${formatBytes(totalSize)} · Avg ${avgTime > 0 ? avgTime + 'ms' : '—'}`;
+
   // Memory warning indicator
   if (config.maxRequests > 0) {
     const usage = allRequests.length / config.maxRequests;
     if (usage > 0.95) {
-      DOM.statusStats!.style.color = 'var(--red)';
+      $statusText.style.color = 'var(--red)';
     } else if (usage > 0.8) {
-      DOM.statusStats!.style.color = 'var(--orange)';
+      $statusText.style.color = 'var(--orange)';
     } else {
-      DOM.statusStats!.style.color = '';
+      $statusText.style.color = '';
     }
   }
+}
+
+/**
+ * Update the DataLayer status bar display.
+ */
+export function updateDlStatusBar(): void {
+  const $statusText = DOM.statusText;
+  if (!$statusText) return;
+
+  const visible = getDlVisibleCount();
+  const total = getDlTotalCount();
+  const pushes = getAllDlPushes();
+
+  const parts: string[] = [`${visible} / ${total} pushes`];
+
+  // E-commerce count
+  const ecCount = pushes.filter(p => p._ecommerceType).length;
+  if (ecCount > 0) {
+    parts.push(`${ecCount} e-commerce`);
+  }
+
+  $statusText.textContent = parts.join(' · ');
+  $statusText.style.color = '';
 }
 
 /**
@@ -43,18 +70,21 @@ export function updateStatusBar(visibleCount: number, totalSize: number, totalDu
  * @param count Number of pruned requests
  */
 export function showPruneNotification(count: number): void {
+  const $statusText = DOM.statusText;
+  if (!$statusText) return;
+
   const visibleCount = getStatsVisibleCount();
   const totalSize = getStatsTotalSize();
   const totalDuration = getStatsTotalDuration();
   const avgTime = visibleCount > 0 ? Math.round(totalDuration / visibleCount) : 0;
   const allRequests = getAllRequests();
-  
-  DOM.statusStats!.textContent = `${visibleCount} / ${allRequests.length} requests · ${formatBytes(totalSize)} · Avg ${avgTime > 0 ? avgTime + 'ms' : '—'} · (${count} oldest removed)`;
-  DOM.statusStats!.style.color = 'var(--orange)';
-  
+
+  $statusText.textContent = `${visibleCount} / ${allRequests.length} requests · ${formatBytes(totalSize)} · Avg ${avgTime > 0 ? avgTime + 'ms' : '—'} · (${count} oldest removed)`;
+  $statusText.style.color = 'var(--orange)';
+
   clearTimeout(pruneNotificationTimer as NodeJS.Timeout);
   pruneNotificationTimer = setTimeout(() => {
-    DOM.statusStats!.style.color = '';
+    $statusText.style.color = '';
     updateStatusBar(visibleCount, totalSize, totalDuration);
   }, 3000);
 }

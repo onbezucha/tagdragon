@@ -134,12 +134,11 @@
       // This handles the extension reload race: bridge posts READY after its listeners
       // are set up, so by the time MAIN world responds, the bridge is guaranteed ready.
       detectAndIntercept();
+      // GTM: replay the entire dataLayer array (detectAndIntercept only replays
+      // via interceptDataLayer, which also patches .push — we replay here to
+      // ensure all items are sent even if the array was already intercepted).
       const dl = win['dataLayer'];
       if (Array.isArray(dl)) replayDataLayer(dl);
-      // Check current state, not just detected flag (handles async-loaded digitalData)
-      if (detected.digitalData || (win['digitalData'] && typeof win['digitalData'] === 'object')) {
-        sendDigitalDataSnapshot(true);
-      }
       postDetectedSources();
       return;
     }
@@ -147,7 +146,7 @@
     if (event.data.type === 'TAGDRAGON_DL_REPLAY_REQUEST') {
       const dl = win['dataLayer'];
       if (Array.isArray(dl)) replayDataLayer(dl);
-      // Check current state, not just detected flag (handles async-loaded digitalData)
+      // digitalData: send snapshot if detected
       if (detected.digitalData || (win['digitalData'] && typeof win['digitalData'] === 'object')) {
         sendDigitalDataSnapshot(true);
       }

@@ -74,7 +74,6 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   // tabId comes from sender.tab.id, NOT from message body
   if (message.type === 'DATALAYER_PUSH') {
     const tabId = _sender.tab?.id;
-    console.debug('[TagDragon] bg: DATALAYER_PUSH from tabId', tabId, 'portExists:', devToolsPorts.has(tabId ?? -1), 'allPorts:', [...devToolsPorts.keys()]);
     if (tabId != null) {
       const port = devToolsPorts.get(tabId);
       if (port) {
@@ -137,13 +136,15 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         }).catch(() => { /* ignore — tab may not be scriptable */ });
 
         // 3. ISOLATED world bridge (relays postMessage → runtime.sendMessage)
-        chrome.scripting.executeScript({
+        //    AWAIT so the bridge's message listener is registered before MAIN world runs.
+        await chrome.scripting.executeScript({
           target: { tabId },
           files: ['dist/data-layer-bridge.js'],
         }).catch((e: Error) => console.warn('[TagDragon] Failed to inject bridge:', e.message));
 
         // 4. MAIN world interceptor — world: 'MAIN' bypasses page CSP
-        chrome.scripting.executeScript({
+        //    AWAIT so injection is fully complete before we return.
+        await chrome.scripting.executeScript({
           target: { tabId },
           files: ['dist/data-layer-main.js'],
           world: 'MAIN' as chrome.scripting.ExecutionWorld,

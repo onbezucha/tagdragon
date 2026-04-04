@@ -28,7 +28,7 @@
 
     body {
       display: grid;
-      grid-template-rows: 36px auto 1fr 24px;
+      grid-template-rows: 32px 34px auto 1fr 24px;
       gap: 0;
       overflow: hidden;
     }
@@ -43,21 +43,41 @@
       border-top-color: var(--accent);
     }
 
-    /* === TOOLBAR === */
-    #toolbar {
+    /* === ROW 1 — GLOBAL TAB BAR (32px) === */
+    #global-tab-bar {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0 8px;
+      padding: 0 10px;
       background-color: var(--bg-1);
       border-bottom: 1px solid var(--border);
-      gap: 8px;
+      gap: 10px;
+      height: 32px;
+      grid-row: 1;
     }
 
-    #toolbar > .toolbar-section {
+    .gtb-section {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .gtb-right {
       display: flex;
       align-items: center;
       gap: 8px;
+    }
+
+    /* === ROW 2 — CONTEXT TOOLBAR (34px) === */
+    .context-toolbar {
+      display: flex;
+      align-items: center;
+      padding: 0 8px;
+      background-color: var(--bg-0);
+      border-bottom: 3px solid var(--border-strong);
+      gap: 8px;
+      height: 34px;
+      grid-row: 2;
     }
 
     .toolbar-separator {
@@ -145,67 +165,57 @@
       padding: 4px 6px;
     }
 
-    /* Pause toggle */
-    #chk-pause {
-      display: none;
-    }
-
-    label[for="chk-pause"] {
+    /* Pause button */
+    .pause-btn {
       display: flex;
       align-items: center;
       gap: 4px;
       padding: 4px 6px;
       cursor: pointer;
+      border: none;
+      background: none;
       border-radius: 3px;
       transition: background-color 150ms;
       user-select: none;
       font-size: 12px;
+      color: var(--text-1);
     }
 
-    label[for="chk-pause"]:hover {
+    .pause-btn:hover {
       background-color: var(--bg-2);
     }
 
-    label[for="chk-pause"] svg {
+    .pause-btn svg {
       width: 12px;
       height: 14px;
     }
 
-    /* Paused state styling */
-    label[for="chk-pause"] .pause-icon {
-      display: block;
-    }
-
-    label[for="chk-pause"] .play-icon {
+    .pause-btn .play-icon {
       display: none;
     }
 
-    label[for="chk-pause"] .pause-text {
-      display: inline;
-    }
-
-    label[for="chk-pause"] .play-text {
+    .pause-btn .play-text {
       display: none;
     }
 
-    #chk-pause:checked ~ label[for="chk-pause"] {
+    .pause-btn.active {
       background-color: var(--accent);
       color: #fff;
     }
 
-    #chk-pause:checked ~ label[for="chk-pause"] .pause-icon {
+    .pause-btn.active .pause-icon {
       display: none;
     }
 
-    #chk-pause:checked ~ label[for="chk-pause"] .play-icon {
+    .pause-btn.active .play-icon {
       display: block;
     }
 
-    #chk-pause:checked ~ label[for="chk-pause"] .pause-text {
+    .pause-btn.active .pause-text {
       display: none;
     }
 
-    #chk-pause:checked ~ label[for="chk-pause"] .play-text {
+    .pause-btn.active .play-text {
       display: inline;
     }
 
@@ -303,7 +313,7 @@
     /* Settings popover */
     #settings-popover {
       position: absolute;
-      top: 40px;
+      top: 66px;
       right: 8px;
       background-color: var(--bg-1);
       border: 1px solid var(--border);
@@ -609,7 +619,7 @@
 
     #provider-popover {
       position: absolute;
-      top: 40px;
+      top: 66px;
       right: 8px;
       background-color: var(--bg-1);
       border: 1px solid var(--border);
@@ -754,35 +764,6 @@
       display: flex;
     }
 
-    .add-filter-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      padding: 3px 10px;
-      font-size: 11px;
-      font-weight: 500;
-      color: var(--text-1);
-      background: var(--bg-2);
-      border: 1px dashed var(--border);
-      border-radius: 12px;
-      cursor: pointer;
-      transition: all 150ms;
-      white-space: nowrap;
-      flex-shrink: 0;
-    }
-
-    .add-filter-btn:hover {
-      color: var(--accent);
-      border-color: var(--accent);
-      border-style: solid;
-      background: var(--accent-muted);
-    }
-
-    .add-filter-btn svg {
-      width: 10px;
-      height: 10px;
-    }
-
     #active-filters {
       display: flex;
       gap: 4px;
@@ -805,30 +786,54 @@
       gap: 5px;
       padding: 4px 10px;
       background: none;
-      border: 1px solid transparent;
-      border-radius: 4px;
+      border: none;
+      border-bottom: 2px solid transparent;
+      border-radius: 4px 4px 0 0;
       font-size: 12px;
       font-weight: 500;
-      color: var(--text-2);
+      color: var(--text-1);
       cursor: pointer;
-      transition: all 150ms;
+      transition: color 150ms, border-color 150ms, background-color 150ms;
       white-space: nowrap;
     }
 
     .tab-btn:hover {
       background: var(--bg-2);
-      color: var(--text-1);
+      color: var(--text-0);
     }
 
     .tab-btn.active {
-      background: var(--accent-muted);
-      border-color: var(--accent);
       color: var(--accent);
+      font-weight: 600;
+      border-bottom-color: var(--accent);
     }
 
     .tab-btn svg {
       width: 13px;
       height: 13px;
+    }
+
+    /* Tab badge — small count pill */
+    .tab-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 18px;
+      height: 16px;
+      padding: 0 4px;
+      border-radius: 8px;
+      font-size: 10px;
+      font-weight: 600;
+      font-family: var(--font-mono);
+      background: var(--bg-2);
+      color: var(--text-1);
+      border: 1px solid var(--border);
+    }
+
+    .tab-btn.active .tab-badge {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
     }
 
     .view-toolbar {
@@ -837,9 +842,33 @@
       gap: 8px;
     }
 
+    /* Context toolbar sections */
+    .view-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .ctx-left {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+    }
+
+    .ctx-left .filter-wrap {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .ctx-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
     /* === MAIN AREA === */
     #main, #datalayer-view {
-      grid-row: 3;
+      grid-row: 4;
       grid-column: 1;
       overflow: hidden;
     }
@@ -1681,7 +1710,7 @@
 
     /* === STATUS BAR === */
     #status-bar {
-      grid-row: 4;
+      grid-row: 5;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -1732,7 +1761,7 @@
 
     #consent-popover {
       position: absolute;
-      top: 40px;
+      top: 66px;
       right: 8px;
       background-color: var(--bg-1);
       border: 1px solid var(--border);
@@ -2075,7 +2104,7 @@
     /* === INFO POPOVER === */
     #info-popover {
       position: absolute;
-      top: 40px;
+      top: 66px;
       right: 8px;
       background-color: var(--bg-1);
       border: 1px solid var(--border);
@@ -2332,10 +2361,9 @@
   </style>
 </head>
 <body>
-  <!-- TOOLBAR -->
-  <div id="toolbar">
-    <div class="toolbar-section">
-      <!-- TAB SWITCHER (always visible) -->
+  <!-- ROW 1: GLOBAL TAB BAR -->
+  <div id="global-tab-bar">
+    <div class="gtb-section">
       <div id="tab-switcher">
         <button class="tab-btn active" data-view="network" title="Network requests">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -2350,91 +2378,8 @@
           <span>DataLayer</span>
         </button>
       </div>
-      <div class="toolbar-separator"></div>
-      <!-- NETWORK TOOLBAR -->
-      <div id="network-toolbar" class="view-toolbar">
-        <button id="btn-clear" title="Clear all (Ctrl+L)">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/>
-          </svg>
-        </button>
-        <div class="toolbar-separator"></div>
-        <input type="checkbox" id="chk-pause">
-        <label for="chk-pause" title="Pause capture">
-          <!-- Pause icon (shown when recording) -->
-          <svg class="pause-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/>
-          </svg>
-          <!-- Play icon (shown when paused) -->
-          <svg class="play-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polygon points="6 3 20 12 6 21 6 3"/>
-          </svg>
-          <span class="pause-text">Pause</span>
-          <span class="play-text" style="display: none;">Resume</span>
-        </label>
-        <div class="toolbar-separator"></div>
-        <div class="filter-wrap">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
-          </svg>
-          <input type="text" id="filter-input" placeholder="Filter by URL, parameter, or provider...">
-          <button id="btn-clear-filter">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
-            </svg>
-          </button>
-        </div>
-      </div>
-      <!-- DATALAYER TOOLBAR -->
-      <div id="datalayer-toolbar" class="view-toolbar" style="display:none;">
-        <button id="dl-btn-clear" title="Clear all DataLayer pushes">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
-          </svg>
-        </button>
-        <div class="toolbar-separator"></div>
-        <input type="checkbox" id="dl-chk-pause">
-        <label for="dl-chk-pause" title="Pause DataLayer capture" style="display:flex;align-items:center;gap:4px;padding:4px 6px;cursor:pointer;border-radius:3px;font-size:12px;user-select:none;">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/>
-          </svg>
-          Pause
-        </label>
-        <div class="toolbar-separator"></div>
-        <div id="dl-source-status" style="display:flex;align-items:center;gap:4px;"></div>
-        <div class="toolbar-separator"></div>
-        <select id="dl-filter-source" title="Filter by source">
-          <option value="">All sources</option>
-          <option value="gtm">GTM</option>
-          <option value="digitalData">W3C</option>
-          <option value="tealium">Tealium</option>
-          <option value="adobe">Adobe</option>
-          <option value="segment">Segment</option>
-        </select>
-        <div class="toolbar-separator"></div>
-        <div class="filter-wrap">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
-          </svg>
-          <input type="text" id="dl-filter-input" placeholder="Filter by event, key, or value...">
-          <button id="dl-clear-filter" title="Clear filter">
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
-            </svg>
-          </button>
-        </div>
-        <div class="toolbar-separator"></div>
-        <span id="dl-push-count" style="font-size:11px;color:var(--text-2);white-space:nowrap;padding:0 6px;" title="Total pushes received by panel">0 pushes</span>
-        <div class="toolbar-separator"></div>
-        <button id="dl-btn-export" title="Export DataLayer" style="display:flex;align-items:center;gap:4px;padding:4px 8px;font-size:12px;">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/>
-          </svg>
-          <span>Export</span>
-        </button>
-      </div>
     </div>
-    <div class="toolbar-section">
+    <div class="gtb-right">
       <!-- Adobe Environment Switcher Badge -->
       <div id="adobe-env-badge" class="env-badge hidden" title="Adobe environment">
         <span class="env-badge-dot"></span>
@@ -2456,7 +2401,44 @@
         </svg>
       </button>
       <div class="toolbar-separator"></div>
-      <!-- Quick Actions + Provider filter + Settings -->
+      <!-- Theme + Settings + Info -->
+      <button id="btn-theme-toggle" title="Toggle light/dark mode">
+        <svg class="theme-icon-sun" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>
+        </svg>
+        <svg class="theme-icon-moon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>
+        </svg>
+      </button>
+      <button id="btn-settings" title="Filters &amp; settings">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>
+        </svg>
+      </button>
+      <button id="btn-info" title="About TagDragon">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="16" y2="12"/><line x1="12" x2="12.01" y1="8" y2="8"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- ROW 2: NETWORK CONTEXT TOOLBAR -->
+  <div id="network-context" class="context-toolbar">
+    <div class="ctx-left">
+      <div class="filter-wrap">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+        </svg>
+        <input type="text" id="filter-input" placeholder="Filter by URL, parameter, or provider...">
+        <button id="btn-clear-filter">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+    <div class="ctx-right">
       <div id="quick-actions">
         <button id="btn-quick-sort" class="quick-btn" title="Sort: Newest first">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -2485,7 +2467,6 @@
         </svg>
       </button>
       <div class="toolbar-separator"></div>
-      <!-- Export -->
       <button id="btn-export" title="Export as JSON">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/>
@@ -2493,25 +2474,75 @@
         <span>Export</span>
       </button>
       <div class="toolbar-separator"></div>
-      <!-- Theme + Settings + Info -->
-      <button id="btn-theme-toggle" title="Toggle light/dark mode">
-        <!-- Sun icon (shown in dark mode) -->
-        <svg class="theme-icon-sun" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>
+      <button id="btn-pause" class="pause-btn" title="Pause capture">
+        <svg class="pause-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/>
         </svg>
-        <!-- Moon icon (shown in light mode) -->
-        <svg class="theme-icon-moon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>
+        <svg class="play-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="6 3 20 12 6 21 6 3"/>
+        </svg>
+        <span class="pause-text">Pause</span>
+        <span class="play-text">Resume</span>
+      </button>
+      <div class="toolbar-separator"></div>
+      <button id="btn-clear" title="Clear all (Ctrl+L)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/>
         </svg>
       </button>
-      <button id="btn-settings" title="Filters & settings">
+    </div>
+  </div>
+
+  <!-- ROW 2: DATALAYER CONTEXT TOOLBAR -->
+  <div id="datalayer-context" class="context-toolbar" style="display:none;">
+    <div class="ctx-left">
+      <div class="filter-wrap">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
         </svg>
+        <input type="text" id="dl-filter-input" placeholder="Filter by event, key, or value...">
+        <button id="dl-clear-filter" title="Clear filter">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+    <div class="ctx-right">
+      <div id="dl-source-status" style="display:flex;align-items:center;gap:4px;"></div>
+      <div class="toolbar-separator"></div>
+      <select id="dl-filter-source" title="Filter by source">
+        <option value="">All sources</option>
+        <option value="gtm">GTM</option>
+        <option value="digitalData">W3C</option>
+        <option value="tealium">Tealium</option>
+        <option value="adobe">Adobe</option>
+        <option value="segment">Segment</option>
+      </select>
+      <div class="toolbar-separator"></div>
+      <span id="dl-push-count" style="font-size:11px;color:var(--text-2);white-space:nowrap;padding:0 6px;" title="Total pushes received by panel">0 pushes</span>
+      <div class="toolbar-separator"></div>
+      <button id="dl-btn-export" title="Export DataLayer" style="display:flex;align-items:center;gap:4px;padding:4px 8px;font-size:12px;">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/>
+        </svg>
+        <span>Export</span>
       </button>
-      <button id="btn-info" title="About TagDragon">
+      <div class="toolbar-separator"></div>
+      <button id="dl-btn-pause" class="pause-btn" title="Pause DataLayer capture">
+        <svg class="pause-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/>
+        </svg>
+        <svg class="play-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="6 3 20 12 6 21 6 3"/>
+        </svg>
+        <span class="pause-text">Pause</span>
+        <span class="play-text">Resume</span>
+      </button>
+      <div class="toolbar-separator"></div>
+      <button id="dl-btn-clear" title="Clear all DataLayer pushes">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="16" y2="12"/><line x1="12" x2="12.01" y1="8" y2="8"/>
+          <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/>
         </svg>
       </button>
     </div>
@@ -2837,7 +2868,6 @@
         <div class="info-shortcuts">
           <div class="info-shortcut"><span>Clear all</span><kbd>Ctrl+L</kbd></div>
           <div class="info-shortcut"><span>Focus search</span><kbd>Ctrl+F</kbd></div>
-          <div class="info-shortcut"><span>Add filter</span><kbd>Ctrl+Shift+F</kbd></div>
           <div class="info-shortcut"><span>Navigate list</span><kbd>↑ ↓</kbd></div>
           <div class="info-shortcut"><span>Close panel</span><kbd>Esc</kbd></div>
         </div>

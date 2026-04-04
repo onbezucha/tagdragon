@@ -4,7 +4,7 @@ Instructions for AI coding agents working in this repository.
 
 ## Project Overview
 
-**TagDragon v1.4.0** — Chrome DevTools extension (Manifest V3) for capturing and decoding marketing/analytics tracking requests. Built with TypeScript, Rollup (JS bundler) and Tailwind CSS.
+**TagDragon v1.5.0** — Chrome DevTools extension (Manifest V3) for capturing and decoding marketing/analytics tracking requests. Built with TypeScript, Rollup (JS bundler) and Tailwind CSS.
 
 ## Build Commands
 
@@ -42,6 +42,8 @@ Entry Points (edit these):          Build Output (never edit):
 ├── src/devtools/index.ts      →    dist/devtools.js
 ├── src/panel/index.ts         →    dist/panel.js
 ├── src/popup/index.ts         →    dist/popup.js
+├── src/content/data-layer-main.ts  →    dist/data-layer-main.js
+├── src/content/data-layer-bridge.ts → dist/data-layer-bridge.js
 ├── styles/input.css           →    dist/panel.css
 └── public/panel.html               (static, includes inline CSS)
 ```
@@ -144,7 +146,7 @@ Strict mode enabled with these checks:
 
 ### Provider System
 
-The extension currently has **68 registered providers** across 9 UI groups (Analytics, Tag Manager, Marketing, Session Replay, A/B Testing, Visitor Identification, Customer Engagement, CDP, Adobe Stack), plus an "Other" fallback group for ungrouped providers (e.g. Merkury).
+The extension currently has **68 registered providers** across 9 UI groups (Analytics, Tag Manager, Marketing, Session Replay, A/B Testing, Visitor Identification, Customer Engagement, CDP, Adobe Stack). Merkury is assigned to the Visitor Identification group. The `UNGROUPED_ID`/`UNGROUPED_LABEL` constants in `src/shared/provider-groups.ts` provide a fallback for any future ungrouped providers.
 
 Providers are defined as objects with `name`, `color`, `pattern` (RegExp), and `parseParams()`:
 
@@ -176,13 +178,18 @@ Providers are defined as objects with `name`, `color`, `pattern` (RegExp), and `
 
 ### State Management
 
-Centralized state objects with getter/setter functions:
-```javascript
-let allRequests = [];
-const requestMap = new Map();  // id → request (O(1) lookup)
-let selectedId = null;
-let isPaused = false;  // pause/resume request capture
-```
+**Network requests** (`src/panel/state.ts`):
+- `requestState` — `all[]` array + `map` (O(1) lookup by ID) + `filteredIds` set
+- `uiState` — selected ID, pause flag, active tab
+- `filterState` — text, eventType, userId, status, method, hasParam
+- `statsState` — visible count, size, duration accumulators
+- `appConfig` — persisted to `chrome.storage.local` under key `rt_config`
+
+**DataLayer pushes** (`src/panel/datalayer/state.ts`):
+- `all[]` array + `map` (O(1) lookup by push ID) + `filteredIds` set
+- `selectedId`, `isPaused`, `sources` (Set), `sourceLabels` (Map)
+- `dlFilterState` — text, source, eventName, hasKey, ecommerceOnly
+- `dlPending` batch queue + `requestAnimationFrame` batching
 
 ### Configuration (persisted settings)
 
@@ -274,18 +281,38 @@ Hidden providers are persisted in `AppConfig.hiddenProviders` (restored on load 
 | `src/panel/utils/dom.ts` | Cached DOM references (`DOM.*`) and query helpers |
 | `src/panel/utils/format.ts` | Value formatting helpers |
 | `src/panel/utils/filter.ts` | Filter logic — applies filterState to requests |
+| `src/panel/utils/group-icons.ts` | Inline SVG icons for provider groups (analytics, tagmanager, marketing, etc.) |
+| `src/panel/utils/provider-icons.ts` | Brand SVG icons for individual providers (GA4, GTM, Meta Pixel, etc.) |
 | `src/devtools/index.ts` | DevTools page — registers panel, sets up network capture |
+| `src/devtools/data-layer-relay.ts` | DataLayer relay — forwards pushes/sources/snapshots from background port to panel |
 | `src/background/index.ts` | Service worker — message relay, declarativeNetRequest rules, cookie clearing |
+| `src/background/badge.ts` | Badge counter — updates extension icon with request count |
+| `src/background/popup-bridge.ts` | Popup bridge — handles popup ↔ background messaging, DevTools status tracking |
 | `src/providers/index.ts` | PROVIDERS array — ordered list of all provider matchers |
 | `src/shared/provider-groups.ts` | PROVIDER_GROUPS — grouping/categorization of providers in the popover |
 | `src/shared/categories.ts` | Per-provider parameter display categories |
+| `src/shared/cmp-detection.ts` | CMP detection scripts — OneTrust, UserCentrics, Cookiebot, CookieYes, Didomi, iubenda, TCF |
 | `src/types/request.ts` | TypeScript types — ParsedRequest, TabName, etc. |
+| `src/types/datalayer.ts` | DataLayer types — DataLayerPush, DataLayerState, DiffEntry, message types |
+| `src/types/consent.ts` | Consent types — ConsentCategory, GoogleConsentMode, TCFData, CMPInfo |
+| `src/types/popup.ts` | Popup types — ProviderStats, TabPopupStats, PopupStatsResponse |
+| `src/types/categories.ts` | Category types — CategoryConfig, ProviderCategories |
 | `src/shared/constants.ts` | AppConfig interface, DEFAULT_CONFIG, and shared constants |
+| `src/content/data-layer-main.ts` | MAIN world script — intercepts data layer pushes from GTM, Tealium, Adobe, Segment, digitalData |
+| `src/content/data-layer-bridge.ts` | ISOLATED world bridge — relays postMessage to background service worker |
+| `src/panel/datalayer/state.ts` | DataLayer state — push array, filtered IDs, sources, filter state |
+| `src/panel/datalayer/push-list.ts` | DataLayer push list rendering |
+| `src/panel/datalayer/push-detail.ts` | DataLayer detail pane — 4 sub-tabs (push data, diff, current state, correlation) |
+| `src/panel/datalayer/diff-renderer.ts` | Deep diff algorithm and rendering for DataLayer push comparisons |
+| `src/panel/datalayer/ecommerce-formatter.ts` | E-commerce detection and product table rendering |
+| `src/panel/datalayer/correlation.ts` | Correlation engine — finds network requests correlated with DataLayer pushes |
 | `public/panel.html` | Panel DOM + inline CSS |
 
 ## Chrome Extension Notes
 
-- Manifest V3 with permissions: `webRequest`, `storage`, `declarativeNetRequest`, `cookies`, `tabs`, `activeTab`
+- Manifest V3 with permissions: `webRequest`, `storage`, `declarativeNetRequest`, `cookies`, `tabs`, `activeTab`, `scripting`
+- Content scripts: `dist/data-layer-bridge.js` injected on all URLs at `document_idle`
+- Web accessible resources: `dist/data-layer-main.js` (injected dynamically via `chrome.scripting.executeScript`)
 - Host permissions: `<all_urls>`
 - DevTools page: `public/devtools.html`
 - After JS changes, extension must be reloaded at `chrome://extensions/`
@@ -300,10 +327,96 @@ The extension includes functionality to switch Adobe Launch/Tags environments (D
 2. **Configuration**: User sets staging/dev URLs per hostname
 3. **Storage**: Config saved to `chrome.storage.local` under key `rt_adobe_env`
 4. **Redirect rules** (`src/background/index.ts`): Uses `chrome.declarativeNetRequest.updateDynamicRules()` to redirect PROD URLs to configured environment (rule ID `1001`)
-5. **Persistence**: Rules restore automatically on service worker startup via `restoreAdobeRedirectRules()`
+5. **Persistence**: Redirect rules persist across page navigations via `declarativeNetRequest` dynamic rules; config is stored per hostname
 
 ### Message types (panel ↔ background)
 
 - `SET_ADOBE_REDIRECT` - Create redirect rule
-- `CLEAR_ADOBE_REDIRECT` - Remove redirect rule  
+- `CLEAR_ADOBE_REDIRECT` - Remove redirect rule
 - `GET_ADOBE_REDIRECT` - Query active rule
+
+## DataLayer Tab
+
+The extension includes a **DataLayer tab** that intercepts and displays data layer pushes from multiple tag management and analytics platforms.
+
+### Supported Sources
+
+- **GTM** (`window.dataLayer`) — intercepts `.push()` calls and replays existing items
+- **Tealium** (`window.utag.data`) — intercepts `utag.link` and `utag.view` calls
+- **Adobe** (`window.adobeDataLayer`, `_satellite.track`) — intercepts ACDL pushes and satellite track calls
+- **Segment** (`window.analytics`) — intercepts `track`, `page`, `identify`, `group` methods
+- **W3C digitalData** (`window.digitalData`) — wraps with Proxy to detect mutations
+
+### Architecture
+
+The DataLayer feature uses a three-layer architecture:
+
+1. **MAIN world** (`src/content/data-layer-main.ts`) — Runs in the page context. Intercepts data layer pushes and sends them to the ISOLATED world via `window.postMessage`. Sanitizes data (strips functions, DOM nodes, circular refs) before structured clone. Includes retry logic for late-initialized globals (up to 10s).
+
+2. **ISOLATED world bridge** (`src/content/data-layer-bridge.ts`) — Content script that relays `postMessage` events from MAIN world to the background service worker via `chrome.runtime.sendMessage`. Also performs initial source detection and requests snapshots when DevTools opens.
+
+3. **DevTools relay** (`src/devtools/data-layer-relay.ts`) — Forwards DataLayer messages from background port to the panel window. Buffers pushes that arrive before the panel is ready.
+
+4. **Background relay** (`src/background/index.ts`) — Routes `DATALAYER_PUSH`, `DATALAYER_SOURCES`, and `DATALAYER_SNAPSHOT_REQUEST/RESPONSE` messages between content scripts and DevTools via named ports (`devtools_<tabId>`).
+
+5. **Panel UI** (`src/panel/datalayer/`) — Renders the DataLayer tab with push list, detail pane, and correlation view.
+
+### Content Script Injection
+
+Content scripts are injected both via the manifest `content_scripts` entry (bridge only, as a fallback for initial page loads) and dynamically via `chrome.scripting.executeScript()` (both scripts, triggered on panel show and page navigation). Guards (`__tagdragon_bridge__`, `__tagdragon_main__`) prevent double execution:
+- Bridge (ISOLATED world): injected as a file
+- Main (MAIN world): injected with `world: 'MAIN'` to bypass page CSP
+- On panel shown and page navigation, background sends `INJECT_DATALAYER` message which clears guards and re-injects both scripts
+
+### DataLayer Panel Components
+
+| File | Purpose |
+|------|---------|
+| `src/panel/datalayer/state.ts` | DataLayer push state — all pushes, filtered IDs, selected ID, sources, filter state |
+| `src/panel/datalayer/push-list.ts` | Push list rendering — source colors, badges, event names |
+| `src/panel/datalayer/push-detail.ts` | Detail pane with 4 sub-tabs: Push Data, Diff, Current State, Correlation |
+| `src/panel/datalayer/diff-renderer.ts` | Deep diff algorithm and visual rendering between consecutive pushes |
+| `src/panel/datalayer/ecommerce-formatter.ts` | E-commerce detection (purchase, checkout, impression, promo, refund) and product table rendering |
+| `src/panel/datalayer/correlation.ts` | Correlation engine — finds network requests within a time window of a DataLayer push |
+
+### DataLayer Filter State
+
+```typescript
+interface DlFilterState {
+  text: string;           // Text search across push data
+  source: DataLayerSource | '';  // Filter by source (gtm, tealium, adobe, segment, digitalData)
+  eventName: string;      // Filter by event name
+  hasKey: string;         // Filter by key existence
+  ecommerceOnly: boolean; // Show only e-commerce pushes
+}
+```
+
+### DataLayer Detail Sub-Tabs
+
+1. **Push Data** — raw data object of the selected push
+2. **Diff** — deep diff from previous push (added/removed/changed keys with dot-notation paths)
+3. **Current State** — cumulative merged state up to the selected push
+4. **Correlation** — network requests that occurred within 2s of the push, sorted by delay
+
+## Extension Popup
+
+The extension includes a popup (`src/popup/index.ts`, `public/popup.html`, `public/popup.css`) that shows live request statistics when clicking the extension icon. No need to open DevTools to see basic stats.
+
+### Features
+
+- **Live stats** — total requests, total size, average duration, success rate
+- **Provider breakdown** — top 5 providers by count with color-coded pills
+- **Pause/Resume** — toggle recording from the popup
+- **Clear** — clear all captured requests
+- **DevTools warning** — shown when DevTools is not open (requests not captured)
+- **Badge counter** — extension icon shows request count (via `src/background/badge.ts`)
+
+### Popup ↔ Background Communication
+
+- `GET_POPUP_STATS` — request current stats for the active tab
+- `UPDATE_POPUP_STATS` — sent by DevTools after each captured request (increments counters)
+- `PAUSE_RECORDING` / `RESUME_RECORDING` — toggle pause state
+- `CLEAR_REQUESTS` — clear stats for the active tab
+
+Stats are stored in `chrome.storage.session` (key: `popup_stats`) — per-tab, cleared on browser restart.
+DevTools open/closed state is tracked via named ports (`devtools_<tabId>`).

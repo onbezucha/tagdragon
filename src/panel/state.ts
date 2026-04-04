@@ -7,12 +7,12 @@ import type {
   UIState,
   FilterState,
   StatsState,
-  AppConfig,
   TabName,
   PendingRequest,
   AdobeEnvState,
 } from '@/types/request';
 import { DEFAULT_CONFIG } from '@/shared/constants';
+import type { AppConfig } from '@/shared/constants';
 
 // ─── STATE CONTAINERS ────────────────────────────────────────────────────────
 

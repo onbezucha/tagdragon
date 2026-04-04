@@ -1024,7 +1024,7 @@
 /* Environment Popover */
 #env-popover {
   position: absolute;
-  top: 40px;
+  top: 62px;
   right: 60px;
   background-color: var(--bg-1);
   border: 1px solid var(--border);
