@@ -2,6 +2,7 @@
 // Handles buffering and communication with the DevTools panel window.
 
 import type { ParsedRequest } from '@/types/request';
+import type { DataLayerPush, DataLayerSource } from '@/types/datalayer';
 
 interface HeavyData {
   responseBody: string;
@@ -11,6 +12,14 @@ interface HeavyData {
 
 interface PanelWindow extends Window {
   receiveRequest: (data: ParsedRequest) => void;
+  receiveDataLayerPush: (data: DataLayerPush) => void;
+  receiveDataLayerSources: (
+    sources: DataLayerSource[],
+    labels: Record<DataLayerSource, string>
+  ) => void;
+  receiveDataLayerSnapshot: (data: Record<string, unknown>) => void;
+  clearDataLayer?: () => void;
+  triggerReinject?: () => void;
   _getHeavyData?: (requestId: number) => HeavyData | null;
   _clearHeavyData?: () => void;
   _deleteHeavyData?: (ids: number[]) => void;
@@ -41,7 +50,7 @@ export function sendToPanel(data: ParsedRequest): void {
   }
   buffer.push(data);
   if (buffer.length > MAX_BUFFER) {
-    buffer.splice(0, buffer.length - MAX_BUFFER);
+    buffer = buffer.slice(-MAX_BUFFER);
   }
 }
 

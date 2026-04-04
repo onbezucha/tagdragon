@@ -1,8 +1,14 @@
 // ─── DEVTOOLS ENTRY POINT ────────────────────────────────────────────────────
 // Creates the DevTools panel and initializes network capture.
 
-import { setPanelWindow } from './panel-bridge';
+import { setPanelWindow, getPanelWindow } from './panel-bridge';
 import { initNetworkCapture } from './network-capture';
+import {
+  sendDataLayerPushToPanel,
+  sendDataLayerSourcesToPanel,
+  sendDataLayerSnapshotToPanel,
+  flushDataLayerBuffer,
+} from './data-layer-relay';
 
 // ─── DEVTOOLS STATUS TRACKING ────────────────────────────────────────────────
 // Connect a named port to background so it can track whether DevTools are open.
@@ -10,9 +16,45 @@ import { initNetworkCapture } from './network-capture';
 // cleanup in the background — more reliable than window.unload + async storage.
 
 const tabId = chrome.devtools.inspectedWindow.tabId;
-const _devToolsPort = chrome.runtime.connect({ name: `devtools_${tabId}` });
-// Port is intentionally kept alive for the lifetime of the DevTools session.
-void _devToolsPort;
+
+// ─── PORT WITH AUTO-RECONNECT ─────────────────────────────────────────────────
+// The background service worker can be killed when idle, which drops the port
+// and empties its devToolsPorts Map. Reconnect automatically so background
+// always has a valid port entry for this DevTools session.
+
+type PortMsg = { type: string; sources?: unknown[]; labels?: Record<string, string>; data?: Record<string, unknown>; source?: string; pushIndex?: number; timestamp?: string; isReplay?: boolean; [key: string]: unknown };
+
+function attachPortListener(port: chrome.runtime.Port): void {
+  port.onMessage.addListener((msg: PortMsg) => {
+    if (msg.type === 'DATALAYER_PUSH') {
+      sendDataLayerPushToPanel({
+        source: msg.source as import('@/types/datalayer').DataLayerSource,
+        pushIndex: msg.pushIndex as number,
+        timestamp: msg.timestamp as string,
+        data: msg.data as Record<string, unknown>,
+        isReplay: msg.isReplay as boolean | undefined,
+      });
+    }
+    if (msg.type === 'DATALAYER_SOURCES') {
+      sendDataLayerSourcesToPanel(
+        msg.sources as import('@/types/datalayer').DataLayerSource[],
+        msg.labels as Record<string, string>,
+      );
+    }
+    if (msg.type === 'DATALAYER_SNAPSHOT_RESPONSE') {
+      sendDataLayerSnapshotToPanel(msg.data as Record<string, unknown>);
+    }
+  });
+
+  port.onDisconnect.addListener(() => {
+    // SW restarted — reconnect so background gets a fresh port entry
+    const newPort = chrome.runtime.connect({ name: `devtools_${tabId}` });
+    attachPortListener(newPort);
+  });
+}
+
+const devToolsPort = chrome.runtime.connect({ name: `devtools_${tabId}` });
+attachPortListener(devToolsPort);
 
 // ─── PANEL CREATION ──────────────────────────────────────────────────────────
 
@@ -24,6 +66,28 @@ chrome.devtools.panels.create(
     // When panel becomes visible, establish the bridge and flush buffered requests
     panel.onShown.addListener((win: Window) => {
       setPanelWindow(win);
+      // Expose re-inject helper so panel.js can trigger injection on demand
+      (win as Record<string, unknown>)['triggerReinject'] = () => {
+        chrome.runtime.sendMessage({ type: 'INJECT_DATALAYER', tabId }).catch(() => {});
+        chrome.runtime.sendMessage({ type: 'DATALAYER_SNAPSHOT_REQUEST', tabId }).catch(() => {});
+      };
+      // Flush any DataLayer pushes that arrived before the panel was visible
+      flushDataLayerBuffer();
+      // Inject DataLayer content scripts into inspected tab (idempotent)
+      chrome.runtime.sendMessage({ type: 'INJECT_DATALAYER', tabId }).catch(() => { /* ignore */ });
+      // Ask content script to replay current dataLayer state (handles case where
+      // MAIN world script ran before panel was open and replayed items were dropped)
+      chrome.runtime.sendMessage({ type: 'DATALAYER_SNAPSHOT_REQUEST', tabId }).catch(() => { /* ignore */ });
+    });
+
+    // Re-inject on navigation — panel.onShown does not fire on page navigation,
+    // so without this listener the MAIN world script would never run on the new page.
+    chrome.devtools.network.onNavigated.addListener(() => {
+      const win = getPanelWindow();
+      if (win && !win.closed && typeof win.clearDataLayer === 'function') {
+        win.clearDataLayer();
+      }
+      chrome.runtime.sendMessage({ type: 'INJECT_DATALAYER', tabId }).catch(() => {});
     });
 
     // When panel is hidden, we keep the panel window reference for buffering

@@ -27,7 +27,10 @@
 - **Active Filter Chips** — Visual chips for active filters (hidden providers, search text, etc.) with one-click removal
 - **Detailed Analysis** — View decoded parameters, query strings, POST bodies, headers, and responses
 - **Consent Panel** — Inspect and override cookie/consent state on the inspected page
-- **Export** — Export captured requests as JSON
+- **Clear Cookies** — Delete all cookies for the inspected page with one click
+- **Export** — Export captured requests as JSON or CSV
+- **Compact Rows** — Toggle compact row display for denser request lists
+- **Timestamp Formats** — Display timestamps as absolute time, relative age, or elapsed since first request
 - **Adobe Environment Switcher** — Switch between DEV/ACC/PROD Adobe Launch environments using network-level redirects
 - **Performance Optimized** — Efficient handling of large request volumes with configurable auto-pruning
 - **Keyboard Shortcuts** — Power-user friendly navigation
@@ -77,7 +80,7 @@ TagDragon/
 │   ├── background/             # Service worker (declarativeNetRequest rules)
 │   ├── devtools/               # DevTools registration + network capture
 │   ├── panel/                  # Panel UI
-│   │   ├── components/         # UI components (provider-bar, filter-bar, detail-pane, adobe-env-switcher, consent-panel, status-bar, …)
+│   │   ├── components/         # UI components (provider-bar, filter-bar, detail-pane, request-list, status-bar, adobe-env-switcher, consent-panel, info-popover, …)
 │   │   ├── tabs/               # Detail tabs (decoded, query, POST, headers, response)
 │   │   ├── utils/              # DOM helpers, formatting, filtering, categorization
 │   │   ├── state.ts            # Centralized state
@@ -216,6 +219,12 @@ TagDragon/
 | **Adobe DTM** | `assets.adobedtm.com/…/satelliteLib` |
 | **Adobe Launch (CN)** | `assets.adobedc.cn` |
 
+### Other
+
+| Provider | URL Pattern |
+|----------|-------------|
+| **Merkury** | `d.merkury.com` |
+
 ## Keyboard Shortcuts
 
 | Shortcut | Action |
@@ -231,11 +240,18 @@ TagDragon/
 ### Toolbar
 
 - **⏸ Pause/Resume** — temporarily stop capturing
+- **Clear** — clear all captured requests
+- **Clear Cookies** — delete all cookies for the inspected page
+- **Consent** — open consent/cookie state inspector
 - **⇅ Sort Order** — toggle oldest/newest first
 - **↩ Wrap Values** — wrap long parameter values
 - **📑 Auto-expand** — auto-expand detail sections on select
+- **Compact Rows** — toggle compact row display
 - **🔽 Provider Filter** — opens a popover to show/hide individual providers grouped by category; hidden providers persist across DevTools restarts
-- **⚙ Settings** — performance settings (max requests, auto-prune), keyboard shortcuts, theme
+- **Export** — export captured requests as JSON or CSV
+- **Theme** — toggle dark/light mode
+- **⚙ Settings** — performance settings (max requests, auto-prune, default tab, timestamp format, export format)
+- **Info** — about/help popover
 
 All toolbar settings are persisted to `chrome.storage.local`.
 
@@ -286,7 +302,7 @@ interface Provider {
 
 `getParams(url, postBody)` in `src/providers/url-parser.ts` merges URL query params and POST body (URLencoded or JSON) into one flat object for use inside `parseParams`.
 
-Provider order in `src/providers/index.ts` matters — first match wins. Key ordering constraints: `tealiumEventstream` before `tealium`; Adobe stack ordered `adobeHeartbeat` → `adobeTarget` → `adobeECID` → `adobeAAM` → `adobeDTM` → `adobeAA`; `comscore` before `scorecard`; `googleAds` before `doubleclick`.
+Provider order in `src/providers/index.ts` matters — first match wins. Key ordering constraints: `tealiumEventstream` before `tealium`; Adobe stack ordered `adobeHeartbeat` → `adobeTarget` → `adobeECID` → `adobeAAM` → `adobeDTM` → `adobeLaunchChina` → `adobeAA`; `comscore` before `scorecard`; `googleAds` before `doubleclick`.
 
 ### Adobe Environment Redirect
 

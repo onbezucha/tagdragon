@@ -70,7 +70,7 @@ Providers in vendor subfolders (`google/`, `adobe/`, `meta/`, `microsoft/`) use 
 - `uiState` — selected ID, pause flag, active tab
 - `filterState` — text, eventType, userId, status, method, hasParam
 - `statsState` — visible count, size, duration accumulators
-- `appConfig` — persisted to `chrome.storage.local` under key `rt_config`; includes `hiddenProviders: string[]` which is mirrored into a runtime `Set<string>` on load
+- `appConfig` — persisted to `chrome.storage.local` under key `rt_config`; includes `hiddenProviders: string[]` (mirrored into a runtime `Set<string>` on load), `defaultTab`, `compactRows`, `timestampFormat` (`'absolute'|'relative'|'elapsed'`), `exportFormat` (`'json'|'csv'`), and `collapsedGroups`
 
 `syncHiddenProviders()` must be called after every provider visibility toggle — it writes the current `hiddenProviders` Set back to `AppConfig` via `updateConfig()`.
 
@@ -83,7 +83,7 @@ Provider groups are defined in `src/shared/provider-groups.ts` (9 groups: Analyt
 ### Adobe Environment Switcher
 
 `src/panel/components/adobe-env-switcher.ts` detects Adobe Launch/Tags on the inspected page, lets the user configure DEV/ACC/PROD URLs per hostname, and switches environments via network-level redirects:
-- Panel sends `SET_ADOBE_REDIRECT` / `CLEAR_ADOBE_REDIRECT` / `GET_ADOBE_REDIRECT` to background
+- Panel sends `SET_ADOBE_REDIRECT` / `CLEAR_ADOBE_REDIRECT` / `GET_ADOBE_REDIRECT` to background; background also handles `CLEAR_COOKIES` for cookie deletion
 - Background uses `chrome.declarativeNetRequest.updateDynamicRules` (rule ID `1001`)
 - Config stored in `chrome.storage.local` under key `rt_adobe_env`
 - On init, if config shows non-prod but no active rule exists (e.g. after browser restart), the rule is automatically re-applied

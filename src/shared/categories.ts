@@ -148,7 +148,7 @@ export const PROVIDER_CATEGORIES: AllProviderCategories = {
     }
   },
 
-  'Adobe AA': {
+  'Adobe Client-Side': {
     hit: {
       label: 'Hit Info',
       icon: '📊',
@@ -223,7 +223,7 @@ export const PROVIDER_CATEGORIES: AllProviderCategories = {
     }
   },
 
-  'AEP Web SDK': {
+  'Adobe Server-Side': {
     hit: {
       label: 'Hit Info',
       icon: '📊',
@@ -449,7 +449,7 @@ export const PROVIDER_CATEGORIES: AllProviderCategories = {
     }
   },
 
-  'Adobe Launch': {
+  'Adobe Launch (CN)': {
     library: {
       label: 'Library',
       icon: '📦',
@@ -708,16 +708,6 @@ export const PROVIDER_CATEGORIES: AllProviderCategories = {
       order: 7,
       defaultExpanded: false,
       patterns: [/^Cache Buster$/, /^URL$/]
-    }
-  },
-
-  'DV360': {
-    page: {
-      label: 'Request',
-      icon: '📄',
-      order: 1,
-      defaultExpanded: true,
-      patterns: [/^URL$/]
     }
   },
 

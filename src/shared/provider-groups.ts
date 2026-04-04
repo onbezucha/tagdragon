@@ -5,6 +5,7 @@
 export interface ProviderGroup {
   readonly id: string;
   readonly label: string;
+  readonly icon: string;
   readonly providers: readonly string[];
 }
 
@@ -13,19 +14,22 @@ export const PROVIDER_GROUPS: readonly ProviderGroup[] = [
   {
     id: 'analytics',
     label: 'Analytics',
+    icon: '📊',
     providers: [
-      'GA4', 'GA (UA)', 'Adobe AA', 'AEP Web SDK', 'Scorecard', 'Amplitude', 'Mixpanel', 'Matomo',
+      'GA4', 'GA (UA)', 'Adobe Client-Side', 'Adobe Server-Side', 'Scorecard', 'Amplitude', 'Mixpanel', 'Matomo',
       'Piwik PRO', 'AT Internet', 'Comscore', 'Parse.ly', 'Webtrends', 'Medallia DXA', 'Indicative', 'RudderStack',
     ],
   },
   {
     id: 'tagmanager',
     label: 'Tag Manager',
+    icon: '🏷️',
     providers: ['GTM', 'Tealium', 'Segment', 'Ensighten', 'Piwik PRO TM'],
   },
   {
     id: 'marketing',
     label: 'Marketing',
+    icon: '🎯',
     providers: [
       'Google Ads', 'Meta Pixel', 'Bing Ads', 'Adform', 'DoubleClick', 'Criteo', 'Sklik',
       'TikTok Pixel', 'X (Twitter) Pixel', 'Pinterest Pixel', 'The Trade Desk',
@@ -36,31 +40,37 @@ export const PROVIDER_GROUPS: readonly ProviderGroup[] = [
   {
     id: 'replay',
     label: 'Session Replay',
+    icon: '🎬',
     providers: ['Hotjar', 'Microsoft Clarity', 'FullStory', 'Crazy Egg', 'Glassbox'],
   },
   {
     id: 'abtesting',
     label: 'A/B Testing',
+    icon: '🧪',
     providers: ['Optimizely', 'Dynamic Yield', 'Split', 'Omniconvert'],
   },
   {
     id: 'visitorid',
     label: 'Visitor Identification',
-    providers: ['LinkedIn', 'Demandbase', '6Sense'],
+    icon: '🔍',
+    providers: ['LinkedIn', 'Demandbase', '6Sense', 'Merkury'],
   },
   {
     id: 'engagement',
     label: 'Customer Engagement',
+    icon: '💬',
     providers: ['Braze', 'Lytics'],
   },
   {
     id: 'cdp',
     label: 'CDP',
+    icon: '🗄️',
     providers: ['mParticle', 'Tealium EventStream'],
   },
   {
     id: 'adobe',
     label: 'Adobe Stack',
+    icon: '🅰️',
     providers: [
       'Adobe Target', 'Adobe AAM', 'Adobe ECID', 'Adobe Heartbeat',
       'Adobe DTM', 'Adobe Launch (CN)',

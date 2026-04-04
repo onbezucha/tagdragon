@@ -231,17 +231,30 @@
     color: var(--text-3);
   }
 
-  .req-provider-dot {
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
-
   .req-provider-name {
     font-weight: 600;
     font-size: 11px;
     flex-shrink: 0;
+  }
+
+  .req-category-icon {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    color: var(--text-2);
+  }
+
+  .req-category-icon svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .req-middle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    padding-left: 4px;
   }
 
   .req-event {
@@ -275,7 +288,7 @@
   }
 
   .status-4 {
-    color: var(--orange);
+    color: var(--dragon-orange);
   }
 
   .status-5 {
@@ -445,7 +458,7 @@
   }
 
   .param-value.missing {
-    color: var(--orange);
+    color: var(--dragon-orange);
     font-style: italic;
   }
 
@@ -833,6 +846,10 @@
   }
 
   body.compact-rows .req-secondary {
+    display: none;
+  }
+
+  body.compact-rows .req-middle {
     display: none;
   }
 

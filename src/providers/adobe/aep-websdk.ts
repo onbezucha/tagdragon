@@ -8,7 +8,7 @@ interface HARPostBody {
 }
 
 export const aepWebSDK: Provider = {
-  name: 'AEP Web SDK',
+  name: 'Adobe Server-Side',
   color: '#C70000',
   // Modern implementations use Web SDK (Alloy)
   // POST JSON to *.adobedc.net/ee/v2/interact or /collect

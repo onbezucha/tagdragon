@@ -17,6 +17,7 @@ import {
   getFilterHasParam,
   setFilterHasParam,
   getHiddenProviders,
+  syncHiddenProviders,
   resetFilters,
 } from '../state';
 import { updateFilterBarVisibility } from './provider-bar';
@@ -153,12 +154,13 @@ export function updateActiveFilters(applyFiltersCallback: () => void): void {
       label: `${provider} hidden`,
       colorClass: 'filter-pill--provider',
       dotColor: '#ffa726',
-      onRemove: () => { 
-        hiddenProviders.delete(provider); 
-        const p = document.querySelector(`.ppill[data-provider="${provider}"]`); 
-        if (p) p.classList.replace('inactive', 'active'); 
-        applyFiltersCallback(); 
-        updateActiveFilters(applyFiltersCallback); 
+      onRemove: () => {
+        hiddenProviders.delete(provider);
+        syncHiddenProviders();
+        const p = document.querySelector(`.ppill[data-provider="${provider}"]`);
+        if (p) p.classList.replace('inactive', 'active');
+        applyFiltersCallback();
+        updateActiveFilters(applyFiltersCallback);
       }
     });
   });
@@ -187,6 +189,7 @@ export function updateActiveFilters(applyFiltersCallback: () => void): void {
     clearBtn.addEventListener('click', () => {
       resetFilters();
       hiddenProviders.clear();
+      syncHiddenProviders();
       (DOM.filterInput as HTMLInputElement).value = '';
       DOM.clearFilter!.style.display = 'none';
       qsa('.ppill.inactive').forEach(p => p.classList.replace('inactive', 'active'));

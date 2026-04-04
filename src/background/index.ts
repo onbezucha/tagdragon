@@ -26,6 +26,20 @@ function headersToObj(
 
 const ADOBE_REDIRECT_RULE_ID = 1001;
 
+// ─── DEVTOOLS PORT REGISTRY ───────────────────────────────────────────────────
+// DevTools connects with a named port so background can relay DataLayer messages.
+// port.name format: "devtools_<tabId>"
+
+const devToolsPorts = new Map<number, chrome.runtime.Port>();
+
+chrome.runtime.onConnect.addListener((port) => {
+  const match = port.name.match(/^devtools_(\d+)$/);
+  if (!match) return;
+  const tabId = Number(match[1]);
+  devToolsPorts.set(tabId, port);
+  port.onDisconnect.addListener(() => devToolsPorts.delete(tabId));
+});
+
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message.type === 'SET_ADOBE_REDIRECT') {
     const { fromUrl, toUrl } = message;
@@ -54,6 +68,89 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       sendResponse({ rule: rule ?? null });
     });
     return true;
+  }
+
+  // ─── DATALAYER RELAY ───────────────────────────────────────────────────────
+  // tabId comes from sender.tab.id, NOT from message body
+  if (message.type === 'DATALAYER_PUSH') {
+    const tabId = _sender.tab?.id;
+    console.debug('[TagDragon] bg: DATALAYER_PUSH from tabId', tabId, 'portExists:', devToolsPorts.has(tabId ?? -1), 'allPorts:', [...devToolsPorts.keys()]);
+    if (tabId != null) {
+      const port = devToolsPorts.get(tabId);
+      if (port) {
+        try { port.postMessage({ type: 'DATALAYER_PUSH', tabId, ...message }); } catch { /* port may be closed */ }
+      }
+    }
+    return;
+  }
+
+  if (message.type === 'DATALAYER_SOURCES') {
+    const tabId = _sender.tab?.id;
+    if (tabId != null) {
+      const port = devToolsPorts.get(tabId);
+      if (port) {
+        try { port.postMessage({ type: 'DATALAYER_SOURCES', tabId, ...message }); } catch { /* port may be closed */ }
+      }
+    }
+    return;
+  }
+
+  if (message.type === 'DATALAYER_SNAPSHOT_RESPONSE') {
+    const tabId = _sender.tab?.id;
+    if (tabId != null) {
+      const port = devToolsPorts.get(tabId);
+      if (port) {
+        try { port.postMessage({ type: 'DATALAYER_SNAPSHOT_RESPONSE', tabId, ...message }); } catch { /* port may be closed */ }
+      }
+    }
+    return;
+  }
+
+  // DATALAYER_SNAPSHOT_REQUEST comes from DevTools (tabId is in message body)
+  if (message.type === 'DATALAYER_SNAPSHOT_REQUEST') {
+    chrome.tabs.sendMessage(message.tabId, { type: 'DATALAYER_SNAPSHOT_REQUEST' }).catch(() => { /* tab may not have content script */ });
+    return;
+  }
+
+  // INJECT_DATALAYER: inject both scripts into the inspected tab.
+  // The MAIN world script is injected via scripting.executeScript({ world: 'MAIN' })
+  // which bypasses the page's Content Security Policy — unlike a <script> tag
+  // injection from the content script, which CSP can block.
+  if (message.type === 'INJECT_DATALAYER') {
+    const tabId: number = message.tabId;
+    if (tabId != null) {
+      // Guards must be cleared BEFORE scripts are injected — run sequentially so the
+      // scripts cannot land before their guard flag has been deleted (a race that would
+      // cause data-layer-main.js to see __tagdragon_main__ still set and exit early).
+      (async () => {
+        // 1. Clear the bridge guard (ISOLATED world).
+        await chrome.scripting.executeScript({
+          target: { tabId },
+          func: () => { delete (window as unknown as Record<string, unknown>)['__tagdragon_bridge__']; },
+        }).catch(() => { /* ignore — tab may not be scriptable */ });
+
+        // 2. Clear the MAIN world guard.
+        await chrome.scripting.executeScript({
+          target: { tabId },
+          func: () => { delete (window as unknown as Record<string, unknown>)['__tagdragon_main__']; },
+          world: 'MAIN' as chrome.scripting.ExecutionWorld,
+        }).catch(() => { /* ignore — tab may not be scriptable */ });
+
+        // 3. ISOLATED world bridge (relays postMessage → runtime.sendMessage)
+        chrome.scripting.executeScript({
+          target: { tabId },
+          files: ['dist/data-layer-bridge.js'],
+        }).catch((e: Error) => console.warn('[TagDragon] Failed to inject bridge:', e.message));
+
+        // 4. MAIN world interceptor — world: 'MAIN' bypasses page CSP
+        chrome.scripting.executeScript({
+          target: { tabId },
+          files: ['dist/data-layer-main.js'],
+          world: 'MAIN' as chrome.scripting.ExecutionWorld,
+        }).catch((e: Error) => console.warn('[TagDragon] Failed to inject main:', e.message));
+      })();
+    }
+    return;
   }
 
   if (message.type === 'CLEAR_COOKIES') {

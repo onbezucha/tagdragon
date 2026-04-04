@@ -791,13 +791,627 @@
       flex: 1;
     }
 
+    /* === TAB SWITCHER === */
+    #tab-switcher {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      margin-right: 4px;
+    }
+
+    .tab-btn {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      background: none;
+      border: 1px solid transparent;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-2);
+      cursor: pointer;
+      transition: all 150ms;
+      white-space: nowrap;
+    }
+
+    .tab-btn:hover {
+      background: var(--bg-2);
+      color: var(--text-1);
+    }
+
+    .tab-btn.active {
+      background: var(--accent-muted);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .tab-btn svg {
+      width: 13px;
+      height: 13px;
+    }
+
+    .view-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
     /* === MAIN AREA === */
-    #main {
+    #main, #datalayer-view {
       grid-row: 3;
+      grid-column: 1;
+      overflow: hidden;
+    }
+
+    #main {
       display: grid;
       grid-template-columns: minmax(280px, var(--list-width, 340px)) 6px 1fr;
       gap: 0;
+      position: relative;
+    }
+
+    /* === DATALAYER VIEW === */
+    #datalayer-view {
+      display: none;
+    }
+
+    #dl-main {
+      display: grid;
+      grid-template-columns: minmax(280px, var(--list-width, 340px)) 6px 1fr;
+      gap: 0;
+      height: 100%;
       overflow: hidden;
+      position: relative;
+    }
+
+    #dl-list-pane {
+      display: flex;
+      flex-direction: column;
+      background-color: var(--bg-0);
+      border-right: 1px solid var(--border);
+      overflow: hidden;
+    }
+
+    #dl-push-list {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #dl-push-list::-webkit-scrollbar { width: 8px; }
+    #dl-push-list::-webkit-scrollbar-track { background: var(--bg-0); }
+    #dl-push-list::-webkit-scrollbar-thumb { background: var(--bg-2); border-radius: 4px; }
+
+    #dl-empty-state {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 20px;
+      color: var(--text-2);
+    }
+
+    #dl-status-text {
+      padding: 3px 8px;
+      font-size: 11px;
+      color: var(--text-2);
+      border-top: 1px solid var(--border);
+      background-color: var(--bg-0);
+      flex-shrink: 0;
+    }
+
+    #dl-splitter {
+      width: 6px;
+      background-color: var(--border);
+      cursor: col-resize;
+      transition: background-color 150ms;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #dl-splitter:hover { background-color: var(--accent); }
+
+    #dl-detail-pane {
+      display: flex;
+      flex-direction: column;
+      background-color: var(--bg-0);
+      overflow: hidden;
+    }
+
+    #dl-detail-pane.hidden { display: none; }
+
+    #dl-detail-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px;
+      background-color: var(--bg-1);
+      border-bottom: 1px solid var(--border);
+      min-height: 36px;
+    }
+
+    #dl-detail-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    #dl-detail-title {
+      flex: 1;
+      font-size: 12px;
+      color: var(--text-1);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      min-width: 0;
+    }
+
+    #dl-detail-tabs {
+      display: flex;
+      gap: 0;
+      padding: 0;
+      background-color: var(--bg-1);
+      border-bottom: 1px solid var(--border);
+      overflow-x: auto;
+      flex-shrink: 0;
+    }
+
+    .dl-dtab {
+      padding: 8px 12px;
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      color: var(--text-2);
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 150ms;
+    }
+
+    .dl-dtab:hover {
+      color: var(--text-0);
+      background-color: var(--bg-2);
+    }
+
+    .dl-dtab.active {
+      color: var(--text-0);
+      border-bottom-color: var(--accent);
+    }
+
+    #dl-detail-content {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 12px;
+    }
+
+    #dl-detail-content::-webkit-scrollbar { width: 8px; }
+    #dl-detail-content::-webkit-scrollbar-track { background: var(--bg-0); }
+    #dl-detail-content::-webkit-scrollbar-thumb { background: var(--bg-2); border-radius: 4px; }
+
+    /* === DL PUSH ROW === */
+    .dl-push-row {
+      padding: 6px 10px;
+      border-bottom: 1px solid var(--border-subtle, var(--border));
+      cursor: pointer;
+      transition: background-color 80ms;
+    }
+
+    .dl-push-row:hover { background-color: var(--bg-1); }
+    .dl-push-row.active { background-color: var(--accent-muted); }
+
+    body.compact-rows .dl-push-row { padding: 2px 10px; }
+    body.compact-rows .dl-push-preview { display: none; }
+
+    .dl-push-primary {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      flex-wrap: wrap;
+    }
+
+    .dl-push-index {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-2);
+      min-width: 32px;
+      flex-shrink: 0;
+    }
+
+    .dl-push-badge {
+      display: inline-block;
+      padding: 1px 6px;
+      border-radius: 10px;
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      flex-shrink: 0;
+    }
+
+    .dl-source-pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 1px 7px;
+      border-radius: 10px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      background: color-mix(in srgb, var(--pill-color) 15%, transparent);
+      color: var(--pill-color);
+      border: 1px solid color-mix(in srgb, var(--pill-color) 35%, transparent);
+      white-space: nowrap;
+    }
+
+    .dl-push-event {
+      font-weight: 600;
+      color: var(--text-0);
+      flex: 1;
+      min-width: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .dl-push-keycount {
+      font-size: 11px;
+      color: var(--text-2);
+      flex-shrink: 0;
+    }
+
+    .dl-push-time {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-2);
+      flex-shrink: 0;
+    }
+
+    .dl-push-preview {
+      font-size: 11px;
+      color: var(--text-2);
+      margin-top: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-family: var(--font-mono);
+    }
+
+    .dl-ec-badge {
+      padding: 1px 5px;
+      background: rgba(72, 187, 120, 0.15);
+      color: #48bb78;
+      border: 1px solid rgba(72, 187, 120, 0.4);
+      border-radius: 3px;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      flex-shrink: 0;
+    }
+
+    /* === DL DETAIL CONTENT === */
+    .dl-data-section {
+      margin-bottom: 12px;
+    }
+
+    .dl-data-section-header {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-2);
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      padding: 4px 0;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 6px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .dl-data-section.collapsed .dl-data-section-body {
+      display: none;
+    }
+
+    .dl-kv-row {
+      display: flex;
+      gap: 8px;
+      padding: 3px 0;
+      font-size: 12px;
+      align-items: flex-start;
+    }
+
+    .dl-kv-key {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-2);
+      flex-shrink: 0;
+      min-width: 140px;
+      max-width: 200px;
+      word-break: break-all;
+    }
+
+    .dl-kv-value {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-0);
+      flex: 1;
+      word-break: break-all;
+    }
+
+    .dl-kv-value-json {
+      white-space: pre-wrap;
+      color: var(--text-1);
+    }
+
+    .dl-copy-btn {
+      margin-top: 12px;
+      padding: 5px 10px;
+      font-size: 11px;
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--text-1);
+      cursor: pointer;
+    }
+
+    .dl-copy-btn:hover { background: var(--bg-3); }
+
+    /* === DIFF === */
+    .dl-diff-entry {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 4px 8px;
+      border-radius: 3px;
+      margin-bottom: 2px;
+      font-size: 12px;
+    }
+
+    .dl-diff-added { background: rgba(72, 187, 120, 0.1); }
+    .dl-diff-removed { background: rgba(245, 101, 101, 0.1); }
+    .dl-diff-changed { background: rgba(236, 201, 75, 0.1); }
+
+    .dl-diff-key {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-1);
+      min-width: 160px;
+      max-width: 220px;
+      word-break: break-all;
+      flex-shrink: 0;
+    }
+
+    .dl-diff-value {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-0);
+      flex: 1;
+      word-break: break-all;
+    }
+
+    .dl-diff-old {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: #f56565;
+      text-decoration: line-through;
+      flex-shrink: 0;
+    }
+
+    .dl-diff-arrow {
+      color: var(--text-2);
+      flex-shrink: 0;
+    }
+
+    .dl-diff-new {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: #48bb78;
+      flex: 1;
+      word-break: break-all;
+    }
+
+    .dl-diff-badge {
+      font-size: 9px;
+      font-weight: 700;
+      padding: 1px 4px;
+      border-radius: 3px;
+      flex-shrink: 0;
+    }
+
+    .dl-diff-added .dl-diff-badge { background: rgba(72, 187, 120, 0.2); color: #48bb78; }
+    .dl-diff-removed .dl-diff-badge { background: rgba(245, 101, 101, 0.2); color: #f56565; }
+    .dl-diff-empty, .dl-diff-more { font-size: 12px; color: var(--text-2); padding: 8px 0; }
+
+    /* === ECOMMERCE TABLE === */
+    .dl-ecommerce-products {
+      overflow-x: auto;
+      margin: 8px 0;
+    }
+
+    .dl-ecommerce-products table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11px;
+    }
+
+    .dl-ecommerce-products th {
+      text-align: left;
+      padding: 4px 8px;
+      background: var(--bg-2);
+      border-bottom: 1px solid var(--border);
+      color: var(--text-2);
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 10px;
+      letter-spacing: 0.3px;
+    }
+
+    .dl-ecommerce-products td {
+      padding: 4px 8px;
+      border-bottom: 1px solid var(--border-subtle, var(--border));
+      color: var(--text-0);
+    }
+
+    .dl-ecommerce-products .mono { font-family: var(--font-mono); }
+
+    .dl-total-row td {
+      font-weight: 600;
+      background: var(--bg-1);
+    }
+
+    /* === CORRELATION === */
+    .dl-correlation-header {
+      font-size: 12px;
+      color: var(--text-2);
+      margin-bottom: 8px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .dl-correlation-empty {
+      font-size: 12px;
+      color: var(--text-2);
+      padding: 8px 0;
+    }
+
+    .dl-correlation-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 0;
+      border-bottom: 1px solid var(--border-subtle, var(--border));
+      font-size: 12px;
+    }
+
+    .dl-correlation-delay {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-2);
+      min-width: 50px;
+      flex-shrink: 0;
+    }
+
+    .dl-correlation-badge {
+      display: inline-block;
+      padding: 1px 6px;
+      border-radius: 10px;
+      font-size: 10px;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+
+    .dl-correlation-event {
+      font-size: 11px;
+      color: var(--text-1);
+      flex-shrink: 0;
+    }
+
+    .dl-correlation-url {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-2);
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .dl-correlation-goto {
+      padding: 2px 6px;
+      font-size: 12px;
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      cursor: pointer;
+      flex-shrink: 0;
+      color: var(--accent);
+    }
+
+    .dl-correlation-goto:hover { background: var(--accent-muted); }
+
+    /* === DL STATE DISPLAY === */
+    .dl-state-header {
+      font-size: 12px;
+      color: var(--text-2);
+      margin-bottom: 8px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .dl-state-empty {
+      font-size: 12px;
+      color: var(--text-2);
+      padding: 8px 0;
+    }
+
+    /* === DL FILTER BAR === */
+    #dl-filter-bar {
+      display: none;
+      align-items: center;
+      padding: 0 8px;
+      background-color: var(--bg-0);
+      border-bottom: 1px solid var(--border);
+      gap: 6px;
+      min-height: 28px;
+    }
+
+    #dl-filter-bar.visible {
+      display: flex;
+    }
+
+    #dl-filter-input {
+      flex: 1;
+      border: none;
+      background: none;
+      color: var(--text-0);
+      font-size: 12px;
+      outline: none;
+      padding: 0;
+      font-family: inherit;
+    }
+
+    #dl-filter-input::placeholder { color: var(--text-2); }
+
+    #dl-filter-source {
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      background: var(--bg-2);
+      color: var(--text-0);
+      font-size: 11px;
+      padding: 2px 4px;
+      cursor: pointer;
+      max-width: 100px;
+    }
+
+    #dl-clear-filter {
+      padding: 2px;
+      opacity: 0.5;
+      transition: opacity 150ms;
+      display: none;
+    }
+
+    #dl-clear-filter:hover {
+      opacity: 1;
+      background-color: transparent;
+    }
+
+    /* === MAIN AREA === */
+    #main {
+      display: grid;
+      grid-template-columns: minmax(280px, var(--list-width, 340px)) 6px 1fr;
+      gap: 0;
       position: relative;
     }
 
@@ -1721,35 +2335,102 @@
   <!-- TOOLBAR -->
   <div id="toolbar">
     <div class="toolbar-section">
-      <button id="btn-clear" title="Clear all (Ctrl+L)">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/>
-        </svg>
-      </button>
-      <div class="toolbar-separator"></div>
-      <input type="checkbox" id="chk-pause">
-      <label for="chk-pause" title="Pause capture">
-        <!-- Pause icon (shown when recording) -->
-        <svg class="pause-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/>
-        </svg>
-        <!-- Play icon (shown when paused) -->
-        <svg class="play-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polygon points="6 3 20 12 6 21 6 3"/>
-        </svg>
-        <span class="pause-text">Pause</span>
-        <span class="play-text" style="display: none;">Resume</span>
-      </label>
-      <div class="toolbar-separator"></div>
-      <div class="filter-wrap">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
-        </svg>
-        <input type="text" id="filter-input" placeholder="Filter by URL, parameter, or provider...">
-        <button id="btn-clear-filter">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+      <!-- TAB SWITCHER (always visible) -->
+      <div id="tab-switcher">
+        <button class="tab-btn active" data-view="network" title="Network requests">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21.3 15.3a2.4 2.4 0 0 1 0 3.4l-2.6 2.6a2.4 2.4 0 0 1-3.4 0L2.7 8.7a2.41 2.41 0 0 1 0-3.4l2.6-2.6a2.41 2.41 0 0 1 3.4 0z"/><path d="m14.5 12.5 2 2"/><path d="m11.5 9.5 2 2"/>
           </svg>
+          <span>Network</span>
+        </button>
+        <button class="tab-btn" data-view="datalayer" title="DataLayer pushes">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"/>
+          </svg>
+          <span>DataLayer</span>
+        </button>
+      </div>
+      <div class="toolbar-separator"></div>
+      <!-- NETWORK TOOLBAR -->
+      <div id="network-toolbar" class="view-toolbar">
+        <button id="btn-clear" title="Clear all (Ctrl+L)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/>
+          </svg>
+        </button>
+        <div class="toolbar-separator"></div>
+        <input type="checkbox" id="chk-pause">
+        <label for="chk-pause" title="Pause capture">
+          <!-- Pause icon (shown when recording) -->
+          <svg class="pause-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/>
+          </svg>
+          <!-- Play icon (shown when paused) -->
+          <svg class="play-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="6 3 20 12 6 21 6 3"/>
+          </svg>
+          <span class="pause-text">Pause</span>
+          <span class="play-text" style="display: none;">Resume</span>
+        </label>
+        <div class="toolbar-separator"></div>
+        <div class="filter-wrap">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+          </svg>
+          <input type="text" id="filter-input" placeholder="Filter by URL, parameter, or provider...">
+          <button id="btn-clear-filter">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+      <!-- DATALAYER TOOLBAR -->
+      <div id="datalayer-toolbar" class="view-toolbar" style="display:none;">
+        <button id="dl-btn-clear" title="Clear all DataLayer pushes">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+          </svg>
+        </button>
+        <div class="toolbar-separator"></div>
+        <input type="checkbox" id="dl-chk-pause">
+        <label for="dl-chk-pause" title="Pause DataLayer capture" style="display:flex;align-items:center;gap:4px;padding:4px 6px;cursor:pointer;border-radius:3px;font-size:12px;user-select:none;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/>
+          </svg>
+          Pause
+        </label>
+        <div class="toolbar-separator"></div>
+        <div id="dl-source-status" style="display:flex;align-items:center;gap:4px;"></div>
+        <div class="toolbar-separator"></div>
+        <select id="dl-filter-source" title="Filter by source">
+          <option value="">All sources</option>
+          <option value="gtm">GTM</option>
+          <option value="digitalData">W3C</option>
+          <option value="tealium">Tealium</option>
+          <option value="adobe">Adobe</option>
+          <option value="segment">Segment</option>
+        </select>
+        <div class="toolbar-separator"></div>
+        <div class="filter-wrap">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+          </svg>
+          <input type="text" id="dl-filter-input" placeholder="Filter by event, key, or value...">
+          <button id="dl-clear-filter" title="Clear filter">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+            </svg>
+          </button>
+        </div>
+        <div class="toolbar-separator"></div>
+        <span id="dl-push-count" style="font-size:11px;color:var(--text-2);white-space:nowrap;padding:0 6px;" title="Total pushes received by panel">0 pushes</span>
+        <div class="toolbar-separator"></div>
+        <button id="dl-btn-export" title="Export DataLayer" style="display:flex;align-items:center;gap:4px;padding:4px 8px;font-size:12px;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/>
+          </svg>
+          <span>Export</span>
         </button>
       </div>
     </div>
@@ -2172,6 +2853,7 @@
   <div id="filter-bar">
     <div id="active-filters"></div>
   </div>
+  <div id="dl-filter-bar"></div>
 
   <!-- FILTER POPOVER -->
   <div id="filter-popover">
@@ -2285,6 +2967,54 @@
       </div>
 
       <div id="detail-content"></div>
+    </div>
+  </div>
+
+  <!-- DATALAYER VIEW -->
+  <div id="datalayer-view" style="display:none;">
+    <div id="dl-main">
+      <!-- PUSH LIST PANE -->
+      <div id="dl-list-pane">
+        <div id="dl-push-list"></div>
+        <div id="dl-empty-state">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.5;margin-bottom:10px">
+            <ellipse cx="12" cy="5" rx="9" ry="3"/>
+            <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
+            <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+          </svg>
+          <div style="font-weight:600;font-size:13px;color:var(--text-1);margin-bottom:6px">Waiting for DataLayer events</div>
+          <div style="font-size:11px;color:var(--text-2);line-height:1.6;max-width:300px;margin-bottom:12px">TagDragon intercepts GTM, W3C digitalData, Tealium, Adobe, and Segment.<br>If you navigated here with DevTools already open, click Re-inject below.</div>
+          <button id="dl-btn-reinject" style="padding:5px 12px;font-size:12px;border-radius:4px;cursor:pointer;background:var(--bg-2);color:var(--text-1);border:1px solid var(--border);">Re-inject scripts</button>
+        </div>
+        <div id="dl-status-text"></div>
+      </div>
+
+      <!-- DL SPLITTER -->
+      <div id="dl-splitter">
+        <div class="splitter-handle">
+          <span></span><span></span><span></span>
+        </div>
+      </div>
+
+      <!-- DL DETAIL PANE -->
+      <div id="dl-detail-pane" class="hidden">
+        <div id="dl-detail-header">
+          <span id="dl-detail-badge"></span>
+          <span id="dl-detail-title"></span>
+          <button id="dl-detail-close" title="Close detail">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+            </svg>
+          </button>
+        </div>
+        <div id="dl-detail-tabs">
+          <button class="dl-dtab active" data-tab="push-data">Push Data</button>
+          <button class="dl-dtab" data-tab="diff">Diff</button>
+          <button class="dl-dtab" data-tab="current-state">Current State</button>
+          <button class="dl-dtab" data-tab="correlation">Correlation</button>
+        </div>
+        <div id="dl-detail-content"></div>
+      </div>
     </div>
   </div>
 

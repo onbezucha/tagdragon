@@ -80,6 +80,9 @@ export function formatTimestamp(
  */
 export function getEventName(data: ParsedRequest): string {
   if (!data.decoded) return getHostname(data.url);
+  if (data.provider === 'Google Ads') {
+    return data.decoded['Conversion Label'] || data.decoded['Conversion Type'] || getHostname(data.url);
+  }
   return (
     data.decoded['Event type'] ||
     data.decoded.Event ||

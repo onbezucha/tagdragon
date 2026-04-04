@@ -144,7 +144,7 @@ Strict mode enabled with these checks:
 
 ### Provider System
 
-The extension currently has **68 registered providers** across 9 UI groups (Analytics, Tag Manager, Marketing, Session Replay, A/B Testing, Visitor Identification, Customer Engagement, CDP, Adobe Stack).
+The extension currently has **68 registered providers** across 9 UI groups (Analytics, Tag Manager, Marketing, Session Replay, A/B Testing, Visitor Identification, Customer Engagement, CDP, Adobe Stack), plus an "Other" fallback group for ungrouped providers (e.g. Merkury).
 
 Providers are defined as objects with `name`, `color`, `pattern` (RegExp), and `parseParams()`:
 
@@ -189,24 +189,37 @@ let isPaused = false;  // pause/resume request capture
 Default configuration object stored in `chrome.storage.local` under key `rt_config`:
 ```typescript
 const DEFAULT_CONFIG: AppConfig = {
-  maxRequests: 500,         // Max requests to keep in memory
-  autoPrune: true,          // Auto-prune oldest when limit reached
-  pruneRatio: 0.8,          // Keep 80% when pruning
-  sortOrder: 'asc',         // 'asc' = oldest first, 'desc' = newest first
-  wrapValues: false,        // Wrap long parameter values
-  autoExpand: false,        // Auto-expand detail sections on select
-  hiddenProviders: [],      // Provider names hidden in the request list (persisted)
+  maxRequests: 500,            // Max requests to keep in memory
+  autoPrune: true,             // Auto-prune oldest when limit reached
+  pruneRatio: 0.75,            // Prune down to 75% when limit reached
+  sortOrder: 'asc',            // 'asc' = oldest first, 'desc' = newest first
+  wrapValues: false,           // Wrap long parameter values
+  autoExpand: false,           // Auto-expand detail sections on select
+  collapsedGroups: [],         // Session-only collapsed group IDs (not persisted meaningfully)
+  hiddenProviders: [],         // Provider names hidden in the request list (persisted)
+  defaultTab: 'decoded',       // Default detail tab on request select
+  compactRows: false,          // Compact row display in request list
+  timestampFormat: 'absolute', // 'absolute' | 'relative' | 'elapsed'
+  exportFormat: 'json',        // 'json' | 'csv'
 };
 ```
 
 ### Quick-Actions Toolbar
 
 Compact icon buttons in the toolbar for quick settings toggles:
-- **⇅ Sort Order** - Toggle newest/oldest first
-- **↩ Wrap Values** - Toggle long value wrapping
-- **📑 Auto-expand** - Toggle auto-expand sections
+- **⏸ Pause/Resume** (`#chk-pause`) - Stop/resume request capture
+- **Clear** (`#btn-clear`) - Clear all captured requests (Ctrl+L)
+- **Clear Cookies** (`#btn-clear-cookies`) - Delete all cookies for the inspected page
+- **Consent** (`#btn-consent`) - Open consent/cookie state inspector
+- **⇅ Sort Order** (`#btn-quick-sort`) - Toggle newest/oldest first
+- **↩ Wrap Values** (`#btn-quick-wrap`) - Toggle long value wrapping
+- **📑 Auto-expand** (`#btn-quick-expand`) - Toggle auto-expand sections
+- **Compact Rows** (`#btn-quick-compact`) - Toggle compact row display
 - **Provider Filter** (`#btn-providers`) - Opens `#provider-popover` with grouped provider pills; button gets `active` class when any providers are hidden
+- **Export** (`#btn-export`) - Export captured requests (JSON or CSV per config)
+- **Theme** (`#btn-theme-toggle`) - Toggle dark/light mode
 - **Settings** (`#btn-settings`) - Opens `#settings-popover`
+- **Info** (`#btn-info`) - Opens `#info-popover` (About/Help)
 
 All toggle settings also available in Settings popover. Quick buttons sync bidirectionally with Settings popover.
 
@@ -246,22 +259,33 @@ Hidden providers are persisted in `AppConfig.hiddenProviders` (restored on load 
 | `src/panel/index.ts` | Panel controller — toolbar handlers, request rendering, popover logic |
 | `src/panel/state.ts` | Single source of truth — request state, filter state, AppConfig persistence |
 | `src/panel/components/provider-bar.ts` | Provider filter popover — pills, groups, toggle, counts, filter bar visibility |
-| `src/panel/components/adobe-env-switcher.ts` | Adobe environment switcher UI |
+| `src/panel/components/filter-bar.ts` | Active filter chips bar — shows removable chips for active filters |
 | `src/panel/components/detail-pane.ts` | Detail pane tabs — decoded, query, POST, headers, response |
+| `src/panel/components/request-list.ts` | Request list rendering and row templates |
+| `src/panel/components/status-bar.ts` | Status bar — request count, size, duration stats |
+| `src/panel/components/adobe-env-switcher.ts` | Adobe environment switcher UI |
+| `src/panel/components/consent-panel.ts` | Consent/cookie state inspector |
+| `src/panel/components/info-popover.ts` | About/Help popover |
+| `src/panel/tabs/decoded.ts` | Decoded tab — categorized parameter display |
+| `src/panel/tabs/query.ts` | Query tab — raw URL query params |
+| `src/panel/tabs/post.ts` | POST tab — POST body display |
+| `src/panel/tabs/headers.ts` | Headers tab — request/response headers |
+| `src/panel/tabs/response.ts` | Response tab — lazy-loaded response body |
 | `src/panel/utils/dom.ts` | Cached DOM references (`DOM.*`) and query helpers |
 | `src/panel/utils/format.ts` | Value formatting helpers |
+| `src/panel/utils/filter.ts` | Filter logic — applies filterState to requests |
 | `src/devtools/index.ts` | DevTools page — registers panel, sets up network capture |
-| `src/background/index.ts` | Service worker — message relay, declarativeNetRequest rules |
+| `src/background/index.ts` | Service worker — message relay, declarativeNetRequest rules, cookie clearing |
 | `src/providers/index.ts` | PROVIDERS array — ordered list of all provider matchers |
 | `src/shared/provider-groups.ts` | PROVIDER_GROUPS — grouping/categorization of providers in the popover |
 | `src/shared/categories.ts` | Per-provider parameter display categories |
-| `src/types/request.ts` | TypeScript types — ParsedRequest, AppConfig, etc. |
-| `src/shared/constants.ts` | DEFAULT_CONFIG and shared constants |
+| `src/types/request.ts` | TypeScript types — ParsedRequest, TabName, etc. |
+| `src/shared/constants.ts` | AppConfig interface, DEFAULT_CONFIG, and shared constants |
 | `public/panel.html` | Panel DOM + inline CSS |
 
 ## Chrome Extension Notes
 
-- Manifest V3 with permissions: `webRequest`, `storage`, `declarativeNetRequest`
+- Manifest V3 with permissions: `webRequest`, `storage`, `declarativeNetRequest`, `cookies`, `tabs`, `activeTab`
 - Host permissions: `<all_urls>`
 - DevTools page: `public/devtools.html`
 - After JS changes, extension must be reloaded at `chrome://extensions/`

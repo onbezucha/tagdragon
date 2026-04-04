@@ -31,6 +31,7 @@ export function qsa<T extends Element = Element>(
 // Cached DOM references for performance
 
 interface DOMRefs {
+  // ─── NETWORK REFS ───────────────────────────────────────────────────────
   readonly list: HTMLElement | null;
   readonly empty: HTMLElement | null;
   readonly detail: HTMLElement | null;
@@ -74,6 +75,22 @@ interface DOMRefs {
   readonly infoPopover: HTMLElement | null;
   readonly btnInfo: HTMLElement | null;
   readonly infoProviderGroups: HTMLElement | null;
+  // ─── DATALAYER REFS ─────────────────────────────────────────────────────
+  readonly dlPushList: HTMLElement | null;
+  readonly dlDetailPane: HTMLElement | null;
+  readonly dlEmptyState: HTMLElement | null;
+  readonly dlSplitter: HTMLElement | null;
+  readonly dlFilterInput: HTMLInputElement | null;
+  readonly dlBtnClear: HTMLElement | null;
+  readonly dlBtnExport: HTMLElement | null;
+  readonly dlView: HTMLElement | null;
+  readonly dlFilterBar: HTMLElement | null;
+  readonly dlStatusText: HTMLElement | null;
+  readonly dlMain: HTMLElement | null;
+  readonly dlDetailContent: HTMLElement | null;
+  readonly dlDetailTabs: HTMLElement | null;
+  readonly dlDetailBadge: HTMLElement | null;
+  readonly dlDetailTitle: HTMLElement | null;
 }
 
 export const DOM: DOMRefs = {
@@ -120,4 +137,20 @@ export const DOM: DOMRefs = {
   get infoPopover() { return $('info-popover'); },
   get btnInfo() { return $('btn-info'); },
   get infoProviderGroups() { return $('info-provider-groups'); },
+  // ─── DATALAYER REFS ─────────────────────────────────────────────────────
+  get dlPushList() { return $('dl-push-list'); },
+  get dlDetailPane() { return $('dl-detail-pane'); },
+  get dlEmptyState() { return $('dl-empty-state'); },
+  get dlSplitter() { return $('dl-splitter'); },
+  get dlFilterInput() { return $<HTMLInputElement>('dl-filter-input'); },
+  get dlBtnClear() { return $('dl-btn-clear'); },
+  get dlBtnExport() { return $('dl-btn-export'); },
+  get dlView() { return $('datalayer-view'); },
+  get dlFilterBar() { return $('dl-filter-bar'); },
+  get dlStatusText() { return $('dl-status-text'); },
+  get dlMain() { return $('dl-main'); },
+  get dlDetailContent() { return $('dl-detail-content'); },
+  get dlDetailTabs() { return $('dl-detail-tabs'); },
+  get dlDetailBadge() { return $('dl-detail-badge'); },
+  get dlDetailTitle() { return $('dl-detail-title'); },
 };

@@ -33,4 +33,14 @@ export default [
     output: { file: 'dist/popup.js', format: 'iife', name: 'RequestTrackerPopup', sourcemap: !isProduction },
     plugins,
   },
+  {
+    input: 'src/content/data-layer-main.ts',
+    output: { file: 'dist/data-layer-main.js', format: 'iife' },
+    plugins,
+  },
+  {
+    input: 'src/content/data-layer-bridge.ts',
+    output: { file: 'dist/data-layer-bridge.js', format: 'iife' },
+    plugins,
+  },
 ];

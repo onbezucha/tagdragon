@@ -1,7 +1,7 @@
 {
   "name": "request-tracker",
   "type": "module",
-  "version": "1.3.3",
+  "version": "1.4.1",
   "description": "Chrome DevTools extension that captures and decodes network requests from marketing/analytics tracking services",
   "main": "dist/panel.js",
   "scripts": {

@@ -10,6 +10,16 @@ import {
   getConfig,
   getAllRequests,
 } from '../state';
+import { getProviderGroup } from '@/shared/provider-groups';
+import { GROUP_ICONS } from '../utils/group-icons';
+import { PROVIDER_ICONS } from '../utils/provider-icons';
+
+function buildGroupIcon(provider: string): string {
+  if (PROVIDER_ICONS[provider]) return PROVIDER_ICONS[provider];
+  const group = getProviderGroup(provider);
+  if (!group) return '';
+  return GROUP_ICONS[group.id] ?? group.icon;
+}
 
 export type SelectCallback = (data: ParsedRequest, row: HTMLElement) => void;
 
@@ -18,10 +28,12 @@ const rowTemplate = document.createElement('template');
 rowTemplate.innerHTML = `
   <div class="req-row">
     <div class="req-primary">
-      <span class="req-provider-dot"></span>
+      <span class="req-category-icon"></span>
       <span class="req-provider-name"></span>
-      <span class="req-event"></span>
       <span class="req-time"></span>
+    </div>
+    <div class="req-middle">
+      <span class="req-event"></span>
     </div>
     <div class="req-secondary">
       <span class="req-status"></span>
@@ -48,21 +60,29 @@ export function createRequestRow(data: ParsedRequest, isVisible: boolean): HTMLE
   const eventName = data._eventName || getEventName(data);
   
   // Primary line
-  const dot = row.querySelector('.req-provider-dot') as HTMLElement;
-  dot.style.background = data.color;
   const nameEl = row.querySelector('.req-provider-name') as HTMLElement;
   nameEl.textContent = data.provider;
   nameEl.style.color = data.color;
-  
+
   if (data.source === 'extension') {
     const badge = document.createElement('span');
     badge.className = 'badge-ext';
     badge.textContent = 'EXT';
     nameEl.after(badge);
   }
-  
-  (row.querySelector('.req-event') as HTMLElement).textContent = eventName;
+
+  const iconEl = row.querySelector('.req-category-icon') as HTMLElement;
+  const iconSvg = buildGroupIcon(data.provider);
+  if (iconSvg) {
+    iconEl.innerHTML = iconSvg;
+  } else {
+    iconEl.remove();
+  }
+
   (row.querySelector('.req-time') as HTMLElement).textContent = time;
+
+  // Middle line
+  (row.querySelector('.req-event') as HTMLElement).textContent = eventName;
   
   // Secondary line
   const statusEl = row.querySelector('.req-status') as HTMLElement;

@@ -2,7 +2,7 @@ import type { Provider } from '../../types/provider';
 import { getParams, extractPath } from '../url-parser';
 
 export const adobeAA: Provider = {
-  name: 'Adobe AA',
+  name: 'Adobe Client-Side',
   color: '#FF0000',
   // Patterns:
   //   [company].sc.omtrdc.net/b/ss/[rsid]/...  — standard 3rd-party collection
