@@ -6,7 +6,7 @@ import { GET_CONSENT_DATA_SCRIPT, ACCEPT_ALL_SCRIPT, REJECT_ALL_SCRIPT } from '@
 
 const STORAGE_KEY = 'rt_consent_override';
 const MAX_APPLY_ATTEMPTS = 6;
-const APPLY_RETRY_MS = 1500;   // interval mezi pokusy o aplikaci po navigaci
+const APPLY_RETRY_MS = 1500;   // retry interval between post-navigation attempts
 const FIRST_ATTEMPT_MS = 1000; // delay after navigation before first attempt
 
 type ConsentOverride = 'accept_all' | 'reject_all' | null;

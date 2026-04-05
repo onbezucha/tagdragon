@@ -17,12 +17,11 @@ interface PanelWindow extends Window {
     sources: DataLayerSource[],
     labels: Record<DataLayerSource, string>
   ) => void;
-  receiveDataLayerSnapshot: (data: Record<string, unknown>) => void;
-  clearDataLayer?: () => void;
   triggerReinject?: () => void;
   _getHeavyData?: (requestId: number) => HeavyData | null;
   _clearHeavyData?: () => void;
   _deleteHeavyData?: (ids: number[]) => void;
+  _setPaused?: (paused: boolean) => void;
 }
 
 let panelWindow: PanelWindow | null = null;

@@ -6,7 +6,6 @@ import { initNetworkCapture } from './network-capture';
 import {
   sendDataLayerPushToPanel,
   sendDataLayerSourcesToPanel,
-  sendDataLayerSnapshotToPanel,
   flushDataLayerBuffer,
 } from './data-layer-relay';
 
@@ -41,9 +40,6 @@ function attachPortListener(port: chrome.runtime.Port): void {
         msg.labels as Record<string, string>,
       );
     }
-    if (msg.type === 'DATALAYER_SNAPSHOT_RESPONSE') {
-      sendDataLayerSnapshotToPanel(msg.data as Record<string, unknown>);
-    }
   });
 
   port.onDisconnect.addListener(() => {
@@ -66,6 +62,11 @@ chrome.devtools.panels.create(
     // When panel becomes visible, establish the bridge and flush buffered requests
     panel.onShown.addListener((win: Window) => {
       setPanelWindow(win);
+      // Wire pause sync: popup → background → network-capture → panel UI
+      (win as Record<string, unknown>)['_setPaused'] = (paused: boolean) => {
+        const fn = (win as Record<string, unknown>)['setPanelPaused'];
+        if (typeof fn === 'function') fn(paused);
+      };
       // Expose re-inject helper so panel.js can trigger injection on demand
       (win as Record<string, unknown>)['triggerReinject'] = () => {
         chrome.runtime.sendMessage({ type: 'INJECT_DATALAYER', tabId }).catch(() => {});

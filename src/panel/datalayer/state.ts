@@ -5,7 +5,6 @@ import type {
   DataLayerPush,
   DataLayerState,
   DataLayerSource,
-  DlPendingPush,
 } from '@/types/datalayer';
 
 // ─── STATE CONTAINERS ────────────────────────────────────────────────────────
@@ -18,21 +17,15 @@ const dlState: DataLayerState = {
   isPaused: false,
   sources: new Set(),
   sourceLabels: new Map(),
-  searchIndex: new Map(),
 };
-
-// ─── BATCHING STATE ──────────────────────────────────────────────────────────
-
-let dlPending: DlPendingPush[] = [];
-let dlRafId: number | null = null;
 
 // ─── FILTER STATE ────────────────────────────────────────────────────────────
 
 interface DlFilterState {
   text: string;
   source: DataLayerSource | '';
-  eventName: string;
-  hasKey: string;
+  eventName: string;    // TODO: No UI control yet — reserved for future filter dropdown
+  hasKey: string;       // TODO: No UI control yet — reserved for future "has key" filter
   ecommerceOnly: boolean;
 }
 
@@ -122,10 +115,6 @@ export function addDlSource(source: DataLayerSource): void {
   dlState.sources.add(source);
 }
 
-export function setDlSourceLabels(labels: Map<DataLayerSource, string>): void {
-  labels.forEach((label, source) => dlState.sourceLabels.set(source, label));
-}
-
 export function getDlSourceLabel(source: DataLayerSource): string {
   return dlState.sourceLabels.get(source) ?? source;
 }
@@ -182,28 +171,6 @@ export function resetDlFilters(): void {
   dlFilterState.eventName = '';
   dlFilterState.hasKey = '';
   dlFilterState.ecommerceOnly = false;
-}
-
-// ─── BATCHING ────────────────────────────────────────────────────────────────
-
-export function getDlPending(): DlPendingPush[] {
-  return dlPending;
-}
-
-export function addDlPending(item: DlPendingPush): void {
-  dlPending.push(item);
-}
-
-export function clearDlPending(): void {
-  dlPending = [];
-}
-
-export function getDlRafId(): number | null {
-  return dlRafId;
-}
-
-export function setDlRafId(id: number | null): void {
-  dlRafId = id;
 }
 
 // ─── STATS ───────────────────────────────────────────────────────────────────

@@ -48,8 +48,8 @@ export const GET_CONSENT_DATA_SCRIPT = `
     var categories = [];
 
     // ── OneTrust ─────────────────────────────────────────────────────────────
-    // Priorita: 1) window.OnetrustActiveGroups (live stav, sync update po AllowAll/RejectAll)
-    //           2) OneTrust.GetDomainData().Groups (definice skupin)
+    // Priority: 1) window.OnetrustActiveGroups (live state, sync update after AllowAll/RejectAll)
+    //           2) OneTrust.GetDomainData().Groups (group definitions)
     //           3) OptanonConsent cookie (fallback)
     if (win.OneTrust || win.Optanon) {
       try {
@@ -88,7 +88,7 @@ export const GET_CONSENT_DATA_SCRIPT = `
             if (!isAlways) {
               granted = activeStr
                 ? isOTActive(id)
-                : g.IsConsentOptIn === true; // fallback z API dat
+                : g.IsConsentOptIn === true; // fallback from API data
             }
             categories.push({
               type: type,

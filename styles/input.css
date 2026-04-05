@@ -45,8 +45,8 @@
   }
 
   /* ═══════════════════════════════════════════════════════════════════════════
-     TAGDRAGON "DRAGON EYE" COLOR PALETTE
-     ═══════════════════════════════════════════════════════════════════════════ */
+       TAGDRAGON "DRAGON EYE" COLOR PALETTE
+       ═══════════════════════════════════════════════════════════════════════════ */
   
   /* Default: Dark Mode */
   :root {
@@ -104,8 +104,8 @@
   }
 
   /* ═══════════════════════════════════════════════════════════════════════════
-     LIGHT MODE
-     ═══════════════════════════════════════════════════════════════════════════ */
+       LIGHT MODE
+       ═══════════════════════════════════════════════════════════════════════════ */
   [data-theme="light"] {
     /* ─── POZADÍ (inspirováno sclerou z loga) ────────────────────────────────── */
     --bg-0: #FEF7ED;          /* Nejtmavší — krémová */
@@ -153,8 +153,8 @@
 
 @layer components {
   /* ═════════════════════════════════════════════════════════════════════
-     REQUEST ROWS (dynamically created by JS at runtime)
-     ═════════════════════════════════════════════════════════════════════ */
+       REQUEST ROWS (dynamically created by JS at runtime)
+       ═════════════════════════════════════════════════════════════════════ */
 
   @keyframes slideIn {
     from {
@@ -325,8 +325,8 @@
   }
 
   /* ═════════════════════════════════════════════════════════════════════
-     CATEGORY SECTIONS (Decoded tab - dynamically created by JS)
-     ═════════════════════════════════════════════════════════════════════ */
+       CATEGORY SECTIONS (Decoded tab - dynamically created by JS)
+       ═════════════════════════════════════════════════════════════════════ */
 
   .category-section {
     border-radius: var(--radius);
@@ -412,8 +412,8 @@
   }
 
   /* ═════════════════════════════════════════════════════════════════════
-     PARAM ROWS (Decoded tab parameter rows)
-     ═════════════════════════════════════════════════════════════════════ */
+       PARAM ROWS (Decoded tab parameter rows)
+       ═════════════════════════════════════════════════════════════════════ */
 
   .param-row {
     display: flex;
@@ -501,8 +501,8 @@
   }
 
   /* ═════════════════════════════════════════════════════════════════════
-     PARAM TABLE (Query, POST, Headers, Response tabs)
-     ═════════════════════════════════════════════════════════════════════ */
+       PARAM TABLE (Query, POST, Headers, Response tabs)
+       ═════════════════════════════════════════════════════════════════════ */
 
   .param-table {
     width: 100%;
@@ -569,8 +569,8 @@
   }
 
   /* ═════════════════════════════════════════════════════════════════════
-     JSON PRE BLOCKS (Response tab)
-     ═════════════════════════════════════════════════════════════════════ */
+       JSON PRE BLOCKS (Response tab)
+       ═════════════════════════════════════════════════════════════════════ */
 
   pre.json {
     font-family: var(--font-mono);
@@ -587,8 +587,8 @@
   }
 
   /* ═════════════════════════════════════════════════════════════════════
-     EMPTY TAB MESSAGE
-     ═════════════════════════════════════════════════════════════════════ */
+       EMPTY TAB MESSAGE
+       ═════════════════════════════════════════════════════════════════════ */
 
   .empty-tab {
     color: var(--text-2);
@@ -599,8 +599,8 @@
   }
 
   /* ═════════════════════════════════════════════════════════════════════
-     ADOBE SPECIALIZED RENDERERS
-     ═════════════════════════════════════════════════════════════════════ */
+       ADOBE SPECIALIZED RENDERERS
+       ═════════════════════════════════════════════════════════════════════ */
 
   .param-row.adobe-events {
     align-items: flex-start;
@@ -656,8 +656,8 @@
   }
 
   /* ═════════════════════════════════════════════════════════════════════
-     PROVIDER PILLS (filter bar - dynamically created by JS)
-     ═════════════════════════════════════════════════════════════════════ */
+       PROVIDER PILLS (filter bar - dynamically created by JS)
+       ═════════════════════════════════════════════════════════════════════ */
 
   .ppill {
     display: inline-flex;
@@ -712,8 +712,8 @@
   }
 
   /* ═════════════════════════════════════════════════════════════════════
-     FILTER PILLS (filter bar - dynamically created by JS)
-     ═════════════════════════════════════════════════════════════════════ */
+       FILTER PILLS (filter bar - dynamically created by JS)
+       ═════════════════════════════════════════════════════════════════════ */
 
   @keyframes pillFadeIn {
     from {
@@ -837,8 +837,8 @@
   }
 
   /* ═════════════════════════════════════════════════════════════════════
-     COMPACT ROWS MODE
-     ═════════════════════════════════════════════════════════════════════ */
+       COMPACT ROWS MODE
+       ═════════════════════════════════════════════════════════════════════ */
 
   body.compact-rows .req-row {
     padding: 3px 10px;
@@ -858,8 +858,8 @@
   }
 
   /* ═════════════════════════════════════════════════════════════════════
-     PAUSED STATE INDICATOR
-     ═════════════════════════════════════════════════════════════════════ */
+       PAUSED STATE INDICATOR
+       ═════════════════════════════════════════════════════════════════════ */
 
   body.paused #toolbar {
     border-bottom-color: var(--red);
@@ -871,8 +871,8 @@
   }
 
   /* ═════════════════════════════════════════════════════════════════════
-     DISABLED TAB STATE
-     ═════════════════════════════════════════════════════════════════════ */
+       DISABLED TAB STATE
+       ═════════════════════════════════════════════════════════════════════ */
 
   .dtab.disabled {
     opacity: 0.3;
@@ -881,8 +881,8 @@
   }
 
   /* ═════════════════════════════════════════════════════════════════════
-     WARNING ICON
-     ═════════════════════════════════════════════════════════════════════ */
+       WARNING ICON
+       ═════════════════════════════════════════════════════════════════════ */
 
   .warning-icon {
     margin-right: 4px;
@@ -890,8 +890,8 @@
   }
 
   /* ═════════════════════════════════════════════════════════════════════
-     HEADERS SECTION TITLES (merged Headers tab)
-     ═════════════════════════════════════════════════════════════════════ */
+       HEADERS SECTION TITLES (merged Headers tab)
+       ═════════════════════════════════════════════════════════════════════ */
 
   .headers-section-title {
     font-size: 12px;
@@ -909,8 +909,8 @@
   }
 
   /* ═════════════════════════════════════════════════════════════════════
-     BADGE EXT (EXT badge for extension requests)
-     ═════════════════════════════════════════════════════════════════════ */
+       BADGE EXT (EXT badge for extension requests)
+       ═════════════════════════════════════════════════════════════════════ */
 
   .badge-ext {
     font-size: 9px;
@@ -926,8 +926,8 @@
 
 @layer utilities {
   /* ═════════════════════════════════════════════════════════════════════
-     GLOBAL SCROLLBAR STYLING
-     ═════════════════════════════════════════════════════════════════════ */
+       GLOBAL SCROLLBAR STYLING
+       ═════════════════════════════════════════════════════════════════════ */
 
   *::-webkit-scrollbar {
     width: 6px;
@@ -1044,20 +1044,20 @@
 /* Detected info */
 .env-detected {
   margin-top: 4px;
-  font-size: 10px;
+  font-size: 12px;
   line-height: 1.6;
   color: var(--text-2);
 }
 
 .env-detected-label {
-  font-size: 10px;
+  font-size: 11px;
   color: var(--text-2);
 }
 
 .env-detected-url {
   display: block;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 12px;
   color: var(--text-1);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1071,7 +1071,7 @@
   margin-top: 4px;
   padding: 1px 6px;
   border-radius: 3px;
-  font-size: 10px;
+  font-size: 11px;
   background: var(--bg-2);
   color: var(--text-1);
 }
@@ -1087,7 +1087,7 @@
 
 .env-input-label {
   display: block;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 500;
   margin-bottom: 3px;
   color: var(--text-2);
@@ -1099,7 +1099,7 @@
   width: 100%;
   padding: 5px 8px;
   border-radius: 4px;
-  font-size: 10px;
+  font-size: 12px;
   font-family: var(--font-mono);
   background: var(--bg-2);
   border: 1px solid var(--border);
@@ -1133,7 +1133,7 @@
   gap: 6px;
   padding: 6px 0;
   border-radius: 4px;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 500;
   background: var(--bg-2);
   border: 1px solid var(--border);
@@ -1166,7 +1166,7 @@
   width: 100%;
   padding: 7px 0;
   border-radius: 4px;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 500;
   background: var(--accent);
   color: white;
@@ -1189,7 +1189,7 @@
   width: 100%;
   padding: 5px 0;
   border-radius: 4px;
-  font-size: 10px;
+  font-size: 12px;
   background: none;
   border: 1px solid var(--border);
   color: var(--text-2);
@@ -1205,7 +1205,7 @@
 /* Footer */
 .env-footer {
   padding: 8px 12px;
-  font-size: 10px;
+  font-size: 12px;
   border-top: 1px solid var(--border);
   color: var(--text-3);
 }

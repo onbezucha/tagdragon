@@ -2,6 +2,8 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+**TagDragon v1.5.0** — Chrome DevTools extension (Manifest V3) for capturing and decoding marketing/analytics tracking requests.
+
 ## Commands
 
 ```bash
@@ -61,7 +63,7 @@ To add a provider: create a file in `src/providers/` (or a vendor subfolder), im
 **Order in `PROVIDERS` matters** — first match wins. Keep more specific patterns before broader ones. Critical ordering constraints:
 - `tealiumEventstream` before `tealium`
 - `piwikProTm` before `piwikPro`
-- Adobe stack (specific → broad): `adobeHeartbeat` → `adobeTarget` → `adobeECID` → `adobeAAM` → `adobeDTM` → `adobeLaunchChina` → `adobeAA`
+- Adobe stack (specific → broad): `aepWebSDK` → `adobeHeartbeat` → `adobeTarget` → `adobeECID` → `adobeAAM` → `adobeDTM` → `adobeLaunchChina` → `adobeAA`
 - `comscore` before `scorecard`
 - `googleAds` before `doubleclick`
 
@@ -102,6 +104,20 @@ Stats stored in `chrome.storage.session` (per-tab, cleared on restart). Badge co
 
 `src/panel/utils/provider-icons.ts` contains brand SVG icons for individual providers (GA4, GTM, Meta Pixel, etc.) sourced from Simple Icons (CC0). `src/panel/utils/group-icons.ts` has generic SVG icons for provider groups. Both use `currentColor` for theme adaptation.
 
+### Shared utilities
+
+- `src/shared/datalayer-constants.ts` — `SOURCE_LABELS` and `SOURCE_DESCRIPTIONS` for DataLayer sources
+- `src/shared/ecommerce.ts` — Unified e-commerce event type detection (purchase, checkout, impression, promo, refund)
+- `src/shared/http-utils.ts` — HTTP header parsing utilities
+- `src/shared/id-gen.ts` — Unique ID generation with timestamp + counter
+
+### Panel utilities
+
+- `src/panel/utils/categorize.ts` — Applies provider-specific category rules from `src/shared/categories.ts` for the Decoded tab
+- `src/panel/utils/export.ts` — CSV and JSON download utilities
+- `src/panel/utils/persistence.ts` — Panel setting persistence using `chrome.storage.local` with `localStorage` fallback (used for splitter widths etc.)
+- `src/panel/utils/platform.ts` — `isMac` constant for Mac-specific keyboard shortcuts (Cmd+↑/↓ as Home/End)
+
 ### State management
 
 `src/panel/state.ts` — network request state:
@@ -110,6 +126,7 @@ Stats stored in `chrome.storage.session` (per-tab, cleared on restart). Badge co
 - `filterState` — text, eventType, userId, status, method, hasParam
 - `statsState` — visible count, size, duration accumulators
 - `appConfig` — persisted to `chrome.storage.local` under key `rt_config`; includes `hiddenProviders: string[]` (mirrored into a runtime `Set<string>` on load), `defaultTab`, `compactRows`, `timestampFormat` (`'absolute'|'relative'|'elapsed'`), `exportFormat` (`'json'|'csv'`), and `collapsedGroups`
+- `adobeEnvState` — Adobe environment detection and configuration state (`detected`, `config`, `selectedEnv`)
 
 `src/panel/datalayer/state.ts` — DataLayer push state (parallel structure):
 - `all[]` + `map` (O(1) lookup) + `filteredIds` set + `selectedId` + `isPaused`
@@ -154,6 +171,18 @@ Provider groups are defined in `src/shared/provider-groups.ts` (9 groups: Analyt
 - `@types/*` → `src/types/*`
 - `@providers/*` → `src/providers/*`
 - `@components/*` → `src/panel/components/*`
+
+
+## Keyboard shortcuts
+
+| Shortcut | Action |
+|----------|--------|
+| `Ctrl+L` | Clear all requests (network or datalayer based on active view) |
+| `Ctrl+F` | Focus search input (network or datalayer based on active view) |
+| `↑ / ↓` | Navigate list |
+| `Home` / `Cmd+↑` | Jump to first item |
+| `End` / `Cmd+↓` | Jump to last item |
+| `Esc` | Clear search / close detail panel / close popovers |
 
 ## Localization
 

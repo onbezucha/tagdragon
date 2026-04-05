@@ -172,7 +172,7 @@ Providers are defined as objects with `name`, `color`, `pattern` (RegExp), and `
 - More specific patterns always before broader ones on the same domain
 - `tealiumEventstream` before `tealium` (`collect.tealiumiq.com/event` vs `collect.tealiumiq.com`)
 - `piwikProTm` before `piwikPro`
-- Adobe order (specific → broad): `adobeHeartbeat` → `adobeTarget` → `adobeECID` → `adobeAAM` → `adobeDTM` → `adobeLaunchChina` → `adobeAA`
+- Adobe order (specific → broad): `aepWebSDK` → `adobeHeartbeat` → `adobeTarget` → `adobeECID` → `adobeAAM` → `adobeDTM` → `adobeLaunchChina` → `adobeAA`
 - `comscore` before `scorecard` (same domain `scorecardresearch.com`, different paths)
 - `googleAds` before `doubleclick`
 
@@ -184,6 +184,7 @@ Providers are defined as objects with `name`, `color`, `pattern` (RegExp), and `
 - `filterState` — text, eventType, userId, status, method, hasParam
 - `statsState` — visible count, size, duration accumulators
 - `appConfig` — persisted to `chrome.storage.local` under key `rt_config`
+- `adobeEnvState` — Adobe environment detection and configuration state (not persisted)
 
 **DataLayer pushes** (`src/panel/datalayer/state.ts`):
 - `all[]` array + `map` (O(1) lookup by push ID) + `filteredIds` set
@@ -248,6 +249,17 @@ Hidden providers are persisted in `AppConfig.hiddenProviders` (restored on load 
 - Pre-computed search indexes (`_searchIndex`)
 - Lazy loading for heavy data (response bodies, headers)
 
+### Keyboard Shortcuts
+
+| Shortcut | Action |
+|----------|--------|
+| `Ctrl+L` | Clear all requests (network or datalayer based on active view) |
+| `Ctrl+F` | Focus search input (network or datalayer based on active view) |
+| `↑ / ↓` | Navigate list |
+| `Home` / `Cmd+↑` | Jump to first item |
+| `End` / `Cmd+↓` | Jump to last item |
+| `Esc` | Clear search / close detail panel / close popovers |
+
 ## CSS Workflow
 
 1. **Edit:** `styles/input.css` or inline styles in `public/panel.html`
@@ -264,6 +276,7 @@ Hidden providers are persisted in `AppConfig.hiddenProviders` (restored on load 
 | File | Purpose |
 |------|---------|
 | `src/panel/index.ts` | Panel controller — toolbar handlers, request rendering, popover logic |
+| `src/panel/theme.ts` | Dark/light theme management with CSS custom properties |
 | `src/panel/state.ts` | Single source of truth — request state, filter state, AppConfig persistence |
 | `src/panel/components/provider-bar.ts` | Provider filter popover — pills, groups, toggle, counts, filter bar visibility |
 | `src/panel/components/filter-bar.ts` | Active filter chips bar — shows removable chips for active filters |
@@ -281,23 +294,34 @@ Hidden providers are persisted in `AppConfig.hiddenProviders` (restored on load 
 | `src/panel/utils/dom.ts` | Cached DOM references (`DOM.*`) and query helpers |
 | `src/panel/utils/format.ts` | Value formatting helpers |
 | `src/panel/utils/filter.ts` | Filter logic — applies filterState to requests |
+| `src/panel/utils/categorize.ts` | Request categorization logic for the Decoded tab |
+| `src/panel/utils/export.ts` | CSV and JSON download utilities |
+| `src/panel/utils/persistence.ts` | Panel setting persistence (chrome.storage.local + localStorage fallback) |
+| `src/panel/utils/platform.ts` | Platform detection — `isMac` constant for Mac keyboard shortcuts |
 | `src/panel/utils/group-icons.ts` | Inline SVG icons for provider groups (analytics, tagmanager, marketing, etc.) |
 | `src/panel/utils/provider-icons.ts` | Brand SVG icons for individual providers (GA4, GTM, Meta Pixel, etc.) |
 | `src/devtools/index.ts` | DevTools page — registers panel, sets up network capture |
+| `src/devtools/network-capture.ts` | HAR network request capture — provider matching, POST body parsing, request building |
+| `src/devtools/panel-bridge.ts` | Panel communication — request buffering, heavy data store, lazy loading |
 | `src/devtools/data-layer-relay.ts` | DataLayer relay — forwards pushes/sources/snapshots from background port to panel |
 | `src/background/index.ts` | Service worker — message relay, declarativeNetRequest rules, cookie clearing |
 | `src/background/badge.ts` | Badge counter — updates extension icon with request count |
 | `src/background/popup-bridge.ts` | Popup bridge — handles popup ↔ background messaging, DevTools status tracking |
 | `src/providers/index.ts` | PROVIDERS array — ordered list of all provider matchers |
+| `src/providers/url-parser.ts` | URL and POST body parameter parser — `getParams()` utility used by all providers |
 | `src/shared/provider-groups.ts` | PROVIDER_GROUPS — grouping/categorization of providers in the popover |
 | `src/shared/categories.ts` | Per-provider parameter display categories |
 | `src/shared/cmp-detection.ts` | CMP detection scripts — OneTrust, UserCentrics, Cookiebot, CookieYes, Didomi, iubenda, TCF |
 | `src/types/request.ts` | TypeScript types — ParsedRequest, TabName, etc. |
 | `src/types/datalayer.ts` | DataLayer types — DataLayerPush, DataLayerState, DiffEntry, message types |
-| `src/types/consent.ts` | Consent types — ConsentCategory, GoogleConsentMode, TCFData, CMPInfo |
+| `src/types/consent.ts` | Consent types — ConsentCategory, GoogleConsentMode, TCFData, CMPInfo, ConsentData |
 | `src/types/popup.ts` | Popup types — ProviderStats, TabPopupStats, PopupStatsResponse |
 | `src/types/categories.ts` | Category types — CategoryConfig, ProviderCategories |
 | `src/shared/constants.ts` | AppConfig interface, DEFAULT_CONFIG, and shared constants |
+| `src/shared/datalayer-constants.ts` | DataLayer source labels and descriptions |
+| `src/shared/ecommerce.ts` | Unified e-commerce event type detection (purchase, checkout, impression, promo, refund) |
+| `src/shared/http-utils.ts` | HTTP header parsing utilities |
+| `src/shared/id-gen.ts` | Unique ID generation with timestamp + counter |
 | `src/content/data-layer-main.ts` | MAIN world script — intercepts data layer pushes from GTM, Tealium, Adobe, Segment, digitalData |
 | `src/content/data-layer-bridge.ts` | ISOLATED world bridge — relays postMessage to background service worker |
 | `src/panel/datalayer/state.ts` | DataLayer state — push array, filtered IDs, sources, filter state |

@@ -5,6 +5,10 @@
 
 import { getPanelWindow } from './panel-bridge';
 import type { DataLayerPush, DataLayerSource } from '@/types/datalayer';
+import { detectEcommerceType } from '@/shared/ecommerce';
+import { generateId } from '@/shared/id-gen';
+
+import { SOURCE_DESCRIPTIONS } from '@/shared/datalayer-constants';
 
 const MAX_BUFFER = 500;
 let dlBuffer: DataLayerPush[] = [];
@@ -18,14 +22,13 @@ function buildPush(msg: {
   isReplay?: boolean;
 }): DataLayerPush {
   return {
-    id: Date.now() + Math.random(),
+    id: generateId(),
     source: msg.source,
-    sourceLabel: msg.sourceLabel ?? sourceToLabel(msg.source),
+    sourceLabel: msg.sourceLabel ?? SOURCE_DESCRIPTIONS[msg.source] ?? msg.source,
     pushIndex: msg.pushIndex,
     timestamp: msg.timestamp,
     data: msg.data,
     cumulativeState: {},
-    diffFromPrevious: null,
     isReplay: msg.isReplay ?? false,
     _eventName: extractEventName(msg.data),
     _ecommerceType: detectEcommerceType(msg.data),
@@ -94,35 +97,6 @@ export function sendDataLayerSourcesToPanel(
   }
 }
 
-/**
- * Send a DataLayer snapshot to the panel window.
- */
-export function sendDataLayerSnapshotToPanel(data: Record<string, unknown>): void {
-  const win = getPanelWindow();
-  if (!win || win.closed) return;
-  try {
-    if (typeof win.receiveDataLayerSnapshot === 'function') {
-      win.receiveDataLayerSnapshot(data);
-    }
-  } catch {
-    // ignore
-  }
-}
-
-// ─── HELPERS ─────────────────────────────────────────────────────────────────
-
-function sourceToLabel(source: DataLayerSource): string {
-  const map: Record<DataLayerSource, string> = {
-    gtm: 'GTM',
-    tealium: 'Tealium',
-    adobe: 'Adobe',
-    segment: 'Segment',
-    digitalData: 'W3C',
-    custom: 'Custom',
-  };
-  return map[source] ?? source;
-}
-
 function extractEventName(data: Record<string, unknown>): string | undefined {
   if (typeof data['event'] === 'string') return data['event'];
   if (typeof data['eventName'] === 'string') return data['eventName'];
@@ -130,17 +104,4 @@ function extractEventName(data: Record<string, unknown>): string | undefined {
   return undefined;
 }
 
-function detectEcommerceType(
-  data: Record<string, unknown>,
-): 'purchase' | 'checkout' | 'impression' | 'promo' | 'refund' | null {
-  if (!data['ecommerce']) return null;
-  const event = typeof data['event'] === 'string' ? data['event'] : '';
-  const ec = data['ecommerce'] as Record<string, unknown>;
 
-  if (event === 'purchase' || ec['purchase']) return 'purchase';
-  if (event === 'refund' || ec['refund']) return 'refund';
-  if (event.startsWith('begin_checkout') || event.startsWith('add_shipping') || ec['checkout']) return 'checkout';
-  if (event === 'view_item_list' || ec['impressions']) return 'impression';
-  if (event === 'select_promotion' || ec['promoView'] || ec['promoClick']) return 'promo';
-  return null;
-}

@@ -1,33 +1,12 @@
 // ─── ECOMMERCE FORMATTER ─────────────────────────────────────────────────────
 // Detect e-commerce type and render product tables from DataLayer pushes.
 
-// ─── E-COMMERCE DETECTION ────────────────────────────────────────────────────
+import { detectEcommerceType, type EcommerceType } from '@/shared/ecommerce';
+import { esc } from '../utils/format';
 
-export type EcommerceType = 'purchase' | 'checkout' | 'impression' | 'promo' | 'refund' | null;
-
-/**
- * Detect the e-commerce type of a DataLayer push.
- */
-export function detectEcommerceType(data: Record<string, unknown>): EcommerceType {
-  if (!data['ecommerce']) return null;
-  const event = typeof data['event'] === 'string' ? data['event'] : '';
-  const ec = data['ecommerce'] as Record<string, unknown>;
-
-  if (event === 'purchase' || ec['purchase']) return 'purchase';
-  if (event === 'refund' || ec['refund']) return 'refund';
-  if (
-    event.startsWith('begin_checkout') ||
-    event.startsWith('add_shipping') ||
-    event.startsWith('add_payment') ||
-    ec['checkout']
-  ) return 'checkout';
-  if (event === 'view_item_list' || ec['impressions'] || ec['item_list_name']) return 'impression';
-  if (event === 'select_promotion' || ec['promoView'] || ec['promoClick'] || ec['promotions']) return 'promo';
-
-  // GA4 general ecommerce
-  if (ec['items']) return 'impression';
-  return null;
-}
+// Re-export for backwards compatibility
+export { detectEcommerceType };
+export type { EcommerceType };
 
 interface ProductItem {
   id: string;
@@ -136,12 +115,12 @@ export function renderEcommerceTable(
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td>${i + 1}</td>
-      <td class="mono">${escHtml(p.id)}</td>
-      <td>${escHtml(p.name)}</td>
-      <td>${escHtml(p.category)}</td>
-      <td>${escHtml(p.variant)}</td>
+      <td class="mono">${esc(p.id)}</td>
+      <td>${esc(p.name)}</td>
+      <td>${esc(p.category)}</td>
+      <td>${esc(p.variant)}</td>
       <td>${p.quantity}</td>
-      <td class="mono">${escHtml(p.price)}${currencyDisplay}</td>
+      <td class="mono">${esc(p.price)}${currencyDisplay}</td>
     `;
     tbody.appendChild(tr);
   });
@@ -149,14 +128,10 @@ export function renderEcommerceTable(
 
   if (total) {
     const tfoot = document.createElement('tfoot');
-    tfoot.innerHTML = `<tr class="dl-total-row"><td colspan="6">Total</td><td class="mono">${escHtml(total)}</td></tr>`;
+    tfoot.innerHTML = `<tr class="dl-total-row"><td colspan="6">Total</td><td class="mono">${esc(total)}</td></tr>`;
     table.appendChild(tfoot);
   }
 
   wrapper.appendChild(table);
   container.appendChild(wrapper);
-}
-
-function escHtml(str: string): string {
-  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }

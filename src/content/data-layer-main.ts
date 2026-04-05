@@ -2,6 +2,8 @@
 // Runs in MAIN world (page context). Intercepts data layer pushes and sends
 // them to the ISOLATED world bridge via window.postMessage.
 
+import { SOURCE_DESCRIPTIONS } from '@/shared/datalayer-constants';
+
 (function () {
   // ─── GUARD: prevent double execution when injected more than once ─────────
   const win = window as Record<string, unknown>;
@@ -72,10 +74,6 @@
     }
   }
 
-  function safeStringify(val: unknown): string {
-    try { return JSON.stringify(val); } catch { return String(val); }
-  }
-
   // ─── GTM / window.dataLayer ──────────────────────────────────────────────
 
   function replayDataLayer(dataLayer: unknown[]): void {
@@ -119,7 +117,7 @@
     window.postMessage({
       type: 'TAGDRAGON_DL_SOURCES',
       sources,
-      labels: { gtm: 'GTM', tealium: 'Tealium', adobe: 'Adobe', segment: 'Segment', digitalData: 'W3C', custom: 'Custom' },
+      labels: SOURCE_DESCRIPTIONS,
     }, '*');
   }
 

@@ -107,7 +107,7 @@ import { merkury } from './merkury';
  * Key ordering rules:
  *   - tealiumEventstream before tealium (collect.tealiumiq.com/event vs collect.tealiumiq.com)
  *   - piwikProTm before piwikPro (different paths on piwik.pro)
- *   - adobeHeartbeat → adobeTarget → adobeECID → adobeAAM → adobeDTM → adobeLaunch → adobeAA
+ *   - aepWebSDK → adobeHeartbeat → adobeTarget → adobeECID → adobeAAM → adobeDTM → adobeLaunchChina → adobeAA
  *     (specific omtrdc/demdex patterns before broad adobeAA)
  *   - comscore before scorecard (scorecardresearch.com/b before /p)
  *   - googleAds before doubleclick

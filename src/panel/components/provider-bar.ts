@@ -191,7 +191,7 @@ export function updateFilterBarVisibility(): void {
   const $btn = DOM.btnProviders;
   $btn?.classList.toggle('active', hiddenProviders.size > 0);
 
-  // Empty state v popoveru
+  // Empty state in popover
   const $empty = document.getElementById('provider-popover-empty') as HTMLElement | null;
   if ($empty) $empty.style.display = hasProviders ? 'none' : '';
 

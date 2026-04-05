@@ -4,21 +4,11 @@
 
 import { initPopupBridge } from './popup-bridge';
 import { initBadge } from './badge';
+import { generateId } from '@/shared/id-gen';
+import { headersToObj } from '@/shared/http-utils';
 
 initPopupBridge();
 initBadge();
-
-/**
- * Convert headers array to object with lowercase keys.
- */
-function headersToObj(
-  headers: chrome.webRequest.HttpHeader[] = []
-): Record<string, string> {
-  return headers.reduce((acc, { name, value }) => {
-    acc[name.toLowerCase()] = value ?? '';
-    return acc;
-  }, {} as Record<string, string>);
-}
 
 // ─── ADOBE ENV REDIRECT ───────────────────────────────────────────────────────
 // Uses declarativeNetRequest to redirect Adobe Launch library URLs at network level.
@@ -30,7 +20,7 @@ const ADOBE_REDIRECT_RULE_ID = 1001;
 // DevTools connects with a named port so background can relay DataLayer messages.
 // port.name format: "devtools_<tabId>"
 
-const devToolsPorts = new Map<number, chrome.runtime.Port>();
+export const devToolsPorts = new Map<number, chrome.runtime.Port>();
 
 chrome.runtime.onConnect.addListener((port) => {
   const match = port.name.match(/^devtools_(\d+)$/);
@@ -206,7 +196,7 @@ chrome.webRequest.onBeforeSendHeaders.addListener(
       chrome.runtime.sendMessage({
         type: 'EXT_REQUEST',
         data: {
-          id: Date.now() + Math.random(),
+          id: generateId(),
           url: details.url,
           method: details.method,
           timestamp: new Date().toISOString(),

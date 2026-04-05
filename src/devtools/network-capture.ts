@@ -3,8 +3,10 @@
 
 import { matchProvider } from '@/providers/index';
 import { getParams } from '@/providers/url-parser';
+import { headersToObj } from '@/shared/http-utils';
 import { sendToPanel, heavyDataStore, getPanelWindow } from './panel-bridge';
 import type { ParsedRequest } from '@/types/request';
+import { generateId } from '@/shared/id-gen';
 
 interface HARPostData {
   text?: string;
@@ -53,23 +55,9 @@ function parsePostBody(postData: unknown): unknown {
   try {
     return JSON.parse(text);
   } catch {
-    // Not JSON, return as plain string for URLSearchParams parsing
+    // Not JSON — return as plain string for URLSearchParams parsing
+    return text;
   }
-
-  // URLencoded — return as plain string, getParams parses it via URLSearchParams
-  return text;
-}
-
-/**
- * Convert headers array to object with lowercase keys.
- */
-function headersToObj(
-  headers: Array<{ name: string; value: string }> = []
-): Record<string, string> {
-  return headers.reduce((acc, { name, value }) => {
-    acc[name.toLowerCase()] = value ?? '';
-    return acc;
-  }, {} as Record<string, string>);
 }
 
 // ─── REQUEST PROCESSING ───────────────────────────────────────────────────────
@@ -90,7 +78,7 @@ function processRequest(req: chrome.devtools.network.Request): void {
   const decoded = provider.parseParams(url, postRaw);
 
   req.getContent((responseBody: string | null) => {
-    const id = Date.now() + Math.random();
+    const id = generateId();
 
     // Store heavy data locally (not sent to panel immediately)
     heavyDataStore.set(id, {
@@ -203,14 +191,12 @@ function handleRuntimeMessage(msg: RuntimeMessage): void {
   // Keep local pause flag in sync; also notify the panel window if visible
   if (msg.type === 'RECORDING_PAUSED' && msg.tabId === tabId) {
     isPaused = true;
-    const win = getPanelWindow() as (Window & { _setPaused?: (v: boolean) => void }) | null;
-    win?._setPaused?.(true);
+    getPanelWindow()?._setPaused?.(true);
   }
 
   if (msg.type === 'RECORDING_RESUMED' && msg.tabId === tabId) {
     isPaused = false;
-    const win = getPanelWindow() as (Window & { _setPaused?: (v: boolean) => void }) | null;
-    win?._setPaused?.(false);
+    getPanelWindow()?._setPaused?.(false);
   }
 }
 

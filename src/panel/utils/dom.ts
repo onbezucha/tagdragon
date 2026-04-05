@@ -45,7 +45,9 @@ interface DOMRefs {
   readonly detailUrl: HTMLElement | null;
   readonly detailContent: HTMLElement | null;
   readonly detailTabs: HTMLElement | null;
-  readonly statusText: HTMLElement | null;
+  readonly statusStats: HTMLElement | null;
+  readonly sizeBadge: HTMLElement | null;
+  readonly timeBadge: HTMLElement | null;
   readonly filterInput: HTMLInputElement | null;
   readonly clearFilter: HTMLElement | null;
   readonly metaMethod: HTMLElement | null;
@@ -87,7 +89,7 @@ interface DOMRefs {
   readonly dlEmptyState: HTMLElement | null;
   readonly dlSplitter: HTMLElement | null;
   readonly dlFilterInput: HTMLInputElement | null;
-  readonly dlBtnClear: HTMLElement | null;
+
   readonly dlBtnExport: HTMLElement | null;
   readonly dlView: HTMLElement | null;
   readonly dlFilterBar: HTMLElement | null;
@@ -113,7 +115,9 @@ export const DOM: DOMRefs = {
   get detailUrl() { return $('detail-url'); },
   get detailContent() { return $('detail-content'); },
   get detailTabs() { return $('detail-tabs'); },
-  get statusText() { return $('status-text'); },
+  get statusStats() { return $('status-stats'); },
+  get sizeBadge() { return $('size-badge'); },
+  get timeBadge() { return $('time-badge'); },
   get filterInput() { return $<HTMLInputElement>('filter-input'); },
   get clearFilter() { return $('btn-clear-filter'); },
   get metaMethod() { return $('meta-method'); },
@@ -155,7 +159,7 @@ export const DOM: DOMRefs = {
   get dlEmptyState() { return $('dl-empty-state'); },
   get dlSplitter() { return $('dl-splitter'); },
   get dlFilterInput() { return $<HTMLInputElement>('dl-filter-input'); },
-  get dlBtnClear() { return $('dl-btn-clear'); },
+
   get dlBtnExport() { return $('dl-btn-export'); },
   get dlView() { return $('datalayer-view'); },
   get dlFilterBar() { return $('dl-filter-bar'); },

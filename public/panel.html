@@ -108,6 +108,16 @@
       height: 14px;
     }
 
+    /* Lucide icon sizing — override default 24×24 inline attributes */
+    .tab-btn svg.lucide { width: 13px; height: 13px; }
+    #btn-theme-toggle svg.lucide { width: 14px; height: 14px; }
+    #btn-theme-toggle .theme-icon-sun svg.lucide,
+    #btn-theme-toggle .theme-icon-moon svg.lucide { width: 14px; height: 14px; }
+    #adobe-env-badge svg.lucide { width: 8px; height: 8px; }
+    #btn-export svg.lucide, #dl-btn-export svg.lucide { width: 12px; height: 12px; }
+    #btn-clear-filter svg.lucide { width: 12px; height: 12px; }
+    #dl-clear-filter svg.lucide { width: 10px; height: 10px; }
+
     /* Theme toggle button */
     #btn-theme-toggle {
       position: relative;
@@ -160,8 +170,8 @@
       color: var(--accent);
     }
 
-    /* Clear button in toolbar */
-    #btn-clear {
+    /* Clear button in global toolbar */
+    #btn-clear-all {
       padding: 4px 6px;
     }
 
@@ -1747,6 +1757,29 @@
       font-size: 11px;
     }
 
+    /* === MEMORY BAR === */
+    #memory-bar {
+      height: 2px;
+      background-color: var(--bg-3);
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    #memory-bar-fill {
+      height: 100%;
+      width: 0%;
+      background-color: var(--accent);
+      transition: width 0.3s ease, background-color 0.3s ease;
+    }
+
+    #memory-bar-fill.warning {
+      background-color: var(--orange);
+    }
+
+    #memory-bar-fill.critical {
+      background-color: var(--red);
+    }
+
     /* === CONSENT POPOVER === */
     #btn-consent {
       color: var(--text-0);
@@ -2350,13 +2383,138 @@
       color: var(--text-0);
     }
 
+    /* ─── Info Toolbar Icons ────────────────────────────────────────────────── */
+
+    .info-icons {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .info-icons-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .info-icons-group-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      color: var(--text-2);
+    }
+
+    .info-icons-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4px 10px;
+    }
+
+    .info-icons-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 6px;
+      padding: 3px 0;
+    }
+
+    .info-icons-lucide {
+      flex-shrink: 0;
+      width: 13px;
+      height: 13px;
+      color: var(--text-2);
+      margin-top: 1px;
+    }
+
+    .info-icons-text {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      min-width: 0;
+    }
+
+    .info-icons-name {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-0);
+      line-height: 1.3;
+    }
+
+    .info-icons-desc {
+      font-size: 11px;
+      color: var(--text-2);
+      line-height: 1.35;
+    }
+
+    /* ─── Info DataLayer Sources ─────────────────────────────────────────────── */
+
+    .info-dl-sources {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .info-dl-source {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .info-dl-source-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .info-dl-source-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-0);
+      min-width: 60px;
+    }
+
+    .info-dl-source-var {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-2);
+      background: var(--bg-2);
+      padding: 1px 5px;
+      border-radius: 3px;
+      border: 1px solid var(--border);
+    }
+
+    .info-dl-source-desc {
+      font-size: 12px;
+      color: var(--text-2);
+      padding-left: 68px;
+      line-height: 1.4;
+    }
+
+    /* ─── Info Footer ─────────────────────────────────────────────────────────── */
+
     .info-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
       padding: 9px 14px;
       font-size: 12px;
       color: var(--text-2);
-      text-align: center;
+      text-align: left;
       background: var(--bg-0);
       border-radius: 0 0 6px 6px;
+    }
+
+    .info-footer-link {
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 500;
+      opacity: 0.8;
+      transition: opacity 150ms;
+    }
+
+    .info-footer-link:hover {
+      opacity: 1;
+      text-decoration: underline;
     }
   </style>
 </head>
@@ -2366,15 +2524,11 @@
     <div class="gtb-section">
       <div id="tab-switcher">
         <button class="tab-btn active" data-view="network" title="Network requests">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21.3 15.3a2.4 2.4 0 0 1 0 3.4l-2.6 2.6a2.4 2.4 0 0 1-3.4 0L2.7 8.7a2.41 2.41 0 0 1 0-3.4l2.6-2.6a2.41 2.41 0 0 1 3.4 0z"/><path d="m14.5 12.5 2 2"/><path d="m11.5 9.5 2 2"/>
-          </svg>
+          <i data-lucide="cable"></i>
           <span>Network</span>
         </button>
         <button class="tab-btn" data-view="datalayer" title="DataLayer pushes">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"/>
-          </svg>
+          <i data-lucide="database"></i>
           <span>DataLayer</span>
         </button>
       </div>
@@ -2384,41 +2538,30 @@
       <div id="adobe-env-badge" class="env-badge hidden" title="Adobe environment">
         <span class="env-badge-dot"></span>
         <span class="env-badge-label">PROD</span>
-        <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="m6 9 6 6 6-6"/>
-        </svg>
+        <i data-lucide="chevron-down"></i>
       </div>
       <div class="toolbar-separator" id="env-separator" style="display:none;"></div>
       <!-- Delete cookies + Cookie Consent -->
       <button id="btn-clear-cookies" title="Delete all cookies on this site">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="m9 3 6 6"/><path d="M12 6 6.5 12.5a2 2 0 0 0 3 3L15 9"/><path d="M15 9l4.5 4.5"/><path d="M20 13.5a8.5 8.5 0 0 1-8.5 8.5c-1.5 0-4.5-1-6-2.5"/><path d="M14 19l2-2"/>
-        </svg>
+        <i data-lucide="eraser"></i>
       </button>
       <button id="btn-consent" title="Cookie Consent">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 2a10 10 0 1 0 10 10 4 4 0 0 1-5-5 4 4 0 0 1-5-5"/><path d="M8.5 8.5v.01"/><path d="M16 15.5v.01"/><path d="M12 12v.01"/><path d="M11 17v.01"/><path d="M7 14v.01"/>
-        </svg>
+        <i data-lucide="cookie"></i>
       </button>
       <div class="toolbar-separator"></div>
       <!-- Theme + Settings + Info -->
       <button id="btn-theme-toggle" title="Toggle light/dark mode">
-        <svg class="theme-icon-sun" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>
-        </svg>
-        <svg class="theme-icon-moon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>
-        </svg>
+        <span class="theme-icon-sun"><i data-lucide="sun"></i></span>
+        <span class="theme-icon-moon"><i data-lucide="moon"></i></span>
+      </button>
+      <button id="btn-clear-all" title="Clear all requests (Ctrl+L)">
+        <i data-lucide="trash-2"></i>
       </button>
       <button id="btn-settings" title="Filters &amp; settings">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>
-        </svg>
+        <i data-lucide="settings"></i>
       </button>
       <button id="btn-info" title="About TagDragon">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="16" y2="12"/><line x1="12" x2="12.01" y1="8" y2="8"/>
-        </svg>
+        <i data-lucide="circle-help"></i>
       </button>
     </div>
   </div>
@@ -2427,68 +2570,42 @@
   <div id="network-context" class="context-toolbar">
     <div class="ctx-left">
       <div class="filter-wrap">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
-        </svg>
+        <i data-lucide="search"></i>
         <input type="text" id="filter-input" placeholder="Filter by URL, parameter, or provider...">
         <button id="btn-clear-filter">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
-          </svg>
+          <i data-lucide="x"></i>
         </button>
       </div>
     </div>
     <div class="ctx-right">
       <div id="quick-actions">
         <button id="btn-quick-sort" class="quick-btn" title="Sort: Newest first">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="m21 16-4 4-4-4"/><path d="M17 20V4"/><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/>
-          </svg>
+          <i data-lucide="arrow-up-down"></i>
         </button>
         <button id="btn-quick-wrap" class="quick-btn" title="Wrap long values">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="3" x2="21" y1="6" y2="6"/><path d="M3 12h15a3 3 0 0 1 0 6h-4"/><polyline points="16 16 14 18 16 20"/><line x1="3" x2="10" y1="18" y2="18"/>
-          </svg>
+          <i data-lucide="wrap-text"></i>
         </button>
         <button id="btn-quick-expand" class="quick-btn" title="Auto-expand">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/>
-          </svg>
+          <i data-lucide="maximize-2"></i>
         </button>
         <button id="btn-quick-compact" class="quick-btn" title="Compact list">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="18" y2="18"/>
-          </svg>
+          <i data-lucide="align-justify"></i>
         </button>
       </div>
       <button id="btn-providers" title="Provider filter">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
-        </svg>
+        <i data-lucide="filter"></i>
       </button>
       <div class="toolbar-separator"></div>
       <button id="btn-export" title="Export as JSON">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/>
-        </svg>
+        <i data-lucide="download"></i>
         <span>Export</span>
       </button>
       <div class="toolbar-separator"></div>
       <button id="btn-pause" class="pause-btn" title="Pause capture">
-        <svg class="pause-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/>
-        </svg>
-        <svg class="play-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polygon points="6 3 20 12 6 21 6 3"/>
-        </svg>
+        <span class="pause-icon"><i data-lucide="pause"></i></span>
+        <span class="play-icon"><i data-lucide="play"></i></span>
         <span class="pause-text">Pause</span>
         <span class="play-text">Resume</span>
-      </button>
-      <div class="toolbar-separator"></div>
-      <button id="btn-clear" title="Clear all (Ctrl+L)">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/>
-        </svg>
       </button>
     </div>
   </div>
@@ -2497,14 +2614,10 @@
   <div id="datalayer-context" class="context-toolbar" style="display:none;">
     <div class="ctx-left">
       <div class="filter-wrap">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
-        </svg>
+        <i data-lucide="search"></i>
         <input type="text" id="dl-filter-input" placeholder="Filter by event, key, or value...">
         <button id="dl-clear-filter" title="Clear filter">
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
-          </svg>
+          <i data-lucide="x"></i>
         </button>
       </div>
     </div>
@@ -2523,27 +2636,15 @@
       <span id="dl-push-count" style="font-size:11px;color:var(--text-2);white-space:nowrap;padding:0 6px;" title="Total pushes received by panel">0 pushes</span>
       <div class="toolbar-separator"></div>
       <button id="dl-btn-export" title="Export DataLayer" style="display:flex;align-items:center;gap:4px;padding:4px 8px;font-size:12px;">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/>
-        </svg>
+        <i data-lucide="download"></i>
         <span>Export</span>
       </button>
       <div class="toolbar-separator"></div>
       <button id="dl-btn-pause" class="pause-btn" title="Pause DataLayer capture">
-        <svg class="pause-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/>
-        </svg>
-        <svg class="play-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polygon points="6 3 20 12 6 21 6 3"/>
-        </svg>
+        <span class="pause-icon"><i data-lucide="pause"></i></span>
+        <span class="play-icon"><i data-lucide="play"></i></span>
         <span class="pause-text">Pause</span>
         <span class="play-text">Resume</span>
-      </button>
-      <div class="toolbar-separator"></div>
-      <button id="dl-btn-clear" title="Clear all DataLayer pushes">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/>
-        </svg>
       </button>
     </div>
   </div>
@@ -2828,7 +2929,7 @@
     <div class="info-header">
       <span class="info-logo">🐉</span>
       <span class="info-title">TagDragon</span>
-      <span class="info-version" id="info-version">v1.4.0</span>
+      <span class="info-version" id="info-version"></span>
     </div>
 
     <div class="info-description">
@@ -2836,7 +2937,7 @@
     </div>
 
     <div class="info-section">
-      <button class="info-section-header" aria-expanded="true">
+      <button class="info-section-header" aria-expanded="false">
         <svg class="info-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="m6 9 6 6 6-6"/>
         </svg>
@@ -2865,17 +2966,37 @@
         <span>⌨️ Keyboard shortcuts</span>
       </button>
       <div class="info-section-content">
-        <div class="info-shortcuts">
-          <div class="info-shortcut"><span>Clear all</span><kbd>Ctrl+L</kbd></div>
-          <div class="info-shortcut"><span>Focus search</span><kbd>Ctrl+F</kbd></div>
-          <div class="info-shortcut"><span>Navigate list</span><kbd>↑ ↓</kbd></div>
-          <div class="info-shortcut"><span>Close panel</span><kbd>Esc</kbd></div>
-        </div>
+        <div id="info-shortcuts-list" class="info-shortcuts"></div>
+      </div>
+    </div>
+
+    <div class="info-section">
+      <button class="info-section-header" aria-expanded="true">
+        <svg class="info-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="m6 9 6 6 6-6"/>
+        </svg>
+        <span>🗂️ Toolbar icons</span>
+      </button>
+      <div class="info-section-content">
+        <div id="info-toolbar-icons" class="info-icons"></div>
+      </div>
+    </div>
+
+    <div class="info-section">
+      <button class="info-section-header" aria-expanded="true">
+        <svg class="info-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="m6 9 6 6 6-6"/>
+        </svg>
+        <span>📡 DataLayer sources</span>
+      </button>
+      <div class="info-section-content">
+        <div id="info-dl-sources" class="info-dl-sources"></div>
       </div>
     </div>
 
     <div class="info-footer">
-      MIT License © 2025 Ondřej Bezucha
+      <span>MIT License © 2025 Ondřej Bezucha</span>
+      <a href="https://www.tagdragon.net/" target="_blank" rel="noopener" class="info-footer-link">tagdragon.net</a>
     </div>
   </div>
 
@@ -3058,6 +3179,11 @@
       <span id="time-badge"><span class="status-label">Avg:</span> <span class="value">—</span></span>
     </div>
     <span class="status-hint">Ctrl+L to clear</span>
+  </div>
+
+  <!-- MEMORY BAR -->
+  <div id="memory-bar">
+    <div id="memory-bar-fill"></div>
   </div>
 
   <!-- Panel Script -->

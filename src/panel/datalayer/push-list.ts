@@ -5,6 +5,8 @@ import type { DataLayerPush, DataLayerSource } from '@/types/datalayer';
 import { DOM } from '../utils/dom';
 import { formatTimestamp } from '../utils/format';
 import { getConfig } from '../state';
+import { downloadCsv, downloadJson } from '../utils/export';
+import { SOURCE_LABELS } from '@/shared/datalayer-constants';
 import {
   getAllDlPushes,
   getDlFilteredIds,
@@ -23,15 +25,6 @@ const SOURCE_COLORS: Record<DataLayerSource, string> = {
   segment: '#3182CE',
   digitalData: '#38A169',
   custom: '#718096',
-};
-
-const SOURCE_LABELS: Record<DataLayerSource, string> = {
-  gtm: 'GTM',
-  tealium: 'TEAL',
-  adobe: 'ADOBE',
-  segment: 'SEG',
-  digitalData: 'W3C',
-  custom: 'CUSTOM',
 };
 
 export function getSourceColor(source: DataLayerSource): string {
@@ -157,10 +150,19 @@ export function updateDlRowVisibility(): void {
 // ─── STATUS TEXT ─────────────────────────────────────────────────────────────
 
 export function updateDlStatusText(visible: number, total: number): void {
-  const $status = (document.getElementById('status-text') as HTMLElement);
-  if ($status) {
-    $status.textContent = `${visible} / ${total} pushes`;
+  const $stats = DOM.statusStats;
+  if ($stats) {
+    $stats.textContent = `${visible} / ${total} pushes`;
   }
+
+  // Hide size/time badges when in DataLayer context
+  const $size = DOM.sizeBadge;
+  const $time = DOM.timeBadge;
+  if ($size) $size.style.display = 'none';
+  if ($time) $time.style.display = 'none';
+  document.querySelectorAll('#status-bar .status-separator').forEach(el => {
+    el.style.display = 'none';
+  });
 }
 
 // ─── SELECTION ───────────────────────────────────────────────────────────────
@@ -228,11 +230,7 @@ export function exportDlJson(pushes: DataLayerPush[]): void {
       data: p.data,
     })),
   };
-  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `datalayer-${Date.now()}.json`;
-  a.click();
+  downloadJson(payload, `datalayer-${Date.now()}.json`);
 }
 
 /**
@@ -248,29 +246,16 @@ export function exportDlCsv(pushes: DataLayerPush[]): void {
   const metaCols = ['id', 'timestamp', 'source', 'pushIndex', 'event'];
   const headers = [...metaCols, ...dataKeys];
 
-  const escCsv = (v: unknown): string => {
-    const s = String(v ?? '');
-    if (s.includes(',') || s.includes('"') || s.includes('\n')) {
-      return '"' + s.replace(/"/g, '""') + '"';
-    }
-    return s;
-  };
-
   const rows = pushes.map((p) => {
-    const meta = [p.id, p.timestamp, p.source, p.pushIndex, p._eventName ?? ''];
+    const meta = [String(p.id), String(p.timestamp), p.source, String(p.pushIndex), p._eventName ?? ''];
     const data = dataKeys.map((k) => {
       const v = p.data[k];
-      return typeof v === 'object' ? JSON.stringify(v) : v;
+      return typeof v === 'object' ? JSON.stringify(v) : String(v ?? '');
     });
-    return [...meta, ...data].map(escCsv).join(',');
+    return [...meta, ...data];
   });
 
-  const csv = [headers.join(','), ...rows].join('\n');
-  const blob = new Blob([csv], { type: 'text/csv' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `datalayer-${Date.now()}.csv`;
-  a.click();
+  downloadCsv(headers, rows, `datalayer-${Date.now()}.csv`);
 }
 
 // ─── FILTER ──────────────────────────────────────────────────────────────────
@@ -307,23 +292,4 @@ export function dlMatchesFilter(
   return true;
 }
 
-/**
- * Apply filters to all pushes and update visibility.
- */
-export function applyDlFilters(
-  text: string,
-  source: string,
-  eventName: string,
-  hasKey: string,
-  ecommerceOnly: boolean,
-  filteredIds: Set<number>,
-): void {
-  const pushes = getAllDlPushes();
-  filteredIds.clear();
-  for (const push of pushes) {
-    if (dlMatchesFilter(push, text, source, eventName, hasKey, ecommerceOnly)) {
-      filteredIds.add(push.id);
-    }
-  }
-  setDlSelectedId(null);
-}
+

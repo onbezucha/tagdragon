@@ -4,31 +4,11 @@
 
 import type { TabPopupStats, PopupStatsResponse, UpdatePopupStatsMessage } from '@/types/popup';
 import { updateBadgeForTab, updateBadgeForActiveTab } from './badge';
-
-// ─── DEVTOOLS STATUS TRACKING ────────────────────────────────────────────────
-// Uses chrome.runtime.connect() ports — port automatically disconnects when
-// DevTools is closed, which is more reliable than the window unload event.
-
-const devToolsOpenTabs = new Set<number>();
-
-function initDevToolsTracking(): void {
-  chrome.runtime.onConnect.addListener((port) => {
-    const match = port.name.match(/^devtools_(\d+)$/);
-    if (!match) return;
-
-    const tabId = parseInt(match[1], 10);
-    devToolsOpenTabs.add(tabId);
-
-    port.onDisconnect.addListener(() => {
-      devToolsOpenTabs.delete(tabId);
-    });
-  });
-}
+import { devToolsPorts } from './index';
 
 // ─── MESSAGE HANDLERS ─────────────────────────────────────────────────────────
 
 export function initPopupBridge(): void {
-  initDevToolsTracking();
 
   chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     if (message.type === 'UPDATE_POPUP_STATS') {
@@ -137,7 +117,7 @@ function buildPopupResponse(stats: TabPopupStats, tabId: number): PopupStatsResp
 
   return {
     ...stats,
-    isDevToolsOpen: devToolsOpenTabs.has(tabId),
+    isDevToolsOpen: devToolsPorts.has(tabId),
     avgDuration: stats.totalRequests > 0
       ? Math.round(stats.totalDuration / stats.totalRequests)
       : 0,

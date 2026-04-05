@@ -4,7 +4,7 @@
 
 **The dragon that sees every tag. Chrome DevTools extension for capturing and decoding marketing/analytics tracking requests.**
 
-[![Chrome Extension Version](https://img.shields.io/badge/version-1.5.0-blue.svg)](https://github.com/yourusername/TagDragon)
+[![Chrome Extension Version](https://img.shields.io/badge/version-1.5.1-blue.svg)](https://github.com/yourusername/TagDragon)
 [![License](https://img.shields.io/badge/license-ISC-green.svg)](LICENSE)
 [![Chrome](https://img.shields.io/badge/chrome-88+-brightgreen.svg)](https://www.google.com/chrome/)
 
@@ -16,7 +16,7 @@
 
 ## Overview
 
-**TagDragon v1.5.0** is a Chrome DevTools extension that captures network requests from analytics and marketing platforms, decodes them into human-readable format, and provides advanced filtering and search capabilities.
+**TagDragon v1.5.1** is a Chrome DevTools extension that captures network requests from analytics and marketing platforms, decodes them into human-readable format, and provides advanced filtering and search capabilities.
 
 ### Key Features
 
@@ -41,7 +41,7 @@
 
 ### From GitHub Release (no build required)
 
-1. Download `TagDragon-v1.5.0.zip` from the [Releases page](https://github.com/yourusername/TagDragon/releases)
+1. Download `TagDragon-v1.5.1.zip` from the [Releases page](https://github.com/yourusername/TagDragon/releases)
 2. Unzip the archive
 3. Open `chrome://extensions/`, enable **Developer mode**, click **Load unpacked**, and select the unzipped folder
 
@@ -112,14 +112,15 @@ TagDragon/
 │   │   ├── meta/               # Meta Pixel
 │   │   ├── microsoft/          # Bing Ads, Microsoft Clarity
 │   │   └── …                   # 50+ standalone providers
-│   ├── shared/                 # Constants, parameter categories, provider groups, CMP detection
+│   ├── shared/                 # Constants, parameter categories, provider groups, CMP detection, e-commerce, ID generation
 │   └── types/                  # TypeScript type definitions
 │       ├── request.ts          # ParsedRequest, UIState, FilterState, AppConfig, etc.
 │       ├── datalayer.ts        # DataLayerPush, DataLayerState, DiffEntry, message types
 │       ├── provider.ts         # Provider interface, ProviderRegistry
 │       ├── categories.ts       # CategoryConfig, ProviderCategories
-│       ├── consent.ts          # ConsentCategory, GoogleConsentMode, TCFData, CMPInfo
-│       └── popup.ts            # ProviderStats, TabPopupStats, PopupStatsResponse
+│       ├── consent.ts          # ConsentCategory, GoogleConsentMode, TCFData, CMPInfo, ConsentData
+│       ├── popup.ts            # ProviderStats, TabPopupStats, PopupStatsResponse
+│       └── index.ts            # Re-exports all types from provider, request, categories, datalayer, consent, popup
 ├── public/                     # Static assets (HTML, icons, fonts)
 ├── styles/input.css            # Tailwind CSS source
 ├── dist/                       # Build output — never edit manually
@@ -251,8 +252,9 @@ TagDragon/
 |----------|--------|
 | `Ctrl+L` | Clear all requests |
 | `Ctrl+F` | Focus search input |
-| `Ctrl+Shift+F` | Open filter popover |
-| `↑ / ↓` | Navigate request list |
+| `↑ / ↓` | Navigate list |
+| `Home` / `Cmd+↑` | Jump to first item |
+| `End` / `Cmd+↓` | Jump to last item |
 | `Esc` | Clear search / close detail panel / close popovers |
 
 ## UI Overview
@@ -345,7 +347,7 @@ interface Provider {
 
 `getParams(url, postBody)` in `src/providers/url-parser.ts` merges URL query params and POST body (URLencoded or JSON) into one flat object for use inside `parseParams`.
 
-Provider order in `src/providers/index.ts` matters — first match wins. Key ordering constraints: `tealiumEventstream` before `tealium`; Adobe stack ordered `adobeHeartbeat` → `adobeTarget` → `adobeECID` → `adobeAAM` → `adobeDTM` → `adobeLaunchChina` → `adobeAA`; `comscore` before `scorecard`; `googleAds` before `doubleclick`.
+Provider order in `src/providers/index.ts` matters — first match wins. Key ordering constraints: `tealiumEventstream` before `tealium`; Adobe stack ordered `aepWebSDK` → `adobeHeartbeat` → `adobeTarget` → `adobeECID` → `adobeAAM` → `adobeDTM` → `adobeLaunchChina` → `adobeAA`; `comscore` before `scorecard`; `googleAds` before `doubleclick`.
 
 ### Adobe Environment Redirect
 

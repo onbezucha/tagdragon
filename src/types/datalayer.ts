@@ -11,14 +11,13 @@ export type DataLayerSource =
   | 'custom';
 
 export interface DataLayerPush {
-  readonly id: number;                       // Unique ID (Date.now() + random)
+  readonly id: number;                       // Unique ID (timestamp * 1000 + counter via generateId())
   readonly source: DataLayerSource;          // Which data layer source
   readonly sourceLabel: string;              // Display name: "GTM", "Tealium", etc.
   readonly pushIndex: number;                // Index in the dataLayer array
   readonly timestamp: string;               // ISO timestamp of the push
   readonly data: Record<string, unknown>;   // The pushed data object
   readonly cumulativeState: Record<string, unknown>; // Full state AFTER this push
-  readonly diffFromPrevious: DiffEntry[] | null;     // Diff from previous push
   readonly isReplay?: boolean;               // Whether this is a replay of existing dataLayer items
 
   // E-commerce detection (computed)
@@ -45,7 +44,6 @@ export interface DataLayerState {
   isPaused: boolean;
   sources: Set<DataLayerSource>;             // Detected sources on this page
   sourceLabels: Map<DataLayerSource, string>; // GTM-GTMXXXXX, etc.
-  searchIndex: Map<string, DataLayerPush[]>;
 }
 
 // ─── MESSAGE TYPES ────────────────────────────────────────────────────────────
@@ -79,8 +77,3 @@ export interface DataLayerSnapshotResponse {
 }
 
 export type DlTabName = 'push-data' | 'diff' | 'current-state' | 'correlation';
-
-export interface DlPendingPush {
-  data: DataLayerPush;
-  isVisible: boolean;
-}

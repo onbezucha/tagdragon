@@ -7,3 +7,5 @@ dist/
 .memory/
 AGENTS.md
 CLAUDE.md
+.env
+.env.local

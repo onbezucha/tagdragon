@@ -3,6 +3,8 @@
 // events from MAIN world and relays them to the background service worker.
 // Also injects the MAIN world script dynamically.
 
+import { SOURCE_DESCRIPTIONS } from '@/shared/datalayer-constants';
+
 (function () {
   // NOTE: data-layer-main.js is no longer injected via a <script> tag here.
   // The background injects it with chrome.scripting.executeScript({ world: 'MAIN' })
@@ -74,14 +76,7 @@
   }
 
   function buildSourceLabels(): Record<string, string> {
-    const labels: Record<string, string> = {
-      gtm: 'GTM',
-      tealium: 'Tealium',
-      adobe: 'Adobe',
-      segment: 'Segment',
-      digitalData: 'W3C',
-      custom: 'Custom',
-    };
+    const labels: Record<string, string> = { ...SOURCE_DESCRIPTIONS };
 
     // Try to extract GTM container ID
     const win = window as Record<string, unknown>;

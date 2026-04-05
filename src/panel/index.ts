@@ -11,16 +11,21 @@ import { DOM } from './utils/dom';
 import { getEventName, formatBytes } from './utils/format';
 import { createRequestRow, navigateList, navigateToEdge, updateRowVisibility } from './components/request-list';
 import { selectRequest, initTabHandlers, closeDetailPane, clearTabCache } from './components/detail-pane';
-import { updateStatusBar } from './components/status-bar';
+import { updateStatusBar, updateDlStatusBar, updateNetworkStatusBar, showPruneNotification, clearPruneTimer, resetStatusBar } from './components/status-bar';
 import { ensureProviderPill, initProviderBarHandlers, updateProviderCounts, updateFilterBarVisibility } from './components/provider-bar';
 import { initFilterPopoverHandlers, updateActiveFilters } from './components/filter-bar';
 import { initAdobeEnvSwitcher } from './components/adobe-env-switcher';
 import { initConsentPanel, clearAllCookies, clearConsentOverride } from './components/consent-panel';
 import { initInfoPopover, closeInfoPopover } from './components/info-popover';
 import { applyFilters, matchesFilter } from './utils/filter';
+import { downloadCsv, downloadJson } from './utils/export';
 import { createDlPushRow, getSourceColor, setActiveDlRow, updateDlStatusText, dlMatchesFilter, exportDlJson, exportDlCsv } from './datalayer/push-list';
 import { selectDlPush, closeDlDetail, initDlDetailTabHandlers } from './datalayer/push-detail';
 import { initTheme } from './theme';
+import { savePanelSetting, loadPanelSetting } from './utils/persistence';
+import { isMac } from './utils/platform';
+import { SOURCE_DESCRIPTIONS } from '@/shared/datalayer-constants';
+import { createIcons, Cable, Database, ChevronDown, Eraser, Cookie, Sun, Moon, Trash2, Settings, CircleHelp, Search, X, ArrowUpDown, WrapText, Maximize2, AlignJustify, Filter, Download, Pause, Play } from 'lucide';
 
 // ─── LOCAL HELPERS ───────────────────────────────────────────────────────────
 
@@ -57,53 +62,20 @@ function indexRequest(data: ParsedRequest, getEventNameFn: (d: ParsedRequest) =>
 }
 
 /**
- * Update the status bar with DataLayer-specific info.
+ * Navigate to a network request row from DataLayer correlation view.
+ * Makes the row visible if it's hidden by filter or provider filter.
  */
-function updateDlStatusBar(): void {
-  const $statusText = DOM.statusText;
-  if (!$statusText) return;
-
-  const visible = dlState.getDlVisibleCount();
-  const total = dlState.getDlTotalCount();
-  const pushes = dlState.getAllDlPushes();
-  const parts = [`${visible} / ${total} pushes`];
-
-  const ecCount = pushes.filter(p => p._ecommerceType).length;
-  if (ecCount > 0) {
-    parts.push(`${ecCount} e-commerce`);
+function gotoNetworkRequest(reqId: number): void {
+  switchView('network');
+  const reqData = state.getRequestMap().get(String(reqId));
+  if (!reqData) return;
+  const row = document.querySelector(`.req-row[data-id="${reqId}"]`) as HTMLElement | null;
+  if (!row) return;
+  if (row.classList.contains('filtered-out') || row.classList.contains('provider-hidden')) {
+    row.classList.remove('filtered-out', 'provider-hidden');
+    row.style.display = '';
   }
-
-  $statusText.textContent = parts.join(' · ');
-  $statusText.style.color = '';
-}
-
-/**
- * Show prune notification in status bar.
- */
-let pruneNotificationTimer: ReturnType<typeof setTimeout>;
-
-function showPruneNotification(count: number): void {
-  const $statusText = DOM.statusText;
-  if (!$statusText) return;
-
-  const visibleCount = state.getStatsVisibleCount();
-  const totalSize = state.getStatsTotalSize();
-  const totalDuration = state.getStatsTotalDuration();
-  const avgTime = visibleCount > 0 ? Math.round(totalDuration / visibleCount) : 0;
-  const allRequests = state.getAllRequests();
-
-  $statusText.textContent = `${visibleCount} / ${allRequests.length} requests · ${formatBytes(totalSize)} · Avg ${avgTime > 0 ? avgTime + 'ms' : '—'} · (${count} oldest removed)`;
-  $statusText.style.color = 'var(--orange)';
-
-  clearTimeout(pruneNotificationTimer);
-  pruneNotificationTimer = setTimeout(() => {
-    $statusText.style.color = '';
-    updateStatusBar(visibleCount, totalSize, totalDuration);
-  }, 3000);
-}
-
-function clearPruneTimer(): void {
-  clearTimeout(pruneNotificationTimer);
+  selectRequest(reqData, row);
 }
 
 // ─── MEMORY BUDGET ───────────────────────────────────────────────────────────
@@ -250,10 +222,19 @@ function switchView(view: 'network' | 'datalayer'): void {
 
   // Update status bar
   if (view === 'network') {
+    updateNetworkStatusBar();
     const stats = state.getStats();
     updateStatusBar(stats.visibleCount, stats.totalSize, stats.totalDuration);
   } else {
     updateDlStatusBar();
+  }
+
+  // Update clear button tooltip
+  const $clearBtn = document.getElementById('btn-clear-all');
+  if ($clearBtn) {
+    $clearBtn.title = view === 'network'
+      ? 'Clear all requests (Ctrl+L)'
+      : 'Clear all DataLayer pushes (Ctrl+L)';
   }
 }
 
@@ -323,7 +304,6 @@ window.receiveDataLayerPush = function (push: DataLayerPush): void {
   const enrichedPush: DataLayerPush = {
     ...push,
     cumulativeState,
-    diffFromPrevious: null,
     _eventName: push._eventName ?? (typeof push.data['event'] === 'string' ? push.data['event'] : undefined),
     sourceLabel: push.sourceLabel || push.source.toUpperCase(),
   };
@@ -346,23 +326,7 @@ window.receiveDataLayerPush = function (push: DataLayerPush): void {
       const row = createDlPushRow(enrichedPush, isVisible, (p, r) => {
         dlState.setDlSelectedId(p.id);
         setActiveDlRow(r);
-        selectDlPush(p, r, (reqId) => {
-          switchView('network');
-
-          const reqData = state.getRequestMap().get(String(reqId));
-          if (!reqData) return;
-
-          const row = document.querySelector(`.req-row[data-id="${reqId}"]`) as HTMLElement | null;
-          if (!row) return;
-
-          // Make row visible if hidden by filter or provider filter
-          if (row.classList.contains('filtered-out') || row.classList.contains('provider-hidden')) {
-            row.classList.remove('filtered-out', 'provider-hidden');
-            row.style.display = '';
-          }
-
-          selectRequest(reqData, row);
-        });
+        selectDlPush(p, r, gotoNetworkRequest);
       });
       $list.appendChild(row);
     } catch (e) {
@@ -393,10 +357,6 @@ window.receiveDataLayerSources = function (sources: DataLayerSource[], labels: R
     pill.style.setProperty('--pill-color', getSourceColor(s));
     $status.appendChild(pill);
   });
-};
-
-window.receiveDataLayerSnapshot = function (_data: Record<string, unknown>): void {
-  // Future use: snapshot-based state update
 };
 
 window.clearDataLayer = function (): void {
@@ -439,7 +399,7 @@ window.receiveRequest = function (data: ParsedRequest): void {
 
 let isDragging = false;
 
-function initSplitter(): void {
+async function initSplitter(): Promise<void> {
   const $splitter = DOM.splitter;
   const $main = DOM.main;
   if (!$splitter || !$main) return;
@@ -455,7 +415,7 @@ function initSplitter(): void {
     if (!isDragging) return;
     const width = Math.max(280, Math.min(e.clientX, window.innerWidth - 300));
     $main.style.gridTemplateColumns = `${width}px 4px 1fr`;
-    localStorage.setItem('rt-list-width', String(width));
+    void savePanelSetting('list-width', String(width));
   });
 
   document.addEventListener('mouseup', () => {
@@ -466,7 +426,7 @@ function initSplitter(): void {
   });
 
   // Restore saved width
-  const savedWidth = localStorage.getItem('rt-list-width');
+  const savedWidth = await loadPanelSetting('list-width');
   if (savedWidth) {
     $main.style.gridTemplateColumns = `${savedWidth}px 4px 1fr`;
   }
@@ -479,11 +439,7 @@ function initKeyboardHandlers(): void {
     // Ctrl+L = clear
     if (e.ctrlKey && e.key === 'l') {
       e.preventDefault();
-      if (activeView === 'network') {
-        document.getElementById('btn-clear')?.click();
-      } else {
-        document.getElementById('dl-btn-clear')?.click();
-      }
+      document.getElementById('btn-clear-all')?.click();
       return;
     }
 
@@ -521,13 +477,13 @@ function initKeyboardHandlers(): void {
       return;
     }
 
-    // Home/End
-    if (e.key === 'Home' && document.activeElement !== DOM.filterInput) {
+    // Home/End (on Mac: Cmd+ArrowUp / Cmd+ArrowDown)
+    if ((e.key === 'Home' || (isMac && e.metaKey && e.key === 'ArrowUp')) && document.activeElement !== DOM.filterInput) {
       e.preventDefault();
       navigateToEdge('first', doSelectRequest);
       return;
     }
-    if (e.key === 'End' && document.activeElement !== DOM.filterInput) {
+    if ((e.key === 'End' || (isMac && e.metaKey && e.key === 'ArrowDown')) && document.activeElement !== DOM.filterInput) {
       e.preventDefault();
       navigateToEdge('last', doSelectRequest);
       return;
@@ -548,107 +504,114 @@ function exportCsv(): void {
   const metaCols = ['id', 'timestamp', 'provider', 'method', 'status', 'url', 'duration', 'size'];
   const headers = [...metaCols, ...paramKeys];
 
-  const escCsv = (v: unknown): string => {
-    const s = String(v ?? '');
-    if (s.includes(',') || s.includes('"') || s.includes('\n')) {
-      return '"' + s.replace(/"/g, '""') + '"';
-    }
-    return s;
-  };
-
   const rows = requests.map(r => {
-    const meta = [r.id, r.timestamp, r.provider, r.method, r.status, r.url, r.duration ?? '', r.size ?? ''];
-    const params = paramKeys.map(k => r.allParams?.[k] ?? '');
-    return [...meta, ...params].map(escCsv).join(',');
+    const meta = [String(r.id), String(r.timestamp), r.provider, r.method, String(r.status ?? ''), r.url, String(r.duration ?? ''), String(r.size ?? '')];
+    const params = paramKeys.map(k => String(r.allParams?.[k] ?? ''));
+    return [...meta, ...params];
   });
 
-  const csv = [headers.join(','), ...rows].join('\n');
-  const blob = new Blob([csv], { type: 'text/csv' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `requests-${Date.now()}.csv`;
-  a.click();
+  downloadCsv(headers, rows, `requests-${Date.now()}.csv`);
 }
 
 // ─── TOOLBAR EVENTS ──────────────────────────────────────────────────────────
 
 function initToolbarHandlers(): void {
-  const btnClear = document.getElementById('btn-clear');
+  const btnClearAll = document.getElementById('btn-clear-all');
   const btnCloseDetail = document.getElementById('btn-close-detail');
   const btnExport = document.getElementById('btn-export');
   const btnClearCookies = document.getElementById('btn-clear-cookies');
   const btnSettings = document.getElementById('btn-settings');
   const btnResetFilters = document.getElementById('btn-reset-filters');
 
-  // Clear button
-  btnClear?.addEventListener('click', () => {
-    state.clearRequests();
-    state.resetFilters();
-    state.resetProviders();
-    state.resetStats();
-    state.clearPendingRequests();
+  // Clear button — clears active view (network or datalayer)
+  btnClearAll?.addEventListener('click', () => {
+    if (activeView === 'network') {
+      state.clearRequests();
+      state.resetFilters();
+      state.resetProviders();
+      state.resetStats();
+      state.clearPendingRequests();
 
-    const rafId = state.getRafId();
-    if (rafId) {
-      cancelAnimationFrame(rafId);
-      state.setRafId(null);
-    }
+      const rafId = state.getRafId();
+      if (rafId) {
+        cancelAnimationFrame(rafId);
+        state.setRafId(null);
+      }
 
-    if (DOM.filterInput) DOM.filterInput.value = '';
+      if (DOM.filterInput) DOM.filterInput.value = '';
 
-    const clearFilter = DOM.clearFilter;
-    if (clearFilter) clearFilter.style.display = 'none';
+      const clearFilter = DOM.clearFilter;
+      if (clearFilter) clearFilter.style.display = 'none';
 
-    const list = DOM.list;
-    if (list) {
-      list.innerHTML = '';
+      const list = DOM.list;
+      if (list) {
+        list.innerHTML = '';
+        const empty = DOM.empty;
+        if (empty) list.appendChild(empty);
+      }
+
       const empty = DOM.empty;
-      if (empty) list.appendChild(empty);
+      if (empty) empty.style.display = '';
+
+      const detail = DOM.detail;
+      if (detail) detail.classList.add('hidden');
+
+      const groupList = DOM.providerGroupList;
+      if (groupList) groupList.innerHTML = '';
+
+      const searchInput = DOM.providerSearchInput;
+      if (searchInput) searchInput.value = '';
+
+      const filters = DOM.activeFilters;
+      if (filters) filters.innerHTML = '';
+
+      clearPruneTimer();
+      clearTabCache();
+
+      if (window._clearHeavyData) window._clearHeavyData();
+
+      DOM.providerPopover?.classList.remove('visible');
+      DOM.btnProviders?.classList.remove('active');
+
+      const filterBar = DOM.filterBar;
+      if (filterBar) filterBar.classList.remove('visible');
+
+      resetStatusBar();
+      updateFilterBarVisibility();
+    } else {
+      dlClearAll();
     }
-
-    const empty = DOM.empty;
-    if (empty) empty.style.display = '';
-
-    const detail = DOM.detail;
-    if (detail) detail.classList.add('hidden');
-
-    const groupList = DOM.providerGroupList;
-    if (groupList) groupList.innerHTML = '';
-
-    const searchInput = DOM.providerSearchInput;
-    if (searchInput) searchInput.value = '';
-
-    const filters = DOM.activeFilters;
-    if (filters) filters.innerHTML = '';
-
-    clearPruneTimer();
-    clearTabCache();
-
-    if (window._clearHeavyData) window._clearHeavyData();
-
-    DOM.providerPopover?.classList.remove('visible');
-    DOM.btnProviders?.classList.remove('active');
-
-    const filterBar = DOM.filterBar;
-    if (filterBar) filterBar.classList.remove('visible');
-
-    updateStatusBar(0, 0, 0);
-    updateFilterBarVisibility();
   });
 
   // Pause button
   const btnPause = document.getElementById('btn-pause');
   btnPause?.addEventListener('click', () => {
     const isPaused = !state.getIsPaused();
-    state.setIsPaused(isPaused);
-    document.body.classList.toggle('paused', isPaused);
-    btnPause.classList.toggle('active', isPaused);
-    (btnPause.querySelector('.pause-icon') as HTMLElement).style.display = isPaused ? 'none' : '';
-    (btnPause.querySelector('.play-icon') as HTMLElement).style.display = isPaused ? '' : 'none';
-    (btnPause.querySelector('.pause-text') as HTMLElement).style.display = isPaused ? 'none' : '';
-    (btnPause.querySelector('.play-text') as HTMLElement).style.display = isPaused ? '' : 'none';
-    btnPause.title = isPaused ? 'Resume capture' : 'Pause capture';
+    setPanelPaused(isPaused);
   });
+
+  // Expose for DevTools popup ↔ panel pause sync
+  window['setPanelPaused'] = function (paused: boolean): void {
+    state.setIsPaused(paused);
+    document.body.classList.toggle('paused', paused);
+    const btnPause = document.getElementById('btn-pause');
+    if (btnPause) {
+      btnPause.classList.toggle('active', paused);
+      const pauseIcon = btnPause.querySelector('.pause-icon') as HTMLElement;
+      const playIcon = btnPause.querySelector('.play-icon') as HTMLElement;
+      const pauseText = btnPause.querySelector('.pause-text') as HTMLElement;
+      const playText = btnPause.querySelector('.play-text') as HTMLElement;
+      if (pauseIcon) pauseIcon.style.display = paused ? 'none' : '';
+      if (playIcon) playIcon.style.display = paused ? '' : 'none';
+      if (pauseText) pauseText.style.display = paused ? 'none' : '';
+      if (playText) playText.style.display = paused ? '' : 'none';
+      btnPause.title = paused ? 'Resume capture' : 'Pause capture';
+    }
+  };
+
+  window['isPanelPaused'] = function (): boolean {
+    return state.getIsPaused();
+  };
 
   // Search input
   let filterTimer: ReturnType<typeof setTimeout>;
@@ -688,11 +651,7 @@ function initToolbarHandlers(): void {
     if (state.getConfig().exportFormat === 'csv') {
       exportCsv();
     } else {
-      const blob = new Blob([JSON.stringify(state.getAllRequests(), null, 2)], { type: 'application/json' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = `requests-${Date.now()}.json`;
-      a.click();
+      downloadJson(state.getAllRequests(), `requests-${Date.now()}.json`);
     }
   });
 
@@ -753,13 +712,10 @@ function initToolbarHandlers(): void {
   // Reset filters button
   btnResetFilters?.addEventListener('click', () => {
     state.resetFilters();
-    state.clearHiddenProviders();
-    state.syncHiddenProviders();
+    // Do NOT clear hidden providers — user configured those intentionally
     if (DOM.filterInput) DOM.filterInput.value = '';
     const clearFilter = DOM.clearFilter;
     if (clearFilter) clearFilter.style.display = 'none';
-    document.querySelectorAll('.ppill.inactive').forEach((p) => p.classList.replace('inactive', 'active'));
-    DOM.btnProviders?.classList.remove('active');
     doApplyFilters();
     doUpdateActiveFilters();
     DOM.settingsPopover?.classList.remove('visible');
@@ -978,7 +934,7 @@ function initRequestListHandler(): void {
 
 // ─── DATALAYER HANDLERS ───────────────────────────────────────────────────────
 
-function initDatalayerHandlers(): void {
+async function initDatalayerHandlers(): Promise<void> {
   // View switching
   document.querySelectorAll('.tab-btn[data-view]').forEach((btn) => {
     btn.addEventListener('click', () => {
@@ -987,8 +943,7 @@ function initDatalayerHandlers(): void {
     });
   });
 
-  // DL Clear button
-  document.getElementById('dl-btn-clear')?.addEventListener('click', dlClearAll);
+
 
   // DL Pause button
   const $dlPause = document.getElementById('dl-btn-pause');
@@ -1029,10 +984,9 @@ function initDatalayerHandlers(): void {
     }
 
     const src = dlState.getDlFilterSource();
-    const srcLabels: Record<string, string> = { gtm: 'GTM', digitalData: 'W3C', tealium: 'Tealium', adobe: 'Adobe', segment: 'Segment' };
     if (src) {
       pills.push({
-        label: `Source: ${srcLabels[src] ?? src}`,
+        label: `Source: ${SOURCE_DESCRIPTIONS[src as keyof typeof SOURCE_DESCRIPTIONS] ?? src}`,
         onRemove: () => {
           dlState.setDlFilterSource('');
           const $sel = document.getElementById('dl-filter-source');
@@ -1120,23 +1074,7 @@ function initDatalayerHandlers(): void {
     if (id == null) return null;
     return dlState.getDlPushById(id) ?? null;
   };
-  initDlDetailTabHandlers(currentPushGetter, (reqId) => {
-    switchView('network');
-
-    const reqData = state.getRequestMap().get(String(reqId));
-    if (!reqData) return;
-
-    const row = document.querySelector(`.req-row[data-id="${reqId}"]`) as HTMLElement | null;
-    if (!row) return;
-
-    // Make row visible if hidden by filter or provider filter
-    if (row.classList.contains('filtered-out') || row.classList.contains('provider-hidden')) {
-      row.classList.remove('filtered-out', 'provider-hidden');
-      row.style.display = '';
-    }
-
-    selectRequest(reqData, row);
-  });
+  initDlDetailTabHandlers(currentPushGetter, gotoNetworkRequest);
 
   // DL Splitter drag
   const $dlSplitter = DOM.dlSplitter;
@@ -1153,7 +1091,7 @@ function initDatalayerHandlers(): void {
       if (!isDragging) return;
       const width = Math.max(240, Math.min(e.clientX, window.innerWidth - 280));
       $dlMain.style.gridTemplateColumns = `${width}px 6px 1fr`;
-      localStorage.setItem('rt-dl-list-width', String(width));
+      void savePanelSetting('dl-list-width', String(width));
     });
     document.addEventListener('mouseup', () => {
       if (!isDragging) return;
@@ -1161,7 +1099,7 @@ function initDatalayerHandlers(): void {
       document.body.style.cursor = '';
       document.body.style.userSelect = '';
     });
-    const savedWidth = localStorage.getItem('rt-dl-list-width');
+    const savedWidth = await loadPanelSetting('dl-list-width');
     if (savedWidth) {
       $dlMain.style.gridTemplateColumns = `${savedWidth}px 6px 1fr`;
     }
@@ -1171,6 +1109,22 @@ function initDatalayerHandlers(): void {
 // ─── INITIALIZE ──────────────────────────────────────────────────────────────
 
 async function init(): Promise<void> {
+  // Lucide icons — replace <i data-lucide="..."> placeholders with SVGs
+  createIcons({
+    icons: {
+      Cable, Database, ChevronDown, Eraser, Cookie, Sun, Moon,
+      Trash2, Settings, CircleHelp, Search, X, ArrowUpDown,
+      WrapText, Maximize2, AlignJustify, Filter, Download, Pause, Play,
+    },
+  });
+
+  // Remove inline width/height attributes from Lucide SVGs so CSS controls sizing
+  document.querySelectorAll('#global-tab-bar svg.lucide, .context-toolbar svg.lucide')
+    .forEach(svg => {
+      svg.removeAttribute('width');
+      svg.removeAttribute('height');
+    });
+
   // Load config first
   await state.loadConfig();
   await initTheme();
@@ -1181,7 +1135,7 @@ async function init(): Promise<void> {
   initFilterPopoverHandlers(doApplyFilters, doUpdateActiveFilters);
   initToolbarHandlers();
   initKeyboardHandlers();
-  initSplitter();
+  await initSplitter();
   initConfigUI();
   initQuickActions();
   syncQuickButtons();
@@ -1201,7 +1155,7 @@ async function init(): Promise<void> {
   initInfoPopover();
 
   // Initialize DataLayer handlers
-  initDatalayerHandlers();
+  await initDatalayerHandlers();
 }
 
 // Start initialization
