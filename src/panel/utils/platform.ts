@@ -2,4 +2,8 @@
 
 const isMac = navigator.platform.includes('Mac');
 
-export { isMac };
+function modLabel(): string {
+  return isMac ? '⌘' : 'Ctrl';
+}
+
+export { isMac, modLabel };
