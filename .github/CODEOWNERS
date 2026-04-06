@@ -1,0 +1,14 @@
+# Default owner
+* @onbezucha
+
+# Providers
+/src/providers/ @onbezucha
+
+# Panel UI
+/src/panel/ @onbezucha
+
+# Build & CI
+/.github/ @onbezucha
+/rollup.config.js @onbezucha
+/tailwind.config.js @onbezucha
+/package.json @onbezucha

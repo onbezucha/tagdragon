@@ -3,6 +3,7 @@
 
 import type { ParsedRequest } from '@/types/request';
 import type { DataLayerPush } from '@/types/datalayer';
+import { getCorrelationWindow, getCorrelationLookback } from './state';
 
 export interface CorrelatedRequest {
   request: ParsedRequest;
@@ -19,8 +20,10 @@ export interface CorrelatedRequest {
 export function findCorrelatedRequests(
   push: DataLayerPush,
   requests: ParsedRequest[],
-  windowMs = 2000,
+  windowMs?: number,
 ): CorrelatedRequest[] {
+  const window = windowMs ?? getCorrelationWindow();
+  const lookback = getCorrelationLookback();
   const pushTime = new Date(push.timestamp).getTime();
   if (isNaN(pushTime)) return [];
 
@@ -29,8 +32,8 @@ export function findCorrelatedRequests(
       const reqTime = new Date(r.timestamp).getTime();
       if (isNaN(reqTime)) return false;
       const diff = reqTime - pushTime;
-      // Allow -500ms for requests already in flight, up to +windowMs
-      return diff >= -500 && diff <= windowMs;
+      // Allow configurable lookback for requests already in flight, up to +window
+      return diff >= -lookback && diff <= window;
     })
     .map((r) => ({
       request: r,
@@ -49,12 +52,15 @@ export function renderCorrelation(
   container: HTMLElement,
   correlated: CorrelatedRequest[],
   onGotoRequest: (requestId: number) => void,
+  windowMs?: number,
 ): void {
   container.innerHTML = '';
 
   const header = document.createElement('div');
   header.className = 'dl-correlation-header';
-  header.textContent = `Network requests within 2s of this push (${correlated.length} found)`;
+  const window = windowMs ?? getCorrelationWindow();
+  const windowSec = (window / 1000).toFixed(1);
+  header.textContent = `Network requests within ${windowSec}s of this push (${correlated.length} found)`;
   container.appendChild(header);
 
   if (correlated.length === 0) {

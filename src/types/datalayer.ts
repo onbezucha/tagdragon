@@ -46,34 +46,36 @@ export interface DataLayerState {
   sourceLabels: Map<DataLayerSource, string>; // GTM-GTMXXXXX, etc.
 }
 
-// ─── MESSAGE TYPES ────────────────────────────────────────────────────────────
+export type DlTabName = 'push-data' | 'diff' | 'current-state' | 'correlation' | 'live';
 
-// Content → Background (tabId omitted — background reads from sender.tab.id)
-export interface DataLayerPushMessage {
-  type: 'DATALAYER_PUSH';
-  source: DataLayerSource;
-  pushIndex: number;
-  timestamp: string;
-  data: Record<string, unknown>;
+// ─── VALIDATION TYPES ──────────────────────────────────────────────────────
+
+export type ValidationCheckType = 'required_key' | 'key_type' | 'forbidden_key' | 'custom';
+
+export interface ValidationCheck {
+  type: ValidationCheckType;
+  key?: string;             // Key path to check (dot-notation)
+  valueType?: 'string' | 'number' | 'boolean' | 'object' | 'array';
+  message: string;
 }
 
-// Content → Background (source detection)
-export interface DataLayerSourcesMessage {
-  type: 'DATALAYER_SOURCES';
-  sources: DataLayerSource[];
-  labels: Record<string, string>;
+export interface ValidationRuleScope {
+  eventName?: string | string[];
+  source?: DataLayerSource;
+  ecommerceType?: string;
 }
 
-// DevTools → Background (request current state snapshot)
-export interface DataLayerSnapshotRequest {
-  type: 'DATALAYER_SNAPSHOT_REQUEST';
-  tabId: number;
+export interface ValidationRule {
+  id: string;
+  name: string;
+  enabled: boolean;
+  scope: ValidationRuleScope;
+  checks: ValidationCheck[];
 }
 
-// Content → Background (snapshot response)
-export interface DataLayerSnapshotResponse {
-  type: 'DATALAYER_SNAPSHOT_RESPONSE';
-  data: Record<string, unknown>;
+export interface ValidationResult {
+  ruleId: string;
+  ruleName: string;
+  checkMessage: string;
+  failedKey?: string;
 }
-
-export type DlTabName = 'push-data' | 'diff' | 'current-state' | 'correlation';

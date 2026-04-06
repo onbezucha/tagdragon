@@ -4,7 +4,7 @@ Instructions for AI coding agents working in this repository.
 
 ## Project Overview
 
-**TagDragon v1.5.0** — Chrome DevTools extension (Manifest V3) for capturing and decoding marketing/analytics tracking requests. Built with TypeScript, Rollup (JS bundler) and Tailwind CSS.
+**TagDragon v1.5.3** — Chrome DevTools extension (Manifest V3) for capturing and decoding marketing/analytics tracking requests. Built with TypeScript, Rollup (JS bundler) and Tailwind CSS.
 
 ## Build Commands
 
@@ -84,9 +84,6 @@ import { DEFAULT_CONFIG } from '@/shared/constants';
 
 **Path aliases (tsconfig.json):**
 - `@/*` → `src/*`
-- `@types/*` → `src/types/*`
-- `@providers/*` → `src/providers/*`
-- `@components/*` → `src/panel/components/*`
 
 ### Error Handling Patterns
 
@@ -308,6 +305,23 @@ Hidden providers are persisted in `AppConfig.hiddenProviders` (restored on load 
 | `src/background/badge.ts` | Badge counter — updates extension icon with request count |
 | `src/background/popup-bridge.ts` | Popup bridge — handles popup ↔ background messaging, DevTools status tracking |
 | `src/providers/index.ts` | PROVIDERS array — ordered list of all provider matchers |
+| `src/providers/adform.ts` | Adform provider |
+| `src/providers/amazon-ads.ts` | Amazon Ads provider |
+| `src/providers/at-internet.ts` | AT Internet provider |
+| `src/providers/demandbase.ts` | Demandbase provider |
+| `src/providers/ensighten.ts` | Ensighten provider |
+| `src/providers/hubspot.ts` | HubSpot provider |
+| `src/providers/invoca.ts` | Invoca provider |
+| `src/providers/lytics.ts` | Lytics provider |
+| `src/providers/omniconvert.ts` | Omniconvert provider |
+| `src/providers/optimizely.ts` | Optimizely provider |
+| `src/providers/piwik-pro-tm.ts` | Piwik PRO TM provider |
+| `src/providers/reddit-pixel.ts` | Reddit Pixel provider |
+| `src/providers/rtb-house.ts` | RTB House provider |
+| `src/providers/seznam-sklik.ts` | Seznam Sklik provider |
+| `src/providers/sojern.ts` | Sojern provider |
+| `src/providers/split-io.ts` | Split.io provider |
+| `src/providers/microsoft/clarity-event-types.ts` | Clarity event type constants |
 | `src/providers/url-parser.ts` | URL and POST body parameter parser — `getParams()` utility used by all providers |
 | `src/shared/provider-groups.ts` | PROVIDER_GROUPS — grouping/categorization of providers in the popover |
 | `src/shared/categories.ts` | Per-provider parameter display categories |
@@ -330,6 +344,9 @@ Hidden providers are persisted in `AppConfig.hiddenProviders` (restored on load 
 | `src/panel/datalayer/diff-renderer.ts` | Deep diff algorithm and rendering for DataLayer push comparisons |
 | `src/panel/datalayer/ecommerce-formatter.ts` | E-commerce detection and product table rendering |
 | `src/panel/datalayer/correlation.ts` | Correlation engine — finds network requests correlated with DataLayer pushes |
+| `src/panel/datalayer/live-inspector.ts` | Reactive tree view of cumulative DataLayer state with change highlighting |
+| `src/panel/datalayer/reverse-correlation.ts` | Reverse correlation — finds DataLayer push that triggered a network request |
+| `src/panel/datalayer/validator.ts` | Rule-based validation engine for DataLayer pushes |
 | `public/panel.html` | Panel DOM + inline CSS |
 
 ## Chrome Extension Notes

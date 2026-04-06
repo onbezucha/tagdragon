@@ -17,9 +17,35 @@ export const googleAds: Provider = {
     const conversionType = convType === 'viewthroughconversion' ? 'View-through' : 'Click-through';
 
     let eventName = p.en;
+
+    // Parse e-commerce fields from the semicolon-delimited `data` parameter
+    // Format: event=cart;ecomm_totalvalue=1190;ecomm_prodid=SKU1,SKU2;ecomm_pagetype=cart
+    let ecommTotalvalue: string | undefined;
+    let ecommProdid: string | undefined;
+    let ecommPagetype: string | undefined;
+
     if (p.data) {
-      const dataMatch = p.data.match(/event=([^&]+)/);
-      if (dataMatch) eventName = dataMatch[1];
+      const dataParts = p.data.split(';');
+      for (const part of dataParts) {
+        const eqIndex = part.indexOf('=');
+        if (eqIndex === -1) continue;
+        const key = part.substring(0, eqIndex);
+        const value = part.substring(eqIndex + 1);
+        switch (key) {
+          case 'event':
+            eventName = value;
+            break;
+          case 'ecomm_totalvalue':
+            ecommTotalvalue = value;
+            break;
+          case 'ecomm_prodid':
+            ecommProdid = value;
+            break;
+          case 'ecomm_pagetype':
+            ecommPagetype = value;
+            break;
+        }
+      }
     }
 
     return {
@@ -27,7 +53,7 @@ export const googleAds: Provider = {
       'Conversion Label': p.label,
       'Conversion Type':  conversionType,
       'Event':            eventName,
-      'Conversion Value': p.value,
+      'Conversion Value': p.value ?? ecommTotalvalue,
       'Currency':         p.currency_code ?? p.currency,
       'Transaction ID':   p.order_id ?? p.transaction_id,
       'Page Title':       p.tiba ? decodeURIComponent(p.tiba) : undefined,
@@ -37,12 +63,16 @@ export const googleAds: Provider = {
       'wbraid':           p.wbraid,
       'gbraid':           p.gbraid,
       'GTM Container':    p.gtm,
+      'Advertiser User ID': p.auid,
       'Consent State':    p.gcs,
       'Consent Details':  p.gcd,
       'Non-Personalized': p.npa,
       'DMA Compliance':   p.dma,
       'DMA Consent':      p.dma_cps,
       'Cookie Present':   p.ct_cookie_present,
+      'E-Commerce Value': ecommTotalvalue,
+      'Product IDs':      ecommProdid,
+      'E-Commerce Type':  ecommPagetype,
     };
   },
 };

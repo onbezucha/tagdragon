@@ -9,8 +9,8 @@ export const ga4: Provider = {
   
   parseParams(url: string, postBody: unknown): Record<string, string | undefined> {
     const p = getParams(url, postBody);
-    
-    return {
+
+    const decoded: Record<string, string | undefined> = {
       // Hit Info
       'Event': p.en,
       'Session ID': p.sid,
@@ -21,6 +21,7 @@ export const ga4: Provider = {
       // User & Session
       'Client ID': p.cid,
       'User ID': p.uid,
+      'ECID': p.ecid,
       // Page & Content
       'Page': p.dl ?? p.dp,
       'Page title': p.dt,
@@ -34,9 +35,29 @@ export const ga4: Provider = {
       'Non-personalized Ads': p.npa,
       'DMA Compliance': p.dma,
       'DMA Consent': p.dma_cps,
+      // Ecommerce
+      'Currency': p.cu,
       // Device & Browser
       'Screen Resolution': p.sr,
       'User Language': p.ul,
     };
+
+    // Dynamic parameters — forwarded with prefix intact so categorizer prefixMatch works
+    for (const [key, value] of Object.entries(p)) {
+      // Event parameters: ep.item_name, epn.value, etc.
+      if ((key.startsWith('ep.') && key.length > 3) || (key.startsWith('epn.') && key.length > 4)) {
+        decoded[key] = value;
+      }
+      // User properties: up.*, upn.*
+      else if ((key.startsWith('up.') && key.length > 3) || (key.startsWith('upn.') && key.length > 4)) {
+        decoded[key] = value;
+      }
+      // Product-scoped: pr1, pr1id, pr1nm, etc.
+      else if (key.length > 2 && /^pr\w/.test(key)) {
+        decoded[key] = value;
+      }
+    }
+
+    return decoded;
   },
 };

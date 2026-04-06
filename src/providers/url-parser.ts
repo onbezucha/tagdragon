@@ -96,5 +96,3 @@ export function extractPath(url: string, regex: RegExp): string | undefined {
   const m = url.match(regex);
   return m ? m[1] : undefined;
 }
-
-export type { ParamRecord, ParamValue };

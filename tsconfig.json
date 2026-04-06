@@ -20,10 +20,7 @@
     "rootDir": "./src",
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"],
-      "@types/*": ["src/types/*"],
-      "@providers/*": ["src/providers/*"],
-      "@components/*": ["src/panel/components/*"]
+      "@/*": ["src/*"]
     }
   },
   "include": ["src/**/*"],

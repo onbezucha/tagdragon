@@ -5,6 +5,7 @@ import { PROVIDER_GROUPS } from '@/shared/provider-groups';
 import { DATA_LAYER_SOURCES } from '@/shared/datalayer-constants';
 import { DOM } from '../utils/dom';
 import { isMac, modLabel } from '../utils/platform';
+import { esc } from '../utils/format';
 import {
   createIcons,
   Cable,
@@ -12,6 +13,7 @@ import {
   Eraser,
   Cookie,
   Sun,
+  Moon,
   Trash2,
   Settings,
   CircleHelp,
@@ -23,6 +25,9 @@ import {
   Filter,
   Download,
   Pause,
+  Play,
+  ChevronDown,
+  X,
 } from 'lucide';
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
@@ -89,8 +94,8 @@ function renderProviderGroups(): void {
   $container.innerHTML = PROVIDER_GROUPS.map(group => {
     const pills = group.providers.map(name => {
       const color = colorMap.get(name) ?? '#888';
-      return `<span class="info-provider-pill" data-name="${name}">` +
-        `<span class="info-pill-dot" style="background:${color}"></span>${name}</span>`;
+      return `<span class="info-provider-pill" data-name="${esc(name)}">` +
+        `<span class="info-pill-dot" style="background:${color}"></span>${esc(name)}</span>`;
     }).join('');
 
     return `
@@ -217,6 +222,7 @@ function renderToolbarIcons(): void {
       Eraser,
       Cookie,
       Sun,
+      Moon,
       Trash2,
       Settings,
       CircleHelp,
@@ -228,6 +234,9 @@ function renderToolbarIcons(): void {
       Filter,
       Download,
       Pause,
+      Play,
+      ChevronDown,
+  X,
     },
   });
 }

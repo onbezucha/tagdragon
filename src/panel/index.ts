@@ -3,7 +3,7 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
 import type { ParsedRequest } from '@/types/request';
-import type { DataLayerPush, DataLayerSource } from '@/types/datalayer';
+import type { DataLayerPush, DataLayerSource, ValidationRule } from '@/types/datalayer';
 
 import * as state from './state';
 import * as dlState from './datalayer/state';
@@ -19,8 +19,12 @@ import { initConsentPanel, clearAllCookies, clearConsentOverride } from './compo
 import { initInfoPopover, closeInfoPopover } from './components/info-popover';
 import { applyFilters, matchesFilter } from './utils/filter';
 import { downloadCsv, downloadJson } from './utils/export';
-import { createDlPushRow, getSourceColor, setActiveDlRow, updateDlStatusText, dlMatchesFilter, exportDlJson, exportDlCsv } from './datalayer/push-list';
+import { createDlPushRow, getSourceColor, setActiveDlRow, updateDlStatusText, dlMatchesFilter, exportDlJson, exportDlCsv, updateDlRowValidation } from './datalayer/push-list';
 import { selectDlPush, closeDlDetail, initDlDetailTabHandlers } from './datalayer/push-detail';
+import { queueHighlights, checkWatchPaths, clearLiveState } from './datalayer/live-inspector';
+import { validatePush, loadValidationRules, saveValidationRules } from './datalayer/validator';
+import { getValidationErrors, setValidationErrors, clearValidationErrors, getValidationRules, setValidationRules, isValidationLoaded, setValidationLoaded } from './datalayer/state';
+import { findTriggeringPush, renderTriggeredBy } from './datalayer/reverse-correlation';
 import { initTheme } from './theme';
 import { savePanelSetting, loadPanelSetting } from './utils/persistence';
 import { isMac } from './utils/platform';
@@ -76,6 +80,25 @@ function gotoNetworkRequest(reqId: number): void {
     row.style.display = '';
   }
   selectRequest(reqData, row);
+}
+
+/**
+ * Navigate to a DataLayer push from the Network view.
+ */
+function gotoDatalayerPush(pushId: number): void {
+  switchView('datalayer');
+
+  const push = dlState.getDlPushById(pushId);
+  if (!push) return;
+
+
+  const $list = DOM.dlPushList;
+  if (!$list) return;
+  const row = $list.querySelector(`.dl-push-row[data-id="${pushId}"]`) as HTMLElement | null;
+  if (row) {
+    row.click();
+    row.scrollIntoView({ block: 'nearest' });
+  }
 }
 
 // ─── MEMORY BUDGET ───────────────────────────────────────────────────────────
@@ -232,7 +255,7 @@ function switchView(view: 'network' | 'datalayer'): void {
   // Update clear button tooltip
   const $clearBtn = document.getElementById('btn-clear-all');
   if ($clearBtn) {
-    $clearBtn.title = view === 'network'
+    $clearBtn.dataset.tooltip = view === 'network'
       ? 'Clear all requests (Ctrl+L)'
       : 'Clear all DataLayer pushes (Ctrl+L)';
   }
@@ -310,6 +333,26 @@ window.receiveDataLayerPush = function (push: DataLayerPush): void {
 
   dlState.addDlPush(enrichedPush);
 
+  // Compute diff for Live Inspector highlights
+  const allPushesForInspector = dlState.getAllDlPushes();
+  if (allPushesForInspector.length >= 2) {
+    const prevPush = allPushesForInspector[allPushesForInspector.length - 2];
+    const changedPaths = computeChangedPaths(prevPush.cumulativeState, enrichedPush.cumulativeState);
+    if (changedPaths.size > 0) {
+      queueHighlights(changedPaths);
+      checkWatchPaths(prevPush.cumulativeState, enrichedPush.cumulativeState);
+    }
+  }
+
+  // Validate push if rules are loaded
+  if (dlState.isValidationLoaded()) {
+    const rules = dlState.getValidationRules();
+    const errors = validatePush(enrichedPush, rules);
+    if (errors.length > 0) {
+      dlState.setValidationErrors(enrichedPush.id, errors);
+    }
+  }
+
   const filterText = dlState.getDlFilterText();
   const isVisible = dlMatchesFilter(enrichedPush, filterText, dlState.getDlFilterSource(), dlState.getDlFilterEventName(), dlState.getDlFilterHasKey(), dlState.getDlEcommerceOnly());
   if (isVisible) dlState.addDlFilteredId(push.id);
@@ -343,6 +386,19 @@ window.receiveDataLayerPush = function (push: DataLayerPush): void {
     const n = dlState.getDlTotalCount();
     $count.textContent = `${n} push${n !== 1 ? 'es' : ''}`;
   }
+
+  // Update rules error count badge
+  const $rulesCount = document.getElementById('dl-rules-count');
+  if ($rulesCount) {
+    const totalErrors = dlState.getAllDlPushes().reduce((sum, p) => sum + dlState.getValidationErrors(p.id).length, 0);
+    if (totalErrors > 0) {
+      $rulesCount.style.display = '';
+      $rulesCount.textContent = String(totalErrors);
+      $rulesCount.style.color = 'var(--red)';
+    } else {
+      $rulesCount.style.display = 'none';
+    }
+  }
 };
 
 window.receiveDataLayerSources = function (sources: DataLayerSource[], labels: Record<DataLayerSource, string>): void {
@@ -362,8 +418,30 @@ window.receiveDataLayerSources = function (sources: DataLayerSource[], labels: R
 window.clearDataLayer = function (): void {
   const $status = document.getElementById('dl-source-status');
   if ($status) $status.innerHTML = '';
+  clearLiveState();
+  clearValidationErrors();
   dlClearAll();
 };
+
+// ─── LIVE INSPECTOR HELPERS ────────────────────────────────────────────────
+
+function computeChangedPaths(
+  prev: Record<string, unknown>,
+  curr: Record<string, unknown>,
+): Map<string, 'added' | 'changed' | 'removed'> {
+  const result = new Map<string, 'added' | 'changed' | 'removed'>();
+  const allKeys = new Set([...Object.keys(prev), ...Object.keys(curr)]);
+  for (const key of allKeys) {
+    if (!(key in prev)) {
+      result.set(key, 'added');
+    } else if (!(key in curr)) {
+      result.set(key, 'removed');
+    } else if (JSON.stringify(prev[key]) !== JSON.stringify(curr[key])) {
+      result.set(key, 'changed');
+    }
+  }
+  return result;
+}
 
 // ─── ENTRY POINT (from devtools.js) ──────────────────────────────────────────
 
@@ -605,7 +683,7 @@ function initToolbarHandlers(): void {
       if (playIcon) playIcon.style.display = paused ? '' : 'none';
       if (pauseText) pauseText.style.display = paused ? 'none' : '';
       if (playText) playText.style.display = paused ? '' : 'none';
-      btnPause.title = paused ? 'Resume capture' : 'Pause capture';
+      btnPause.dataset.tooltip = paused ? 'Resume capture' : 'Pause capture';
     }
   };
 
@@ -657,21 +735,21 @@ function initToolbarHandlers(): void {
 
   // Clear cookies button
   btnClearCookies?.addEventListener('click', async () => {
-    const originalTitle = btnClearCookies.title;
+    const originalTitle = btnClearCookies.dataset.tooltip || 'Delete all cookies on this site';
     btnClearCookies.disabled = true;
-    btnClearCookies.title = 'Deleting...';
+    btnClearCookies.dataset.tooltip = 'Deleting...';
     try {
       const count = await clearAllCookies();
       await clearConsentOverride();
-      btnClearCookies.title = `Deleted ${count} cookies`;
+      btnClearCookies.dataset.tooltip = `Deleted ${count} cookies`;
       setTimeout(() => {
-        btnClearCookies.title = originalTitle;
+        btnClearCookies.dataset.tooltip = originalTitle;
         btnClearCookies.disabled = false;
       }, 2000);
     } catch {
-      btnClearCookies.title = 'Error';
+      btnClearCookies.dataset.tooltip = 'Error';
       setTimeout(() => {
-        btnClearCookies.title = originalTitle;
+        btnClearCookies.dataset.tooltip = originalTitle;
         btnClearCookies.disabled = false;
       }, 2000);
     }
@@ -741,19 +819,19 @@ function syncQuickButtons(): void {
 
   if (sortBtn) {
     sortBtn.classList.toggle('active', cfg.sortOrder === 'desc');
-    sortBtn.title = cfg.sortOrder === 'desc' ? 'Newest first (click for oldest first)' : 'Oldest first (click for newest first)';
+    sortBtn.dataset.tooltip = cfg.sortOrder === 'desc' ? 'Newest first (click for oldest first)' : 'Oldest first (click for newest first)';
   }
   if (wrapBtn) {
     wrapBtn.classList.toggle('active', cfg.wrapValues);
-    wrapBtn.title = cfg.wrapValues ? 'Wrap values: on' : 'Wrap values: off';
+    wrapBtn.dataset.tooltip = cfg.wrapValues ? 'Wrap values: on' : 'Wrap values: off';
   }
   if (expandBtn) {
     expandBtn.classList.toggle('active', cfg.autoExpand);
-    expandBtn.title = cfg.autoExpand ? 'Auto-expand: on' : 'Auto-expand: off';
+    expandBtn.dataset.tooltip = cfg.autoExpand ? 'Auto-expand: on' : 'Auto-expand: off';
   }
   if (compactBtn) {
     compactBtn.classList.toggle('active', cfg.compactRows);
-    compactBtn.title = cfg.compactRows ? 'Compact list: on' : 'Compact list: off';
+    compactBtn.dataset.tooltip = cfg.compactRows ? 'Compact list: on' : 'Compact list: off';
   }
 }
 
@@ -780,6 +858,16 @@ function initQuickActions(): void {
     applyCompactRowsClass();
     syncQuickButtons();
   });
+}
+
+// ─── EXPORT TOOLTIP SYNC ─────────────────────────────────────────────────────
+
+function syncExportTooltip(): void {
+  const btnExport = document.getElementById('btn-export');
+  if (btnExport) {
+    const fmt = state.getConfig().exportFormat.toUpperCase();
+    btnExport.dataset.tooltip = `Export as ${fmt}`;
+  }
 }
 
 // ─── CONFIG UI ───────────────────────────────────────────────────────────────
@@ -867,9 +955,11 @@ function initConfigUI(): void {
   const cfgExportFmtEl = document.getElementById('cfg-export-format') as HTMLSelectElement | null;
   if (cfgExportFmtEl) {
     cfgExportFmtEl.value = state.getConfig().exportFormat;
+    syncExportTooltip();
     cfgExportFmtEl.addEventListener('change', (e: Event) => {
       const value = (e.target as HTMLSelectElement).value;
       state.updateConfig('exportFormat', value);
+      syncExportTooltip();
     });
   }
 }
@@ -955,7 +1045,7 @@ async function initDatalayerHandlers(): Promise<void> {
     ($dlPause.querySelector('.play-icon') as HTMLElement).style.display = isPaused ? '' : 'none';
     ($dlPause.querySelector('.pause-text') as HTMLElement).style.display = isPaused ? 'none' : '';
     ($dlPause.querySelector('.play-text') as HTMLElement).style.display = isPaused ? '' : 'none';
-    $dlPause.title = isPaused ? 'Resume DataLayer capture' : 'Pause DataLayer capture';
+    $dlPause.dataset.tooltip = isPaused ? 'Resume DataLayer capture' : 'Pause DataLayer capture';
   });
 
   // DL active filter pills
@@ -1036,16 +1126,6 @@ async function initDatalayerHandlers(): Promise<void> {
     dlState.setDlFilterSource($dlSourceSelect.value);
     dlApplyFilter();
     updateDlActiveFilters();
-  });
-
-  // DL E-commerce toggle button
-  document.getElementById('dl-ecommerce-toggle')?.addEventListener('click', () => {
-    const current = dlState.getDlEcommerceOnly();
-    dlState.setDlEcommerceOnly(!current);
-    dlApplyFilter();
-    updateDlActiveFilters();
-    document.getElementById('dl-ecommerce-toggle')?.classList.toggle('active', !current);
-    updateDlStatusBar();
   });
 
   // DL Export button — respects AppConfig.exportFormat (json or csv), exports only visible pushes
@@ -1156,6 +1236,112 @@ async function init(): Promise<void> {
 
   // Initialize DataLayer handlers
   await initDatalayerHandlers();
+
+  // Cross-tab navigation: Network → DataLayer
+  document.addEventListener('goto-datalayer-push', (e) => {
+    const pushId = (e as CustomEvent).detail as number;
+    gotoDatalayerPush(pushId);
+  });
+
+  // Load validation rules
+  loadValidationRules().then((rules) => {
+    setValidationRules(rules);
+    setValidationLoaded(true);
+    updateDlRowValidation();
+  }).catch(() => { /* ignore */ });
+
+  // Validation rules panel
+  const $rulesBtn = document.getElementById('dl-btn-rules');
+  const $rulesPanel = document.getElementById('dl-rules-panel');
+  const $rulesPanelClose = document.getElementById('dl-rules-panel-close');
+  const $rulesPanelBody = document.getElementById('dl-rules-panel-body');
+
+  if ($rulesBtn && $rulesPanel && $rulesPanelClose && $rulesPanelBody) {
+    $rulesBtn.addEventListener('click', () => {
+      $rulesPanel.classList.toggle('hidden');
+      if (!$rulesPanel.classList.contains('hidden')) {
+        renderRulesPanel($rulesPanelBody);
+      }
+    });
+
+    $rulesPanelClose.addEventListener('click', () => {
+      $rulesPanel.classList.add('hidden');
+    });
+  }
+
+  function renderRulesPanel(container: HTMLElement): void {
+    container.innerHTML = '';
+    const rules = dlState.getValidationRules();
+    const presetRules = rules.filter(r => r.id.startsWith('preset-'));
+    const customRules = rules.filter(r => r.id.startsWith('custom-'));
+
+    if (presetRules.length > 0) {
+      const label = document.createElement('div');
+      label.className = 'dl-rules-group-label';
+      label.textContent = 'Preset Rules';
+      container.appendChild(label);
+
+      for (const rule of presetRules) {
+        container.appendChild(createRuleItem(rule));
+      }
+    }
+
+    if (customRules.length > 0) {
+      const label = document.createElement('div');
+      label.className = 'dl-rules-group-label';
+      label.textContent = 'Custom Rules';
+      container.appendChild(label);
+
+      for (const rule of customRules) {
+        container.appendChild(createRuleItem(rule));
+      }
+    }
+
+    if (rules.length === 0) {
+      const empty = document.createElement('div');
+      empty.style.cssText = 'font-size:11px;color:var(--text-2);padding:8px;';
+      empty.textContent = 'No validation rules configured';
+      container.appendChild(empty);
+    }
+  }
+
+  function createRuleItem(rule: ValidationRule): HTMLElement {
+    const item = document.createElement('div');
+    item.className = `dl-rule-item${rule.enabled ? '' : ' disabled'}`;
+
+    const toggle = document.createElement('div');
+    toggle.className = `dl-rule-toggle${rule.enabled ? ' checked' : ''}`;
+    toggle.addEventListener('click', () => {
+      rule.enabled = !rule.enabled;
+      toggle.classList.toggle('checked');
+      item.classList.toggle('disabled');
+      void saveValidationRules(dlState.getValidationRules());
+    });
+
+    const info = document.createElement('div');
+    info.className = 'dl-rule-info';
+
+    const name = document.createElement('div');
+    name.className = 'dl-rule-name';
+    name.textContent = rule.name;
+    info.appendChild(name);
+
+    const scope = document.createElement('div');
+    scope.className = 'dl-rule-scope';
+    const parts: string[] = [];
+    if (rule.scope.eventName) {
+      const events = Array.isArray(rule.scope.eventName) ? rule.scope.eventName : [rule.scope.eventName];
+      parts.push(`event: ${events.join(', ')}`);
+    }
+    if (rule.scope.source) parts.push(`source: ${rule.scope.source}`);
+    if (rule.scope.ecommerceType) parts.push(`ecom: ${rule.scope.ecommerceType}`);
+    scope.textContent = parts.length > 0 ? parts.join(' · ') : 'all pushes';
+    info.appendChild(scope);
+
+    item.appendChild(toggle);
+    item.appendChild(info);
+    return item;
+  }
 }
 
 // Start initialization

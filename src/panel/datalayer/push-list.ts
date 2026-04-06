@@ -12,6 +12,7 @@ import {
   getDlFilteredIds,
   getDlSelectedId,
   setDlSelectedId,
+  getValidationErrors,
 } from './state';
 
 export type DlSelectCallback = (push: DataLayerPush, row: HTMLElement) => void;
@@ -103,6 +104,19 @@ export function createDlPushRow(
     ecBadge.className = 'dl-ec-badge';
     ecBadge.textContent = push._ecommerceType.toUpperCase();
     row.querySelector('.dl-push-primary')?.appendChild(ecBadge);
+  }
+
+  // Validation error indicator
+  const valErrors = getValidationErrors(push.id);
+  if (valErrors.length > 0) {
+    const dot = document.createElement('span');
+    dot.className = 'dl-validation-dot has-errors';
+    dot.title = valErrors.map(e => e.ruleName).join('\n');
+    const badge = document.createElement('span');
+    badge.className = 'dl-validation-badge';
+    badge.textContent = String(valErrors.length);
+    dot.appendChild(badge);
+    row.querySelector('.dl-push-primary')?.insertBefore(dot, row.querySelector('.dl-push-index'));
   }
 
   // Click to select
@@ -219,7 +233,7 @@ export function navigateDlList(
 export function exportDlJson(pushes: DataLayerPush[]): void {
   const payload = {
     exportedAt: new Date().toISOString(),
-    pageUrl: window.location.href,
+    pageUrl: 'inspected-page',
     sources: [...new Set(pushes.map((p) => p.source))],
     pushes: pushes.map((p) => ({
       id: p.id,
@@ -290,6 +304,30 @@ export function dlMatchesFilter(
   }
 
   return true;
+}
+
+/**
+ * Update validation indicators on existing push rows.
+ */
+export function updateDlRowValidation(): void {
+  const $list = DOM.dlPushList;
+  if (!$list) return;
+  const rows = $list.querySelectorAll('.dl-push-row');
+  rows.forEach((row) => {
+    const id = Number((row as HTMLElement).dataset['id']);
+    const errors = getValidationErrors(id);
+    const existing = row.querySelector('.dl-validation-dot');
+    if (errors.length > 0 && !existing) {
+      const dot = document.createElement('span');
+      dot.className = 'dl-validation-dot has-errors';
+      dot.title = errors.map(e => e.ruleName).join('\n');
+      const badge = document.createElement('span');
+      badge.className = 'dl-validation-badge';
+      badge.textContent = String(errors.length);
+      dot.appendChild(badge);
+      row.querySelector('.dl-push-primary')?.insertBefore(dot, row.querySelector('.dl-push-index'));
+    }
+  });
 }
 
 

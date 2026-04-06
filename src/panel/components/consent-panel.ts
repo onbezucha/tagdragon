@@ -2,6 +2,7 @@
 
 import type { ConsentData } from '@/types/consent';
 import { DOM } from '../utils/dom';
+import { esc } from '../utils/format';
 import { GET_CONSENT_DATA_SCRIPT, ACCEPT_ALL_SCRIPT, REJECT_ALL_SCRIPT } from '@/shared/cmp-detection';
 
 const STORAGE_KEY = 'rt_consent_override';
@@ -183,11 +184,22 @@ export async function clearAllCookies(): Promise<number> {
   if (!url) return 0;
 
   // Relay to background — chrome.cookies is not available in DevTools panels
-  return new Promise<number>((resolve) => {
-    chrome.runtime.sendMessage({ type: 'CLEAR_COOKIES', url }, (resp: any) => {
-      resolve(resp?.deleted ?? 0);
-    });
-  });
+  // 5-second timeout to prevent infinite hang if background doesn't respond
+  try {
+    return await Promise.race<number>([
+      new Promise<number>((resolve) => {
+        chrome.runtime.sendMessage({ type: 'CLEAR_COOKIES', url }, (resp: any) => {
+          resolve(resp?.deleted ?? 0);
+        });
+      }),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('Clear cookies timeout')), 5000)
+      ),
+    ]);
+  } catch {
+    console.warn('TagDragon: clearAllCookies failed or timed out');
+    return 0;
+  }
 }
 
 async function runClearCookies(btn: HTMLButtonElement): Promise<void> {
@@ -318,7 +330,7 @@ function renderConsentPanel(data: ConsentData): void {
   // CMP Info
   if ($cmpInfo) {
     $cmpInfo.innerHTML = `
-      <span class="consent-cmp-name">${data.cmp.name}</span>
+      <span class="consent-cmp-name">${esc(data.cmp.name)}</span>
       <span class="consent-cmp-status ${data.cmp.isActive ? 'active' : 'inactive'}">
         ${data.cmp.isActive ? '🟢 Active' : '🔴 API'}
       </span>
@@ -349,7 +361,7 @@ function renderConsentPanel(data: ConsentData): void {
         <div class="consent-category ${cat.granted ? 'granted' : 'denied'}">
           <div class="consent-category-header">
             <span class="consent-category-status">${cat.granted ? '✅' : '❌'}</span>
-            <span class="consent-category-label">${cat.label}</span>
+            <span class="consent-category-label">${esc(cat.label)}</span>
           </div>
         </div>
       `).join('');
@@ -369,7 +381,7 @@ function renderConsentPanel(data: ConsentData): void {
             <button class="consent-btn-small" id="consent-copy-tcf">Copy</button>
           </div>
         </div>
-        <div class="consent-tcf-string" id="consent-tcf-value" style="display:none;">${data.tcf.tcString}</div>
+        <div class="consent-tcf-string" id="consent-tcf-value" style="display:none;">${esc(data.tcf.tcString)}</div>
       `;
       document.getElementById('consent-show-tcf')?.addEventListener('click', () => {
         const $val = document.getElementById('consent-tcf-value');

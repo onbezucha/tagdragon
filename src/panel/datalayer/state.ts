@@ -5,6 +5,8 @@ import type {
   DataLayerPush,
   DataLayerState,
   DataLayerSource,
+  ValidationResult,
+  ValidationRule,
 } from '@/types/datalayer';
 
 // ─── STATE CONTAINERS ────────────────────────────────────────────────────────
@@ -18,6 +20,8 @@ const dlState: DataLayerState = {
   sources: new Set(),
   sourceLabels: new Map(),
 };
+
+const MAX_DL_PUSHES = 1000;
 
 // ─── FILTER STATE ────────────────────────────────────────────────────────────
 
@@ -37,17 +41,29 @@ const dlFilterState: DlFilterState = {
   ecommerceOnly: false,
 };
 
+let watchedPaths: string[] = [];
+
 // ─── PUSH OPERATIONS ─────────────────────────────────────────────────────────
 
 export function addDlPush(push: DataLayerPush): void {
   dlState.all.push(push);
   dlState.map.set(push.id, push);
+
+  // Auto-prune if limit exceeded (mirrors network request pruning)
+  if (dlState.all.length > MAX_DL_PUSHES) {
+    const pruneTo = Math.floor(MAX_DL_PUSHES * 0.75);
+    const removed = dlState.all.splice(0, dlState.all.length - pruneTo);
+    removed.forEach(p => dlState.map.delete(p.id));
+    dlState.filteredIds.clear();
+  }
 }
 
 export function clearDlPushes(): void {
   dlState.all = [];
   dlState.map.clear();
   dlState.filteredIds.clear();
+  dlState.sources.clear();
+  dlState.sourceLabels.clear();
   dlState.selectedId = null;
 }
 
@@ -59,30 +75,19 @@ export function getDlPushById(id: number): DataLayerPush | undefined {
   return dlState.map.get(id);
 }
 
-export function hasDlPush(id: number): boolean {
-  return dlState.map.has(id);
-}
-
 // ─── FILTERED IDS ────────────────────────────────────────────────────────────
 
 export function getDlFilteredIds(): Set<number> {
   return dlState.filteredIds;
 }
 
-export function addDlFilteredId(id: number): void {
-  dlState.filteredIds.add(id);
-}
-
-export function removeDlFilteredId(id: number): void {
-  dlState.filteredIds.delete(id);
-}
 
 export function clearDlFilteredIds(): void {
   dlState.filteredIds.clear();
 }
 
-export function isDlFiltered(id: number): boolean {
-  return dlState.filteredIds.has(id);
+export function addDlFilteredId(id: number): void {
+  dlState.filteredIds.add(id);
 }
 
 // ─── SELECTED ID ─────────────────────────────────────────────────────────────
@@ -107,23 +112,11 @@ export function setDlIsPaused(paused: boolean): void {
 
 // ─── SOURCES ─────────────────────────────────────────────────────────────────
 
-export function getDlSources(): Set<DataLayerSource> {
-  return dlState.sources;
-}
-
 export function addDlSource(source: DataLayerSource): void {
   dlState.sources.add(source);
 }
 
-export function getDlSourceLabel(source: DataLayerSource): string {
-  return dlState.sourceLabels.get(source) ?? source;
-}
-
 // ─── FILTER STATE ────────────────────────────────────────────────────────────
-
-export function getDlFilterState(): Readonly<DlFilterState> {
-  return { ...dlFilterState };
-}
 
 export function setDlFilterText(text: string): void {
   dlFilterState.text = text;
@@ -165,14 +158,6 @@ export function getDlEcommerceOnly(): boolean {
   return dlFilterState.ecommerceOnly;
 }
 
-export function resetDlFilters(): void {
-  dlFilterState.text = '';
-  dlFilterState.source = '';
-  dlFilterState.eventName = '';
-  dlFilterState.hasKey = '';
-  dlFilterState.ecommerceOnly = false;
-}
-
 // ─── STATS ───────────────────────────────────────────────────────────────────
 
 export function getDlVisibleCount(): number {
@@ -188,6 +173,14 @@ export function getDlTotalCount(): number {
 
 export function computeCumulativeState(upToIndex: number): Record<string, unknown> {
   const all = dlState.all;
+  if (upToIndex >= 0 && upToIndex < all.length) {
+    const push = all[upToIndex];
+    // Use pre-computed cumulative state if available (pushed after optimization)
+    if (push.cumulativeState && Object.keys(push.cumulativeState).length > 0) {
+      return push.cumulativeState;
+    }
+  }
+  // Fallback: compute from scratch for legacy pushes without cumulativeState
   const result: Record<string, unknown> = {};
   for (let i = 0; i <= upToIndex && i < all.length; i++) {
     const data = all[i].data;
@@ -196,4 +189,77 @@ export function computeCumulativeState(upToIndex: number): Record<string, unknow
     }
   }
   return result;
+}
+
+// ─── WATCH PATHS ──────────────────────────────────────────────────────────────
+
+const MAX_WATCHED_PATHS = 10;
+
+export function getWatchedPaths(): string[] {
+  return watchedPaths;
+}
+
+export function addWatchedPath(path: string): boolean {
+  if (watchedPaths.includes(path) || watchedPaths.length >= MAX_WATCHED_PATHS) return false;
+  watchedPaths.push(path);
+  return true;
+}
+
+export function removeWatchedPath(path: string): void {
+  watchedPaths = watchedPaths.filter(p => p !== path);
+}
+
+export function clearWatchedPaths(): void {
+  watchedPaths = [];
+}
+
+// ─── VALIDATION STATE ─────────────────────────────────────────────────────
+
+let validationErrors: Map<number, ValidationResult[]> = new Map();
+let validationRules: ValidationRule[] = [];
+let validationLoaded = false;
+
+export function getValidationErrors(pushId: number): ValidationResult[] {
+  return validationErrors.get(pushId) ?? [];
+}
+
+export function setValidationErrors(pushId: number, errors: ValidationResult[]): void {
+  validationErrors.set(pushId, errors);
+}
+
+export function clearValidationErrors(): void {
+  validationErrors.clear();
+}
+
+export function getValidationRules(): ValidationRule[] {
+  return validationRules;
+}
+
+export function setValidationRules(rules: ValidationRule[]): void {
+  validationRules = rules;
+}
+
+export function isValidationLoaded(): boolean {
+  return validationLoaded;
+}
+
+export function setValidationLoaded(loaded: boolean): void {
+  validationLoaded = loaded;
+}
+
+// ─── CORRELATION CONFIG ────────────────────────────────────────────────────
+
+let correlationWindowMs: number = 2000;
+let correlationLookbackMs: number = 500;
+
+export function getCorrelationWindow(): number {
+  return correlationWindowMs;
+}
+
+export function setCorrelationWindow(ms: number): void {
+  correlationWindowMs = ms;
+}
+
+export function getCorrelationLookback(): number {
+  return correlationLookbackMs;
 }

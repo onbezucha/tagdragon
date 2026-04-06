@@ -80,7 +80,7 @@ export const PROVIDER_GROUPS: readonly ProviderGroup[] = [
 
 // Utility: finds the group for a given provider name
 export function getProviderGroup(providerName: string): ProviderGroup | undefined {
-  return PROVIDER_GROUPS.find(g => (g.providers as readonly string[]).includes(providerName));
+  return PROVIDER_GROUPS.find(g => g.providers.includes(providerName));
 }
 
 // Fallback group for providers without an assigned group

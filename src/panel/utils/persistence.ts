@@ -6,6 +6,7 @@ const PREFIX = 'rt_';
 export async function savePanelSetting(key: string, value: string): Promise<void> {
   try {
     await chrome.storage.local.set({ [PREFIX + key]: value });
+    return; // chrome.storage succeeded, no need for localStorage fallback
   } catch {
     // fallback below
   }
@@ -22,7 +23,7 @@ export async function savePanelSetting(key: string, value: string): Promise<void
 export async function loadPanelSetting(key: string, fallback = ''): Promise<string> {
   try {
     const result = await chrome.storage.local.get(PREFIX + key);
-    if (result[PREFIX + key]) return result[PREFIX + key] as string;
+    if (result[PREFIX + key] != null) return result[PREFIX + key] as string;
   } catch {
     // fallback below
   }

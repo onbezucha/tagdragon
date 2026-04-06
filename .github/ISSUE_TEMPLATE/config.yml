@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 📖 Documentation
+    url: https://www.tagdragon.net/docs/getting-started
+    about: Check the docs for setup guides and feature references.
+  - name: 💬 Discussions
+    url: https://github.com/onbezucha/tagdragon/discussions
+    about: Ask questions and share ideas with the community.

@@ -53,10 +53,11 @@ export function updateActiveFilters(applyFiltersCallback: () => void): void {
       label: `"${filterText}"`,
       colorClass: 'filter-pill--search',
       dotColor: '#5090ff',
-      onRemove: () => { 
-        setFilterText(''); 
-        (DOM.filterInput as HTMLInputElement).value = ''; 
-        DOM.clearFilter!.style.display = 'none';
+      onRemove: () => {
+        setFilterText('');
+        (DOM.filterInput as HTMLInputElement).value = '';
+        const clearFilter = DOM.clearFilter;
+        if (clearFilter) clearFilter.style.display = 'none';
         applyFiltersCallback(); 
         updateActiveFilters(applyFiltersCallback); 
       }
@@ -166,7 +167,8 @@ export function updateActiveFilters(applyFiltersCallback: () => void): void {
   });
   
   // Render pills
-  const $activeFilters = DOM.activeFilters!;
+  const $activeFilters = DOM.activeFilters;
+  if (!$activeFilters) return;
   $activeFilters.innerHTML = '';
   
   pills.forEach((p) => {
@@ -191,7 +193,8 @@ export function updateActiveFilters(applyFiltersCallback: () => void): void {
       hiddenProviders.clear();
       syncHiddenProviders();
       (DOM.filterInput as HTMLInputElement).value = '';
-      DOM.clearFilter!.style.display = 'none';
+      const clearFilter = DOM.clearFilter;
+      if (clearFilter) clearFilter.style.display = 'none';
       qsa('.ppill.inactive').forEach(p => p.classList.replace('inactive', 'active'));
       applyFiltersCallback();
       updateActiveFilters(applyFiltersCallback);
@@ -206,8 +209,8 @@ export function updateActiveFilters(applyFiltersCallback: () => void): void {
  * Close filter popover.
  */
 export function closeFilterPopover(): void {
-  DOM.filterPopover!.classList.remove('visible');
-  DOM.filterSubmenu!.classList.remove('visible');
+  DOM.filterPopover?.classList.remove('visible');
+  DOM.filterSubmenu?.classList.remove('visible');
   activeSubmenu = null;
 }
 
@@ -215,7 +218,8 @@ export function closeFilterPopover(): void {
  * Update filter popover state (highlight active filters).
  */
 function updateFilterPopoverState(): void {
-  const popover = DOM.filterPopover!;
+  const popover = DOM.filterPopover;
+  if (!popover) return;
   const filterEventType = getFilterEventType();
   const filterStatus = getFilterStatus();
   const filterMethod = getFilterMethod();
@@ -254,11 +258,11 @@ function updateFilterPopoverState(): void {
  * @param updateActiveFiltersCallback Callback to update active filters
  */
 export function initFilterPopoverHandlers(applyFiltersCallback: () => void, updateActiveFiltersCallback: () => void): void {
-  const $filterPopover = DOM.filterPopover!;
-  const $filterSubmenu = DOM.filterSubmenu!;
-  const $filterSubmenuContent = DOM.filterSubmenuContent!;
-  
-  if (!$filterPopover) return;
+  const $filterPopover = DOM.filterPopover;
+  const $filterSubmenu = DOM.filterSubmenu;
+  const $filterSubmenuContent = DOM.filterSubmenuContent;
+
+  if (!$filterPopover || !$filterSubmenu || !$filterSubmenuContent) return;
   
   // Handle clicks on filter popover menu items
   $filterPopover.addEventListener('click', (e: MouseEvent) => {

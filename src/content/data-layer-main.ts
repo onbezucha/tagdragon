@@ -132,11 +132,6 @@ import { SOURCE_DESCRIPTIONS } from '@/shared/datalayer-constants';
       // This handles the extension reload race: bridge posts READY after its listeners
       // are set up, so by the time MAIN world responds, the bridge is guaranteed ready.
       detectAndIntercept();
-      // GTM: replay the entire dataLayer array (detectAndIntercept only replays
-      // via interceptDataLayer, which also patches .push — we replay here to
-      // ensure all items are sent even if the array was already intercepted).
-      const dl = win['dataLayer'];
-      if (Array.isArray(dl)) replayDataLayer(dl);
       postDetectedSources();
       return;
     }

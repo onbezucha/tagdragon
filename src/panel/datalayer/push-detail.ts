@@ -1,16 +1,17 @@
 // ─── PUSH DETAIL COMPONENT ───────────────────────────────────────────────────
 // Detail pane with 4 sub-tabs: Push Data, Diff, Current State, Correlation.
 
-import type { DataLayerPush } from '@/types/datalayer';
+import type { DataLayerPush, ValidationResult } from '@/types/datalayer';
 import type { ParsedRequest } from '@/types/request';
 import { DOM } from '../utils/dom';
 import { formatTimestamp } from '../utils/format';
 import { getConfig, getAllRequests } from '../state';
-import { getAllDlPushes, computeCumulativeState } from './state';
+import { getAllDlPushes, computeCumulativeState, getValidationErrors, getCorrelationWindow, setCorrelationWindow } from './state';
 import { deepDiff, renderDiff } from './diff-renderer';
 import { renderEcommerceTable, detectEcommerceType } from './ecommerce-formatter';
 import { findCorrelatedRequests, renderCorrelation } from './correlation';
 import { getSourceColor, getSourceBadge } from './push-list';
+import { renderLiveInspector } from './live-inspector';
 
 // ─── DETAIL RENDERING ────────────────────────────────────────────────────────
 
@@ -121,6 +122,9 @@ function renderActiveTab(
     case 'correlation':
       renderCorrelationTab($content, push, onGotoNetwork);
       break;
+    case 'live':
+      renderLiveTab($content, push);
+      break;
     default:
       renderPushDataTab($content, push);
   }
@@ -150,6 +154,13 @@ const DATA_CATEGORIES: { label: string; keys: string[] }[] = [
 function renderPushDataTab(container: HTMLElement, push: DataLayerPush): void {
   const categorized = categorizeData(push.data);
 
+  // Build error map for validation highlighting
+  const errors = getValidationErrors(push.id);
+  const errorMap = new Map<string, string>();
+  for (const err of errors) {
+    if (err.failedKey) errorMap.set(err.failedKey, err.checkMessage);
+  }
+
   // Render each category
   for (const { label, entries } of categorized) {
     if (entries.length === 0) continue;
@@ -178,9 +189,9 @@ function renderPushDataTab(container: HTMLElement, push: DataLayerPush): void {
           renderEcommerceTable(ecContainer, value as Record<string, unknown>);
           body.appendChild(ecContainer);
         }
-        renderKvRow(body, key, value);
+        renderKvRow(body, key, value, errorMap);
       } else {
-        renderKvRow(body, key, value);
+        renderKvRow(body, key, value, errorMap);
       }
     }
 
@@ -229,13 +240,19 @@ function categorizeData(data: Record<string, unknown>): { label: string; entries
   return result;
 }
 
-function renderKvRow(container: HTMLElement, key: string, value: unknown): void {
+function renderKvRow(container: HTMLElement, key: string, value: unknown, errorMap?: Map<string, string>): void {
   const row = document.createElement('div');
   row.className = 'dl-kv-row';
 
   const keyEl = document.createElement('span');
   keyEl.className = 'dl-kv-key';
   keyEl.textContent = key;
+
+  // Validation error highlight
+  if (errorMap?.has(key)) {
+    keyEl.classList.add('dl-kv-key-invalid');
+    keyEl.title = errorMap.get(key) ?? '';
+  }
 
   const valEl = document.createElement('span');
   valEl.className = 'dl-kv-value';
@@ -309,6 +326,56 @@ function renderCorrelationTab(
   onGotoNetwork: (requestId: number) => void,
 ): void {
   const allRequests: ParsedRequest[] = getAllRequests();
-  const correlated = findCorrelatedRequests(push, allRequests);
-  renderCorrelation(container, correlated, onGotoNetwork);
+  const windowMs = getCorrelationWindow();
+
+  // Time window controls
+  const controls = document.createElement('div');
+  controls.className = 'dl-correlation-controls';
+
+  const label = document.createElement('label');
+  label.textContent = 'Time window:';
+  controls.appendChild(label);
+
+  const slider = document.createElement('input');
+  slider.type = 'range';
+  slider.min = '500';
+  slider.max = '10000';
+  slider.step = '500';
+  slider.value = String(windowMs);
+  controls.appendChild(slider);
+
+  const valueDisplay = document.createElement('span');
+  valueDisplay.textContent = `${(windowMs / 1000).toFixed(1)}s`;
+  valueDisplay.style.cssText = 'font-size:11px;color:var(--text-2);min-width:30px;';
+  controls.appendChild(valueDisplay);
+
+  container.appendChild(controls);
+
+  // Render initial correlation
+  const correlated = findCorrelatedRequests(push, allRequests, windowMs);
+  renderCorrelation(container, correlated, onGotoNetwork, windowMs);
+
+  // Slider interaction
+  slider.addEventListener('input', () => {
+    const ms = Number(slider.value);
+    valueDisplay.textContent = `${(ms / 1000).toFixed(1)}s`;
+    setCorrelationWindow(ms);
+
+    // Re-render correlation list (keep controls)
+    const oldHeader = container.querySelector('.dl-correlation-header');
+    const oldList = container.querySelector('.dl-correlation-list');
+    const oldEmpty = container.querySelector('.dl-correlation-empty');
+    if (oldHeader) oldHeader.remove();
+    if (oldList) oldList.remove();
+    if (oldEmpty) oldEmpty.remove();
+
+    const newCorrelated = findCorrelatedRequests(push, allRequests, ms);
+    renderCorrelation(container, newCorrelated, onGotoNetwork, ms);
+  });
+}
+
+// ─── LIVE TAB ──────────────────────────────────────────────────────────────
+
+function renderLiveTab(container: HTMLElement, push: DataLayerPush): void {
+  renderLiveInspector(container, push.cumulativeState);
 }

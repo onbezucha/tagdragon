@@ -22,8 +22,9 @@ import { PROVIDER_GROUPS, getProviderGroup, UNGROUPED_ID, UNGROUPED_LABEL } from
 /**
  * Ensure a provider group element exists in #provider-group-list. Returns the .pgroup-pills container.
  */
-function ensureProviderGroup(groupId: string, groupLabel: string, applyFiltersCallback: () => void, updateActiveFiltersCallback: () => void): HTMLElement {
-  const groupList = DOM.providerGroupList!;
+function ensureProviderGroup(groupId: string, groupLabel: string, applyFiltersCallback: () => void, updateActiveFiltersCallback: () => void): HTMLElement | null {
+  const groupList = DOM.providerGroupList;
+  if (!groupList) return null;
   const existing = groupList.querySelector(`.pgroup[data-group="${CSS.escape(groupId)}"]`) as HTMLElement | null;
   if (existing) {
     return existing.querySelector('.pgroup-pills') as HTMLElement;
@@ -106,6 +107,7 @@ export function ensureProviderPill(data: ParsedRequest, applyFiltersCallback: ()
   const groupLabel = group?.label ?? UNGROUPED_LABEL;
 
   const $pillsContainer = ensureProviderGroup(groupId, groupLabel, applyFiltersCallback, updateActiveFiltersCallback);
+  if (!$pillsContainer) return;
 
   const hiddenProviders = getHiddenProviders();
   const isHidden = hiddenProviders.has(data.provider);
@@ -195,7 +197,7 @@ export function updateFilterBarVisibility(): void {
   const $empty = document.getElementById('provider-popover-empty') as HTMLElement | null;
   if ($empty) $empty.style.display = hasProviders ? 'none' : '';
 
-  DOM.filterBar!.classList.toggle('visible', hasFilters);
+  DOM.filterBar?.classList.toggle('visible', hasFilters);
 }
 
 // ─── SEARCH ───────────────────────────────────────────────────────────────────

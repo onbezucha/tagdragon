@@ -32,8 +32,6 @@ export interface ParsedRequest {
   readonly source?: 'extension';
 }
 
-export type HttpMethod = ParsedRequest['method'];
-
 export type TabName = 'decoded' | 'query' | 'post' | 'headers' | 'response';
 
 export interface UIState {

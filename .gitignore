@@ -1,11 +1,19 @@
+# macOS
 .DS_Store
+._*
+.Spotlight-V100
+.Trashes
 node_modules/
 *.log
 .vscode/
-MVP2/
 dist/
-.memory/
 AGENTS.md
 CLAUDE.md
 .env
 .env.local
+
+# AI task artifacts
+.task-*.md
+
+# Patch files
+*.patch

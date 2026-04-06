@@ -1,15 +1,17 @@
 {
   "manifest_version": 3,
   "name": "TagDragon",
-  "version": "1.5.1",
+  "version": "1.5.3",
   "description": "The dragon that sees every tag. Captures and decodes network requests from analytics, tracking, and marketing tags.",
 
   "action": {
     "default_popup": "public/popup.html",
     "default_icon": {
       "16": "public/icons/icon16.png",
+      "32": "public/icons/icon32.png",
       "48": "public/icons/icon48.png",
-      "128": "public/icons/icon128.png"
+      "128": "public/icons/icon128.png",
+      "192": "public/icons/icon192.png"
     },
     "default_title": "TagDragon – Request Tracker"
   },
@@ -45,7 +47,10 @@
   ],
   "icons": {
     "16": "public/icons/icon16.png",
+    "32": "public/icons/icon32.png",
     "48": "public/icons/icon48.png",
-    "128": "public/icons/icon128.png"
+    "96": "public/icons/icon96.png",
+    "128": "public/icons/icon128.png",
+    "192": "public/icons/icon192.png"
   }
 }

@@ -18,6 +18,8 @@ import {
   getConfig,
   getAllRequests,
 } from '../state';
+import { findTriggeringPush, renderTriggeredBy } from '../datalayer/reverse-correlation';
+import { getAllDlPushes } from '../datalayer/state';
 
 // ─── TAB CONTENT CACHE ───────────────────────────────────────────────────────
 // LRU-like cache: requestId → tabName → rendered HTML (max 10 entries)
@@ -72,10 +74,10 @@ export function selectRequest(data: ParsedRequest, row: HTMLElement): void {
   const cfg = getConfig();
   const sessionStart = getAllRequests()[0]?.timestamp;
 
-  DOM.metaMethod!.textContent = data.method;
-  DOM.metaStatus!.textContent = String(data.status || '—');
-  DOM.metaDur!.textContent = data.duration ? data.duration + 'ms' : '—';
-  DOM.metaTs!.textContent = formatTimestamp(data.timestamp, cfg.timestampFormat, sessionStart, true);
+  if (DOM.metaMethod) DOM.metaMethod.textContent = data.method;
+  if (DOM.metaStatus) DOM.metaStatus.textContent = String(data.status || '—');
+  if (DOM.metaDur) DOM.metaDur.textContent = data.duration ? data.duration + 'ms' : '—';
+  if (DOM.metaTs) DOM.metaTs.textContent = formatTimestamp(data.timestamp, cfg.timestampFormat, sessionStart, true);
 
   // Tab memory: keep current tab if it has data, otherwise fallback to defaultTab
   const availableTabs = getAvailableTabs(data);
@@ -88,6 +90,21 @@ export function selectRequest(data: ParsedRequest, row: HTMLElement): void {
   updateTabStates(availableTabs);
   renderTab(getActiveTab(), data);
   autoExpandSections();
+
+  // Triggered by DataLayer
+  const dlPushes = getAllDlPushes();
+  if (dlPushes.length > 0) {
+    const $detailContent = DOM.detailContent;
+    if ($detailContent) {
+      const triggering = findTriggeringPush(data, dlPushes);
+      if (triggering) {
+        renderTriggeredBy($detailContent, triggering, (pushId: number) => {
+          // Dispatch custom event for index.ts to handle cross-tab navigation
+          document.dispatchEvent(new CustomEvent('goto-datalayer-push', { detail: pushId }));
+        });
+      }
+    }
+  }
 
   row.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
 }
@@ -222,7 +239,7 @@ function autoExpandSections(): void {
  * Close the detail pane.
  */
 export function closeDetailPane(): void {
-  DOM.detail!.classList.add('hidden');
+  DOM.detail?.classList.add('hidden');
   qsa('.req-row.active').forEach(r => r.classList.remove('active'));
   setSelectedId(null);
 }

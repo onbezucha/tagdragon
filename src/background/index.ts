@@ -33,6 +33,20 @@ chrome.runtime.onConnect.addListener((port) => {
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message.type === 'SET_ADOBE_REDIRECT') {
     const { fromUrl, toUrl } = message;
+
+    // Validate redirect target hostname — only allow Adobe CDN domains
+    const allowedHostnames = ['assets.adobedtm.com', 'assets.adobedtm.com.ostrk.org'];
+    try {
+      const parsed = new URL(toUrl);
+      if (!allowedHostnames.includes(parsed.hostname)) {
+        sendResponse({ ok: false, error: 'Invalid redirect target hostname' });
+        return true;
+      }
+    } catch {
+      sendResponse({ ok: false, error: 'Invalid redirect URL' });
+      return true;
+    }
+
     chrome.declarativeNetRequest.updateDynamicRules({
       removeRuleIds: [ADOBE_REDIRECT_RULE_ID],
       addRules: [{

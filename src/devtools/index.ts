@@ -16,10 +16,15 @@ import {
 
 const tabId = chrome.devtools.inspectedWindow.tabId;
 
-// ─── PORT WITH AUTO-RECONNECT ─────────────────────────────────────────────────
+// ─── PORT WITH AUTO-RECONNECT (EXPONENTIAL BACKOFF) ───────────────────────
 // The background service worker can be killed when idle, which drops the port
 // and empties its devToolsPorts Map. Reconnect automatically so background
 // always has a valid port entry for this DevTools session.
+// Uses exponential backoff to prevent rapid reconnection attempts.
+
+const MAX_RECONNECT_ATTEMPTS = 10;
+const BASE_BACKOFF_MS = 1000;
+let _reconnectAttempts = 0;
 
 type PortMsg = { type: string; sources?: unknown[]; labels?: Record<string, string>; data?: Record<string, unknown>; source?: string; pushIndex?: number; timestamp?: string; isReplay?: boolean; [key: string]: unknown };
 
@@ -43,9 +48,21 @@ function attachPortListener(port: chrome.runtime.Port): void {
   });
 
   port.onDisconnect.addListener(() => {
-    // SW restarted — reconnect so background gets a fresh port entry
-    const newPort = chrome.runtime.connect({ name: `devtools_${tabId}` });
-    attachPortListener(newPort);
+    // SW restarted — reconnect with exponential backoff
+    if (_reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
+      console.warn('[TagDragon] Max port reconnect attempts reached');
+      return;
+    }
+    const delay = BASE_BACKOFF_MS * Math.pow(2, _reconnectAttempts);
+    _reconnectAttempts++;
+    setTimeout(() => {
+      try {
+        const newPort = chrome.runtime.connect({ name: `devtools_${tabId}` });
+        attachPortListener(newPort);
+      } catch {
+        // Extension context invalidated (reload/update/disable) — stop reconnecting
+      }
+    }, delay);
   });
 }
 
@@ -92,9 +109,6 @@ chrome.devtools.panels.create(
     });
 
     // When panel is hidden, we keep the panel window reference for buffering
-    panel.onHidden.addListener(() => {
-      // Keep panel window reference for buffering during hidden state
-    });
   }
 );
 

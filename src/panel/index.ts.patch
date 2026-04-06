@@ -1,1 +1,0 @@
-import { isMac } from './utils/platform';

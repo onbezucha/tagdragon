@@ -121,13 +121,6 @@ export function clearRequests(): void {
 }
 
 /**
- * Get a request by its ID. O(1) lookup via requestMap.
- */
-export function getRequestById(id: string | number): ParsedRequest | undefined {
-  return requestState.map.get(String(id));
-}
-
-/**
  * Check if a request exists by ID. Convenience method.
  */
 export function hasRequest(id: string | number | null): boolean {
@@ -136,7 +129,7 @@ export function hasRequest(id: string | number | null): boolean {
 }
 
 /**
- * Get a request by its ID (alias for getRequestById for convenience).
+ * Get a request by its ID.
  */
 export function getRequest(id: string | number | null): ParsedRequest | undefined {
   if (id === null) return undefined;
@@ -147,7 +140,13 @@ export function getRequest(id: string | number | null): ParsedRequest | undefine
  * Delete a request by its ID.
  */
 export function deleteRequestById(id: string | number): void {
-  requestState.map.delete(String(id));
+  const strId = String(id);
+  const index = requestState.all.findIndex(r => String(r.id) === strId);
+  if (index !== -1) {
+    requestState.all.splice(index, 1);
+  }
+  requestState.map.delete(strId);
+  requestState.filteredIds.delete(strId);
 }
 
 /**
@@ -176,34 +175,6 @@ export function getFilteredIds(): Set<string> {
  */
 export function addFilteredId(id: string): void {
   requestState.filteredIds.add(id);
-}
-
-/**
- * Remove a request ID from the filtered set (mark as hidden).
- */
-export function removeFilteredId(id: string): void {
-  requestState.filteredIds.delete(id);
-}
-
-/**
- * Clear all filtered IDs (used during filter reset).
- */
-export function clearFilteredIds(): void {
-  requestState.filteredIds.clear();
-}
-
-/**
- * Check if a request ID is in the filtered set (visible).
- */
-export function isFiltered(id: string): boolean {
-  return requestState.filteredIds.has(id);
-}
-
-/**
- * Remove a request ID from the filtered set (alias for removeFilteredId).
- */
-export function removeFromFiltered(id: string): void {
-  requestState.filteredIds.delete(id);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -255,13 +226,6 @@ export function setActiveTab(tab: TabName): void {
 // ─────────────────────────────────────────────────────────────────────────────
 // FILTER STATE OPERATIONS
 // ─────────────────────────────────────────────────────────────────────────────
-
-/**
- * Get a read-only view of the entire filter state.
- */
-export function getFilterState(): Readonly<FilterState> {
-  return { ...filterState };
-}
 
 /**
  * Get the current text search filter.
@@ -438,13 +402,6 @@ export function getHiddenProviders(): Set<string> {
 }
 
 /**
- * Mark a provider as active (detected in this session).
- */
-export function addActiveProvider(name: string): void {
-  activeProviders.add(name);
-}
-
-/**
  * Hide a provider in the provider bar.
  */
 export function addHiddenProvider(name: string): void {
@@ -471,13 +428,6 @@ export function resetProviders(): void {
  */
 export function isProviderHidden(name: string): boolean {
   return hiddenProviders.has(name);
-}
-
-/**
- * Clear all hidden providers.
- */
-export function clearHiddenProviders(): void {
-  hiddenProviders.clear();
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -560,7 +510,7 @@ export function syncHiddenProviders(): void {
  * Save current configuration to chrome.storage.local.
  * Logs a warning if save fails (non-fatal).
  */
-export async function saveConfig(): Promise<void> {
+async function saveConfig(): Promise<void> {
   try {
     await chrome.storage.local.set({ rt_config: config });
   } catch (error) {
@@ -590,3 +540,11 @@ export function updateConfig<K extends keyof AppConfig>(
   scheduleSave();
 }
 
+// Flush debounced config save on panel close to prevent data loss
+window.addEventListener('beforeunload', () => {
+  if (saveTimer) {
+    clearTimeout(saveTimer);
+    saveTimer = null;
+    void saveConfig();
+  }
+});

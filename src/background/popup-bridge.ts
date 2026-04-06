@@ -3,8 +3,34 @@
 // Runs in background (service worker) context.
 
 import type { TabPopupStats, PopupStatsResponse, UpdatePopupStatsMessage } from '@/types/popup';
-import { updateBadgeForTab, updateBadgeForActiveTab } from './badge';
+import { updateBadgeForTab } from './badge';
 import { devToolsPorts } from './index';
+
+// ─── IN-MEMORY STATS CACHE ──────────────────────────────────────────────────
+// Prevents TOCTOU race conditions when multiple UPDATE_POPUP_STATS messages
+// arrive in quick succession. Stats are accumulated in memory and flushed
+// to chrome.storage.session with a debounce.
+let _statsCache: Record<number, TabPopupStats> | null = null;
+let _flushTimer: ReturnType<typeof setTimeout> | null = null;
+
+async function loadStatsCache(): Promise<Record<number, TabPopupStats>> {
+  if (!_statsCache) {
+    _statsCache = await loadAllStats();
+  }
+  return _statsCache;
+}
+
+function scheduleFlush(): void {
+  if (_flushTimer) clearTimeout(_flushTimer);
+  _flushTimer = setTimeout(async () => {
+    _flushTimer = null;
+    if (_statsCache) {
+      try {
+        await chrome.storage.session.set({ popup_stats: _statsCache });
+      } catch { /* storage write failed, data is still in memory cache */ }
+    }
+  }, 100);
+}
 
 // ─── MESSAGE HANDLERS ─────────────────────────────────────────────────────────
 
@@ -78,7 +104,7 @@ function createEmptyStats(tabId: number): TabPopupStats {
 // ─── HANDLERS ─────────────────────────────────────────────────────────────────
 
 async function handleUpdateStats(message: UpdatePopupStatsMessage): Promise<void> {
-  const allStats = await loadAllStats();
+  const allStats = await loadStatsCache();
   const stats: TabPopupStats = allStats[message.tabId] ?? createEmptyStats(message.tabId);
 
   stats.totalRequests++;
@@ -99,13 +125,13 @@ async function handleUpdateStats(message: UpdatePopupStatsMessage): Promise<void
   stats.providers.sort((a, b) => b.count - a.count);
 
   allStats[message.tabId] = stats;
-  await chrome.storage.session.set({ popup_stats: allStats });
+  scheduleFlush();
   await updateBadgeForTab(message.tabId, stats.totalRequests);
 }
 
 async function handleGetStats(tabId?: number): Promise<PopupStatsResponse> {
   const targetTabId = tabId ?? await getActiveTabId();
-  const allStats = await loadAllStats();
+  const allStats = await loadStatsCache();
   const stats = allStats[targetTabId] ?? createEmptyStats(targetTabId);
   return buildPopupResponse(stats, targetTabId);
 }
@@ -132,11 +158,11 @@ function buildPopupResponse(stats: TabPopupStats, tabId: number): PopupStatsResp
 
 async function handleSetPaused(tabId: number | undefined, paused: boolean): Promise<void> {
   const targetTabId = tabId ?? await getActiveTabId();
-  const allStats = await loadAllStats();
+  const allStats = await loadStatsCache();
   const stats = allStats[targetTabId] ?? createEmptyStats(targetTabId);
   stats.isPaused = paused;
   allStats[targetTabId] = stats;
-  await chrome.storage.session.set({ popup_stats: allStats });
+  scheduleFlush();
 
   // Notify devtools script so it can stop/resume processing requests
   chrome.runtime.sendMessage({
@@ -149,8 +175,8 @@ async function handleSetPaused(tabId: number | undefined, paused: boolean): Prom
 
 async function handleClear(tabId?: number): Promise<void> {
   const targetTabId = tabId ?? await getActiveTabId();
-  const allStats = await loadAllStats();
+  const allStats = await loadStatsCache();
   delete allStats[targetTabId];
-  await chrome.storage.session.set({ popup_stats: allStats });
+  scheduleFlush();
   await updateBadgeForTab(targetTabId, 0);
 }

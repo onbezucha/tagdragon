@@ -27,6 +27,7 @@ import { metaPixel } from './meta/pixel';
 // Microsoft
 import { bingAds } from './microsoft/bing-ads';
 import { microsoftClarity } from './microsoft/clarity';
+import { microsoftClarityTag } from './microsoft/clarity-tag';
 
 // Analytics
 import { amplitude } from './amplitude';
@@ -150,6 +151,7 @@ export const PROVIDERS: ProviderRegistry = [
 
   // Session Replay / UX
   hotjar,
+  microsoftClarityTag,
   microsoftClarity,
   fullstory,
   crazyEgg,
@@ -211,11 +213,4 @@ export const PROVIDERS: ProviderRegistry = [
  */
 export function matchProvider(url: string): Provider | null {
   return PROVIDERS.find(p => p.pattern.test(url)) ?? null;
-}
-
-/**
- * Get all registered providers (for UI listing).
- */
-export function getAllProviders(): ProviderRegistry {
-  return PROVIDERS;
 }
