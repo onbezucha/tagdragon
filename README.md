@@ -11,7 +11,6 @@
 
 <p align="center">
   <a href="https://github.com/onbezucha/tagdragon/releases/latest"><img src="https://img.shields.io/github/v/release/onbezucha/tagdragon?style=flat-square&color=blue&label=version" alt="Latest Release"></a>
-  <a href="https://github.com/onbezucha/tagdragon/actions"><img src="https://img.shields.io/github/actions/workflow/status/onbezucha/tagdragon/ci.yml?style=flat-square&label=CI" alt="CI"></a>
   <a href="LICENSE"><img src="https://img.shields.io/github/license/onbezucha/tagdragon?style=flat-square" alt="License: ISC"></a>
   <a href="https://www.google.com/chrome/"><img src="https://img.shields.io/badge/chrome-88%2B-brightgreen?style=flat-square" alt="Chrome 88+"></a>
   <a href="https://github.com/onbezucha/tagdragon/stargazers"><img src="https://img.shields.io/github/stars/onbezucha/tagdragon?style=flat-square" alt="Stars"></a>
@@ -89,11 +88,18 @@ That's it. No configuration needed — tracking requests appear automatically.
 
 ### From Source
 
+> Requires [Node.js](https://nodejs.org/) 18+
+
 ```bash
 git clone https://github.com/onbezucha/tagdragon.git
 cd tagdragon
 npm install
 npm run build
+```
+
+For development with live reload:
+```bash
+npm run dev    # Watches CSS + JS for live changes
 ```
 
 ---
@@ -104,12 +110,12 @@ npm run build
 
 | Category | Count | Providers |
 |----------|-------|-----------|
-| 📊 Analytics | 16 | GA4, UA, Adobe Analytics, AEP Web SDK, Amplitude, Mixpanel, Matomo, Piwik PRO, AT Internet, Comscore, Parse.ly, Webtrends, Scorecard Research, Medallia DXA, Indicative, RudderStack |
+| 📊 Analytics | 16 | GA4, GA (UA), Adobe Client-Side, Adobe Server-Side, Amplitude, Mixpanel, Matomo, Piwik PRO, AT Internet, Comscore, Parse.ly, Webtrends, Scorecard, Medallia DXA, Indicative, RudderStack |
 | 🏷️ Tag Managers | 5 | Google Tag Manager, Tealium, Segment, Ensighten, Piwik PRO TM |
 | 📢 Marketing & Advertising | 24 | Google Ads, Meta Pixel, Bing Ads, Adform, DoubleClick, Criteo, Seznam Sklik, TikTok, X, Pinterest, The Trade Desk, Reddit, Snapchat, Spotify, Amazon Ads, Outbrain, Teads, RTB House, Zemanta, Sojern, Vibes, Brevo, Invoca, HubSpot |
 | 🎥 Session Replay | 5 | Hotjar, Microsoft Clarity, FullStory, Crazy Egg, Glassbox |
 | 🧪 A/B Testing | 4 | Optimizely, Dynamic Yield, Split, Omniconvert |
-| 👤 Visitor Identification | 4 | LinkedIn Insight, Merkury, Demandbase, 6Sense |
+| 👤 Visitor Identification | 4 | LinkedIn, Merkury, Demandbase, 6Sense |
 | 💬 Customer Engagement | 2 | Braze, Lytics |
 | 🗄️ CDP | 2 | mParticle, Tealium EventStream |
 | 🍂 Adobe Stack | 6 | Adobe Target, AAM, ECID, Heartbeat, DTM, Launch (CN) |
@@ -161,7 +167,12 @@ Full documentation available at [tagdragon.net/docs](https://www.tagdragon.net/d
 
 ## 🤝 Contributing
 
-Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on adding new providers, code style, and the development workflow.
+Contributions are welcome! To add a new provider:
+1. Create a provider file in `src/providers/`
+2. Import it in `src/providers/index.ts` and add it to the `PROVIDERS` array
+3. Add the provider name to the correct group in `src/shared/provider-groups.ts`
+
+See [AGENTS.md](AGENTS.md) for code style guidelines and project conventions.
 
 ---
 
