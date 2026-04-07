@@ -24,12 +24,12 @@ export function findCorrelatedRequests(
 ): CorrelatedRequest[] {
   const window = windowMs ?? getCorrelationWindow();
   const lookback = getCorrelationLookback();
-  const pushTime = new Date(push.timestamp).getTime();
+  const pushTime = push._ts ?? new Date(push.timestamp).getTime();
   if (isNaN(pushTime)) return [];
 
   return requests
     .filter((r) => {
-      const reqTime = new Date(r.timestamp).getTime();
+      const reqTime = r._ts ?? new Date(r.timestamp).getTime();
       if (isNaN(reqTime)) return false;
       const diff = reqTime - pushTime;
       // Allow configurable lookback for requests already in flight, up to +window
@@ -37,7 +37,7 @@ export function findCorrelatedRequests(
     })
     .map((r) => ({
       request: r,
-      delayMs: new Date(r.timestamp).getTime() - pushTime,
+      delayMs: (r._ts ?? new Date(r.timestamp).getTime()) - pushTime,
     }))
     .sort((a, b) => a.delayMs - b.delayMs);
 }

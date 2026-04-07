@@ -26,6 +26,7 @@ export interface DataLayerPush {
 
   // Search indexing
   _searchIndex?: string;
+  _ts?: number;
 }
 
 export interface DiffEntry {

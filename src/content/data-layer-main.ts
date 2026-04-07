@@ -52,17 +52,30 @@ import { SOURCE_DESCRIPTIONS } from '@/shared/datalayer-constants';
     data: unknown,
     isReplay?: boolean,
   ): void {
+    let sanitized: unknown;
+
+    // Try native structuredClone first (much faster than manual sanitize)
+    try {
+      sanitized = structuredClone(data);
+    } catch {
+      // Fallback to manual sanitize for non-cloneable data
+      try {
+        sanitized = sanitize(data);
+      } catch {
+        sanitized = { _error: 'Data could not be serialized' };
+      }
+    }
+
     try {
       window.postMessage({
         type: 'TAGDRAGON_DL_PUSH',
         source,
         pushIndex,
         timestamp,
-        data: sanitize(data),
+        data: sanitized,
         isReplay: isReplay === true,
       }, '*');
     } catch {
-      // Fallback: send with empty data so the push is still visible
       window.postMessage({
         type: 'TAGDRAGON_DL_PUSH',
         source,

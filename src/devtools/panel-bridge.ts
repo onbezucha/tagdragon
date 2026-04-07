@@ -27,11 +27,62 @@ interface PanelWindow extends Window {
 let panelWindow: PanelWindow | null = null;
 let buffer: ParsedRequest[] = [];
 
-/**
- * Map from request ID to heavy data (response body, headers).
- * These are stored separately because they can be large.
- */
+// ─── HEAVY DATA STORE ─────────────────────────────────────────────────────
+// Map from request ID to heavy data (response body, headers).
+// These are stored separately because they can be large.
+// Includes automatic size tracking and eviction when over budget.
+
+const MAX_HEAVY_DATA_SIZE = 5 * 1024 * 1024; // 5MB
+let heavyDataSizeEstimate = 0;
+
 export const heavyDataStore = new Map<number, HeavyData>();
+
+function estimateSize(data: HeavyData): number {
+  return (data.responseBody?.length ?? 0) +
+    Object.keys(data.requestHeaders).reduce(
+      (s, k) => s + k.length + (data.requestHeaders[k]?.length ?? 0), 0,
+    ) +
+    Object.keys(data.responseHeaders).reduce(
+      (s, k) => s + k.length + (data.responseHeaders[k]?.length ?? 0), 0,
+    );
+}
+
+// Wrap set to track size and auto-evict when over budget
+const originalSet = heavyDataStore.set.bind(heavyDataStore);
+heavyDataStore.set = function(key: number, value: HeavyData): Map<number, HeavyData> {
+  const old = heavyDataStore.get(key);
+  if (old) {
+    heavyDataSizeEstimate -= estimateSize(old);
+  }
+  heavyDataSizeEstimate += estimateSize(value);
+
+  // Evict oldest entries if over budget
+  while (heavyDataSizeEstimate > MAX_HEAVY_DATA_SIZE && heavyDataStore.size > 0) {
+    const firstKey = heavyDataStore.keys().next().value!;
+    const removed = heavyDataStore.get(firstKey)!;
+    heavyDataSizeEstimate -= estimateSize(removed);
+    heavyDataStore.delete(firstKey);
+  }
+
+  return originalSet(key, value);
+};
+
+// Wrap delete to update size estimate
+const originalDelete = heavyDataStore.delete.bind(heavyDataStore);
+heavyDataStore.delete = function(key: number): boolean {
+  const old = heavyDataStore.get(key);
+  if (old) {
+    heavyDataSizeEstimate -= estimateSize(old);
+  }
+  return originalDelete(key);
+};
+
+// Wrap clear to reset size estimate
+const originalClear = heavyDataStore.clear.bind(heavyDataStore);
+heavyDataStore.clear = function(): void {
+  heavyDataSizeEstimate = 0;
+  return originalClear();
+};
 
 /**
  * Send data to the panel window. Buffers if panel is not yet open.

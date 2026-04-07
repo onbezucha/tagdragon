@@ -25,6 +25,7 @@ export interface ParsedRequest {
   
   // Computed/indexed fields (populated by categorize.indexRequest)
   _searchIndex?: string;
+  _ts?: number;
   _hasUserId?: boolean;
   _statusPrefix?: string | null;
   

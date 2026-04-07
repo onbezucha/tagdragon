@@ -29,6 +29,7 @@ interface TreeNodeData {
 let pendingHighlights: Map<string, ChangeType> = new Map();
 let highlightTimeoutId: ReturnType<typeof setTimeout> | null = null;
 const HIGHLIGHT_DURATION = 1500;
+let liveTabRendered = false;
 
 // ─── PUBLIC API ───────────────────────────────────────────────────────────
 
@@ -93,6 +94,8 @@ export function renderLiveInspector(
   wrapper.appendChild(treeContainer);
   container.appendChild(wrapper);
 
+  liveTabRendered = true;
+
   // Apply pending highlights ONLY if this is a live update (queueHighlights triggered
   // while the tab was already visible). Do NOT auto-expand when user first opens
   // the tab — the tree should start collapsed.
@@ -111,16 +114,24 @@ export function renderLiveInspector(
  * Queue change highlights for the Live Inspector.
  * Called from receiveDataLayerPush when the Live tab may not be visible.
  */
-export function queueHighlights(changedPaths: Map<string, ChangeType>): void {
+export function queueHighlights(
+  changedPaths: Map<string, ChangeType>,
+  prevState: Record<string, unknown>,
+  newState: Record<string, unknown>,
+): void {
   pendingHighlights = new Map(changedPaths);
 
-  // If Live tab is currently visible, apply immediately
+  // If Live tab is currently visible, apply incrementally
   const $content = DOM.dlDetailContent;
   if (!$content) return;
 
   const activeTab = document.querySelector('.dl-dtab.active') as HTMLElement | null;
   if (activeTab?.dataset['tab'] === 'live') {
-    applyHighlights($content, changedPaths);
+    if (liveTabRendered) {
+      updateTreeIncremental($content, prevState, newState, changedPaths);
+    } else {
+      applyHighlights($content, changedPaths);
+    }
     pendingHighlights.clear();
   }
 }
@@ -153,9 +164,157 @@ export function checkWatchPaths(
  */
 export function clearLiveState(): void {
   pendingHighlights.clear();
+  liveTabRendered = false;
   if (highlightTimeoutId) {
     clearTimeout(highlightTimeoutId);
     highlightTimeoutId = null;
+  }
+}
+
+// ─── INCREMENTAL TREE UPDATE ─────────────────────────────────────────────
+
+function updateTreeIncremental(
+  container: HTMLElement,
+  prev: Record<string, unknown>,
+  curr: Record<string, unknown>,
+  changedPaths: Map<string, ChangeType>,
+): void {
+  const treeContainer = container.querySelector('.dl-tree') as HTMLElement | null;
+  if (!treeContainer) return;
+
+  // Update header
+  const header = container.querySelector('.dl-live-header') as HTMLElement | null;
+  if (header) {
+    const keyCount = Object.keys(curr).length;
+    header.textContent = `Current state · ${keyCount} top-level keys`;
+  }
+
+  // Remove keys that no longer exist
+  for (const key of Object.keys(prev)) {
+    if (!(key in curr)) {
+      const node = treeContainer.querySelector(
+        `.dl-tree-node[data-path="${CSS.escape(key)}"]`,
+      );
+      if (node) node.remove();
+    }
+  }
+
+  // Add or update keys
+  for (const key of Object.keys(curr).sort()) {
+    const existingNode = treeContainer.querySelector(
+      `.dl-tree-node[data-path="${CSS.escape(key)}"]`,
+    ) as HTMLElement | null;
+
+    const changeType = changedPaths.get(key);
+
+    if (!existingNode) {
+      // New key — insert in sorted position
+      const nodeData: TreeNodeData = {
+        key,
+        value: curr[key],
+        depth: 0,
+        path: key,
+        changeType,
+        isLeaf: !isExpandable(curr[key]),
+        childCount: isExpandable(curr[key])
+          ? Object.keys(curr[key] as object).length
+          : 0,
+      };
+      const newNode = createTreeNode(nodeData, changedPaths);
+      insertNodeSorted(treeContainer, newNode, key);
+    } else if (changeType) {
+      // Existing key — update value if changed
+      updateExistingNode(existingNode, curr[key], changeType, changedPaths);
+    }
+  }
+}
+
+function insertNodeSorted(
+  container: HTMLElement,
+  newNode: HTMLElement,
+  key: string,
+): void {
+  const nodes = container.querySelectorAll(':scope > .dl-tree-node');
+  let inserted = false;
+  for (const node of nodes) {
+    const nodeKey = (node as HTMLElement).dataset['path'] ?? '';
+    if (key.localeCompare(nodeKey) < 0) {
+      container.insertBefore(newNode, node);
+      inserted = true;
+      break;
+    }
+  }
+  if (!inserted) container.appendChild(newNode);
+}
+
+function updateExistingNode(
+  node: HTMLElement,
+  newValue: unknown,
+  changeType: ChangeType,
+  changedPaths: Map<string, ChangeType>,
+): void {
+  const isLeaf = !isExpandable(newValue);
+
+  if (isLeaf) {
+    const valEl = node.querySelector(':scope > .dl-tree-row .dl-tree-value') as HTMLElement | null;
+    if (valEl) {
+      valEl.textContent = formatValue(newValue);
+      valEl.title = typeof newValue === 'object'
+        ? JSON.stringify(newValue, null, 2)
+        : String(newValue);
+    }
+    const childrenContainer = node.querySelector(':scope > .dl-tree-children');
+    if (childrenContainer) childrenContainer.remove();
+    const toggle = node.querySelector(':scope > .dl-tree-row .dl-tree-toggle');
+    if (toggle) {
+      const placeholder = document.createElement('span');
+      placeholder.className = 'dl-tree-toggle-placeholder';
+      toggle.replaceWith(placeholder);
+    }
+  } else {
+    const bracket = node.querySelector(
+      ':scope > .dl-tree-row .dl-tree-value-bracket',
+    ) as HTMLElement | null;
+    if (bracket) {
+      const isArray = Array.isArray(newValue);
+      const childCount = Object.keys(newValue as object).length;
+      bracket.textContent = isArray ? `[${childCount}]` : `{${childCount}`;
+    }
+    const oldChildren = node.querySelector(':scope > .dl-tree-children');
+    if (oldChildren) oldChildren.remove();
+    const childrenContainer = document.createElement('div');
+    childrenContainer.className = 'dl-tree-children';
+    const obj = newValue as Record<string, unknown>;
+    const entries = Array.isArray(obj)
+      ? obj.map((v, i) => [String(i), v] as [string, unknown])
+      : Object.entries(obj).sort(([a], [b]) => a.localeCompare(b));
+    const path = (node as HTMLElement).dataset['path'] ?? '';
+    for (const [childKey, childVal] of entries) {
+      const childPath = Array.isArray(obj)
+        ? `${path}[${childKey}]`
+        : `${path}.${childKey}`;
+      const childNode: TreeNodeData = {
+        key: Array.isArray(obj) ? `[${childKey}]` : childKey,
+        value: childVal,
+        depth: 1,
+        path: childPath,
+        changeType: changedPaths.get(childPath),
+        isLeaf: !isExpandable(childVal),
+        childCount: isExpandable(childVal)
+          ? Object.keys(childVal as object).length
+          : 0,
+      };
+      childrenContainer.appendChild(createTreeNode(childNode, changedPaths));
+    }
+    node.appendChild(childrenContainer);
+  }
+
+  // Apply highlight animation
+  const keyEl = node.querySelector(':scope > .dl-tree-row .dl-tree-key') as HTMLElement | null;
+  if (keyEl && changeType) {
+    keyEl.classList.remove('dl-tree-key-changed', 'dl-tree-key-added', 'dl-tree-key-removed');
+    void keyEl.offsetWidth;
+    keyEl.classList.add(`dl-tree-key-${changeType}`);
   }
 }
 

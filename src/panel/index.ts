@@ -174,10 +174,14 @@ function flushPendingRequests(): void {
   const empty = DOM.empty;
   if (empty) empty.style.display = 'none';
 
+  // Cache once per flush batch
+  const cfg = state.getConfig();
+  const sessionStart = state.getAllRequests()[0]?.timestamp;
+
   const fragment = document.createDocumentFragment();
   for (const { data, isVisible } of state.getPendingRequests()) {
     ensureProviderPill(data, doApplyFilters, doUpdateActiveFilters);
-    const row = createRequestRow(data, isVisible);
+    const row = createRequestRow(data, isVisible, cfg, sessionStart);
     fragment.appendChild(row);
   }
 
@@ -311,74 +315,64 @@ function dlApplyFilter(): void {
   updateDlStatusText(dlState.getDlVisibleCount(), dlState.getDlTotalCount());
 }
 
-// ─── DATALAYER RECEIVERS ──────────────────────────────────────────────────────
+// ─── DATALAYER BATCHED RENDERING ─────────────────────────────────────────
 
-window.receiveDataLayerPush = function (push: DataLayerPush): void {
-  if (dlState.getDlIsPaused()) return;
+function flushPendingDlPushes(): void {
+  dlState.setDlRafId(null);
+  const pending = dlState.getDlPendingPushes();
+  if (pending.length === 0) return;
 
-  // Compute cumulative state
+  // 1. Compute highlights + validation in batch
   const allPushes = dlState.getAllDlPushes();
-  const prevState = allPushes.length > 0 ? allPushes[allPushes.length - 1].cumulativeState : {};
-  const cumulativeState: Record<string, unknown> = { ...prevState };
-  for (const [k, v] of Object.entries(push.data)) {
-    cumulativeState[k] = v;
-  }
-
-  const enrichedPush: DataLayerPush = {
-    ...push,
-    cumulativeState,
-    _eventName: push._eventName ?? (typeof push.data['event'] === 'string' ? push.data['event'] : undefined),
-    sourceLabel: push.sourceLabel || push.source.toUpperCase(),
-  };
-
-  dlState.addDlPush(enrichedPush);
-
-  // Compute diff for Live Inspector highlights
-  const allPushesForInspector = dlState.getAllDlPushes();
-  if (allPushesForInspector.length >= 2) {
-    const prevPush = allPushesForInspector[allPushesForInspector.length - 2];
-    const changedPaths = computeChangedPaths(prevPush.cumulativeState, enrichedPush.cumulativeState);
+  for (let i = allPushes.length - pending.length; i < allPushes.length; i++) {
+    if (i < 1) continue;
+    const prevPush = allPushes[i - 1];
+    const currPush = allPushes[i];
+    const changedPaths = computeChangedPaths(prevPush.cumulativeState, currPush.cumulativeState);
     if (changedPaths.size > 0) {
-      queueHighlights(changedPaths);
-      checkWatchPaths(prevPush.cumulativeState, enrichedPush.cumulativeState);
+      queueHighlights(changedPaths, prevPush.cumulativeState, currPush.cumulativeState);
+      checkWatchPaths(prevPush.cumulativeState, currPush.cumulativeState);
+    }
+
+    if (dlState.isValidationLoaded()) {
+      const rules = dlState.getValidationRules();
+      const errors = validatePush(currPush, rules);
+      if (errors.length > 0) {
+        dlState.setValidationErrors(currPush.id, errors);
+      }
     }
   }
 
-  // Validate push if rules are loaded
-  if (dlState.isValidationLoaded()) {
-    const rules = dlState.getValidationRules();
-    const errors = validatePush(enrichedPush, rules);
-    if (errors.length > 0) {
-      dlState.setValidationErrors(enrichedPush.id, errors);
-    }
-  }
-
-  const filterText = dlState.getDlFilterText();
-  const isVisible = dlMatchesFilter(enrichedPush, filterText, dlState.getDlFilterSource(), dlState.getDlFilterEventName(), dlState.getDlFilterHasKey(), dlState.getDlEcommerceOnly());
-  if (isVisible) dlState.addDlFilteredId(push.id);
-
-  // Render row synchronously — avoids RAF throttling (DevTools window may be in background
-  // when user reloads the page, causing requestAnimationFrame to never fire)
+  // 2. Batch DOM updates using DocumentFragment
   const $list = DOM.dlPushList;
   const $empty = DOM.dlEmptyState;
   if ($empty && dlState.getDlTotalCount() > 0) {
     $empty.style.display = 'none';
   }
+
   if ($list) {
-    try {
-      const row = createDlPushRow(enrichedPush, isVisible, (p, r) => {
-        dlState.setDlSelectedId(p.id);
-        setActiveDlRow(r);
-        selectDlPush(p, r, gotoNetworkRequest);
-      });
-      $list.appendChild(row);
-    } catch (e) {
-      console.warn('[TagDragon] Failed to create push row:', e);
+    const fragment = document.createDocumentFragment();
+    for (const { push, isVisible } of pending) {
+      try {
+        const row = createDlPushRow(push, isVisible, (p, r) => {
+          dlState.setDlSelectedId(p.id);
+          setActiveDlRow(r);
+          selectDlPush(p, r, gotoNetworkRequest);
+        });
+        fragment.appendChild(row);
+      } catch (e) {
+        console.warn('[TagDragon] Failed to create push row:', e);
+      }
     }
+    $list.appendChild(fragment);
   }
+
+  dlState.clearDlPendingPushes();
+
+  // 3. Single status update
   updateDlStatusText(dlState.getDlVisibleCount(), dlState.getDlTotalCount());
 
-  // Update datalayer tab badge
+  // 4. Update badges (single write)
   const $dlBadge = DOM.tabBadgeDatalayer;
   if ($dlBadge) $dlBadge.textContent = String(dlState.getDlTotalCount());
   const $count = document.getElementById('dl-push-count');
@@ -387,10 +381,12 @@ window.receiveDataLayerPush = function (push: DataLayerPush): void {
     $count.textContent = `${n} push${n !== 1 ? 'es' : ''}`;
   }
 
-  // Update rules error count badge
+  // 5. Validation error count badge (single computation)
   const $rulesCount = document.getElementById('dl-rules-count');
   if ($rulesCount) {
-    const totalErrors = dlState.getAllDlPushes().reduce((sum, p) => sum + dlState.getValidationErrors(p.id).length, 0);
+    const totalErrors = dlState.getAllDlPushes().reduce(
+      (sum, p) => sum + dlState.getValidationErrors(p.id).length, 0,
+    );
     if (totalErrors > 0) {
       $rulesCount.style.display = '';
       $rulesCount.textContent = String(totalErrors);
@@ -398,6 +394,38 @@ window.receiveDataLayerPush = function (push: DataLayerPush): void {
     } else {
       $rulesCount.style.display = 'none';
     }
+  }
+}
+
+// ─── DATALAYER RECEIVERS ──────────────────────────────────────────────────────
+
+window.receiveDataLayerPush = function (push: DataLayerPush): void {
+  if (dlState.getDlIsPaused()) return;
+
+  // Mutate shared cumulative state in-place (2.2)
+  const sharedState = dlState.getSharedCumulativeState();
+  for (const [k, v] of Object.entries(push.data)) {
+    sharedState[k] = v;
+  }
+
+  const enrichedPush: DataLayerPush = {
+    ...push,
+    _ts: Date.parse(push.timestamp),
+    cumulativeState: dlState.snapshotCumulativeState(),
+    _eventName: push._eventName ?? (typeof push.data['event'] === 'string' ? push.data['event'] : undefined),
+    sourceLabel: push.sourceLabel || push.source.toUpperCase(),
+  };
+
+  dlState.addDlPush(enrichedPush);
+
+  // Queue for batched rendering — instead of immediate DOM operations (1.3)
+  const filterText = dlState.getDlFilterText();
+  const isVisible = dlMatchesFilter(enrichedPush, filterText, dlState.getDlFilterSource(), dlState.getDlFilterEventName(), dlState.getDlFilterHasKey(), dlState.getDlEcommerceOnly());
+  if (isVisible) dlState.addDlFilteredId(push.id);
+
+  dlState.addDlPendingPush({ push: enrichedPush, isVisible });
+  if (!dlState.getDlRafId()) {
+    dlState.setDlRafId(requestAnimationFrame(flushPendingDlPushes));
   }
 };
 
@@ -420,6 +448,7 @@ window.clearDataLayer = function (): void {
   if ($status) $status.innerHTML = '';
   clearLiveState();
   clearValidationErrors();
+  dlState.resetCumulativeState();
   dlClearAll();
 };
 
@@ -436,8 +465,34 @@ function computeChangedPaths(
       result.set(key, 'added');
     } else if (!(key in curr)) {
       result.set(key, 'removed');
-    } else if (JSON.stringify(prev[key]) !== JSON.stringify(curr[key])) {
-      result.set(key, 'changed');
+    } else {
+      const prevVal = prev[key];
+      const currVal = curr[key];
+
+      // Fast path: reference equality
+      if (prevVal === currVal) continue;
+
+      // Fast path: null/undefined comparison
+      if (prevVal == null && currVal == null) continue;
+
+      // Primitives: direct comparison (covers string, number, boolean)
+      if (typeof prevVal !== 'object' && typeof currVal !== 'object') {
+        if (prevVal !== currVal) result.set(key, 'changed');
+        continue;
+      }
+
+      // One is object, other is not — definitely changed
+      if ((prevVal === null) !== (currVal === null) ||
+          typeof prevVal !== typeof currVal) {
+        result.set(key, 'changed');
+        continue;
+      }
+
+      // Both are objects/arrays — use JSON.stringify as fallback
+      // (only for actual objects, which is rarer)
+      if (JSON.stringify(prevVal) !== JSON.stringify(currVal)) {
+        result.set(key, 'changed');
+      }
     }
   }
   return result;
@@ -1101,13 +1156,18 @@ async function initDatalayerHandlers(): Promise<void> {
   // DL filter input
   const $dlInput = DOM.dlFilterInput;
   const $dlClearBtn = document.getElementById('dl-clear-filter');
+  let dlFilterTimer: ReturnType<typeof setTimeout>;
   if ($dlInput) {
     $dlInput.addEventListener('input', () => {
       const hasText = $dlInput.value.length > 0;
       if ($dlClearBtn) $dlClearBtn.style.display = hasText ? '' : 'none';
       dlState.setDlFilterText($dlInput.value);
-      dlApplyFilter();
-      updateDlActiveFilters();
+      // Debounce — same as network filter
+      clearTimeout(dlFilterTimer);
+      dlFilterTimer = setTimeout(() => {
+        dlApplyFilter();
+        updateDlActiveFilters();
+      }, 150);
     });
   }
 

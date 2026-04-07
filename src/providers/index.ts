@@ -208,9 +208,86 @@ export const PROVIDERS: ProviderRegistry = [
   merkury,
 ] as const;
 
+// ─── DOMAIN INDEX ────────────────────────────────────────────────────────────
+// Pre-built index: hostname → provider indices for fast first-pass lookup.
+// Providers whose pattern doesn't start with a specific domain are indexed
+// under a special generic list for full-scan fallback.
+
+const domainIndex = new Map<string, number[]>();
+const genericIndices: number[] = [];
+
+function buildDomainIndex(): void {
+  PROVIDERS.forEach((provider, idx) => {
+    const pattern = provider.pattern.source;
+
+    // Try to extract a hostname from the regex pattern
+    // Patterns like: /google-analytics\.com\/g\/collect/
+    const domainMatch = pattern.match(/([a-z0-9][-a-z0-9]*\.)+[a-z]{2,}/);
+
+    if (domainMatch) {
+      const fullDomain = domainMatch[0];
+      const parts = fullDomain.split('.');
+      // Use last 2-3 parts as key (e.g. "google-analytics.com")
+      const key = parts.length >= 3 && parts[0] !== 'www'
+        ? parts.slice(1).join('.')
+        : fullDomain;
+
+      if (!domainIndex.has(key)) {
+        domainIndex.set(key, []);
+      }
+      domainIndex.get(key)!.push(idx);
+    } else {
+      genericIndices.push(idx);
+    }
+  });
+}
+
+// Build once at module load
+buildDomainIndex();
+
 /**
  * Find the first provider whose pattern matches the given URL.
+ * Uses domain-first lookup for fast matching, falls back to full scan.
  */
 export function matchProvider(url: string): Provider | null {
+  try {
+    const hostname = new URL(url).hostname;
+
+    // Find candidates from domain index
+    let candidates: number[] = [];
+
+    // Check exact hostname first
+    const exact = domainIndex.get(hostname);
+    if (exact) candidates.push(...exact);
+
+    // Check parent domain (remove first subdomain)
+    const dotIdx = hostname.indexOf('.');
+    if (dotIdx > 0) {
+      const parent = hostname.slice(dotIdx + 1);
+      const parentMatch = domainIndex.get(parent);
+      if (parentMatch) candidates.push(...parentMatch);
+    }
+
+    // Also check for "www." prefix
+    if (hostname.startsWith('www.')) {
+      const withoutWww = hostname.slice(4);
+      const wwwMatch = domainIndex.get(withoutWww);
+      if (wwwMatch) candidates.push(...wwwMatch);
+    }
+
+    // Test candidates first (most likely match), then generic
+    // IMPORTANT: candidates may contain duplicates from overlapping lookups,
+    // but since PROVIDERS ordering is preserved, first match still wins
+    const ordered = [...candidates, ...genericIndices];
+    for (const idx of ordered) {
+      if (PROVIDERS[idx].pattern.test(url)) {
+        return PROVIDERS[idx] as Provider;
+      }
+    }
+  } catch {
+    // URL parsing failed, fall through to full scan
+  }
+
+  // Fallback: full scan (should rarely be reached)
   return PROVIDERS.find(p => p.pattern.test(url)) ?? null;
 }

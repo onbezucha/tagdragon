@@ -263,3 +263,66 @@ export function setCorrelationWindow(ms: number): void {
 export function getCorrelationLookback(): number {
   return correlationLookbackMs;
 }
+
+// ─── DATALAYER BATCHING STATE ─────────────────────────────────────────────
+
+interface DlPendingPush {
+  push: DataLayerPush;
+  isVisible: boolean;
+}
+
+let dlPendingPushes: DlPendingPush[] = [];
+let dlRafId: number | null = null;
+
+export function addDlPendingPush(item: DlPendingPush): void {
+  dlPendingPushes.push(item);
+}
+
+export function getDlPendingPushes(): DlPendingPush[] {
+  return dlPendingPushes;
+}
+
+export function clearDlPendingPushes(): void {
+  dlPendingPushes = [];
+}
+
+export function getDlRafId(): number | null {
+  return dlRafId;
+}
+
+export function setDlRafId(id: number | null): void {
+  dlRafId = id;
+}
+
+// ─── SHARED CUMULATIVE STATE ─────────────────────────────────────────────
+// Single mutable object that grows with each push.
+// Avoids N shallow copies per session.
+
+let sharedCumulativeState: Record<string, unknown> = {};
+
+/**
+ * Get the current shared cumulative state reference.
+ * Mutating this directly is safe ONLY inside receiveDataLayerPush.
+ */
+export function getSharedCumulativeState(): Record<string, unknown> {
+  return sharedCumulativeState;
+}
+
+/**
+ * Create a lightweight snapshot of the current cumulative state.
+ * Uses structuredClone for true copy (available in modern Chrome).
+ */
+export function snapshotCumulativeState(): Record<string, unknown> {
+  try {
+    return structuredClone(sharedCumulativeState);
+  } catch {
+    return { ...sharedCumulativeState };
+  }
+}
+
+/**
+ * Reset cumulative state (on clear).
+ */
+export function resetCumulativeState(): void {
+  sharedCumulativeState = {};
+}

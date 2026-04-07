@@ -23,17 +23,34 @@ export function findTriggeringPush(
   pushes: DataLayerPush[],
   lookbackMs = 2000,
 ): TriggeringPushResult | null {
-  const reqTime = new Date(request.timestamp).getTime();
+  const reqTime = request._ts ?? new Date(request.timestamp).getTime();
   if (isNaN(reqTime) || pushes.length === 0) return null;
 
+  // Binary search for the first push within the lookback window
+  const minTime = reqTime - lookbackMs;
+
+  let lo = 0;
+  let hi = pushes.length - 1;
+
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    const midTime = pushes[mid]._ts ?? 0;
+    if (midTime < minTime) {
+      lo = mid + 1;
+    } else {
+      hi = mid;
+    }
+  }
+
+  // Scan from the found position to the end (at most lookbackMs worth of pushes)
   let best: TriggeringPushResult | null = null;
 
-  for (const push of pushes) {
-    const pushTime = new Date(push.timestamp).getTime();
+  for (let i = lo; i < pushes.length; i++) {
+    const push = pushes[i];
+    const pushTime = push._ts ?? new Date(push.timestamp).getTime();
     if (isNaN(pushTime)) continue;
 
     const delay = reqTime - pushTime;
-    // Push must be before the request (allow small negative for timing jitter)
     if (delay < -200 || delay > lookbackMs) continue;
 
     if (!best || Math.abs(delay) < Math.abs(best.delayMs)) {

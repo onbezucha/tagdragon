@@ -112,6 +112,7 @@ function processRequest(req: chrome.devtools.network.Request): void {
       _hasResponseBody: !!responseBody,
       _hasRequestHeaders: (req.request.headers?.length || 0) > 0,
       _hasResponseHeaders: (req.response.headers?.length || 0) > 0,
+      _ts: Date.now(),
     };
 
     sendToPanel(parsedRequest);

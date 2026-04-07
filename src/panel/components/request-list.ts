@@ -1,6 +1,7 @@
 // ─── REQUEST LIST COMPONENT ──────────────────────────────────────────────────
 
 import type { ParsedRequest } from '@/types/request';
+import type { AppConfig } from '@/shared/constants';
 import { DOM } from '../utils/dom';
 import { formatBytes, getEventName, formatTimestamp } from '../utils/format';
 import {
@@ -19,6 +20,32 @@ function buildGroupIcon(provider: string): string {
   const group = getProviderGroup(provider);
   if (!group) return '';
   return GROUP_ICONS[group.id] ?? group.icon;
+}
+
+// ─── SVG ICON CACHE ──────────────────────────────────────────────────────
+// Cache parsed DocumentFragments for provider/group icons.
+// Avoids re-parsing the same SVG string for every row.
+
+const svgIconCache = new Map<string, DocumentFragment>();
+
+function getCachedIcon(provider: string): DocumentFragment | null {
+  const cached = svgIconCache.get(provider);
+  if (cached) return cached;
+
+  const iconSvg = buildGroupIcon(provider);
+  if (!iconSvg) return null;
+
+  const wrapper = document.createElement('span');
+  wrapper.style.display = 'contents';
+  wrapper.innerHTML = iconSvg;
+
+  const fragment = document.createDocumentFragment();
+  while (wrapper.firstChild) {
+    fragment.appendChild(wrapper.firstChild);
+  }
+
+  svgIconCache.set(provider, fragment);
+  return fragment;
 }
 
 export type SelectCallback = (data: ParsedRequest, row: HTMLElement) => void;
@@ -48,15 +75,22 @@ rowTemplate.innerHTML = `
  * Create a request row element.
  * @param data Request data
  * @param isVisible Whether the row should be visible
+ * @param cfg Optional config (cached for performance)
+ * @param sessionStart Optional session start timestamp (cached for performance)
  * @returns The created row element
  */
-export function createRequestRow(data: ParsedRequest, isVisible: boolean): HTMLElement {
+export function createRequestRow(
+  data: ParsedRequest,
+  isVisible: boolean,
+  cfg?: Readonly<AppConfig>,
+  sessionStart?: string,
+): HTMLElement {
   const row = rowTemplate.content.firstElementChild?.cloneNode(true) as HTMLElement;
   row.dataset.id = String(data.id);
   
-  const cfg = getConfig();
-  const sessionStart = getAllRequests()[0]?.timestamp;
-  const time = formatTimestamp(data.timestamp, cfg.timestampFormat, sessionStart);
+  const _cfg = cfg ?? getConfig();
+  const _sessionStart = sessionStart ?? getAllRequests()[0]?.timestamp;
+  const time = formatTimestamp(data.timestamp, _cfg.timestampFormat, _sessionStart);
   const eventName = data._eventName || getEventName(data);
   
   // Primary line
@@ -72,9 +106,9 @@ export function createRequestRow(data: ParsedRequest, isVisible: boolean): HTMLE
   }
 
   const iconEl = row.querySelector('.req-category-icon') as HTMLElement;
-  const iconSvg = buildGroupIcon(data.provider);
-  if (iconSvg) {
-    iconEl.innerHTML = iconSvg;
+  const iconFragment = getCachedIcon(data.provider);
+  if (iconFragment) {
+    iconEl.appendChild(iconFragment.cloneNode(true));
   } else {
     iconEl.remove();
   }
