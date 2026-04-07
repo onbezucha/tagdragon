@@ -28,6 +28,7 @@ import { findTriggeringPush, renderTriggeredBy } from './datalayer/reverse-corre
 import { initTheme } from './theme';
 import { savePanelSetting, loadPanelSetting } from './utils/persistence';
 import { isMac } from './utils/platform';
+import { init as initTooltip } from './utils/tooltip';
 import { SOURCE_DESCRIPTIONS } from '@/shared/datalayer-constants';
 import { createIcons, Cable, Database, ChevronDown, Eraser, Cookie, Sun, Moon, Trash2, Settings, CircleHelp, Search, X, ArrowUpDown, WrapText, Maximize2, AlignJustify, Filter, Download, Pause, Play } from 'lucide';
 
@@ -1264,6 +1265,9 @@ async function init(): Promise<void> {
       svg.removeAttribute('width');
       svg.removeAttribute('height');
     });
+
+  // Initialize tooltip system
+  initTooltip();
 
   // Load config first
   await state.loadConfig();

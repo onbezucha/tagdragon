@@ -2525,11 +2525,11 @@
   <div id="global-tab-bar">
     <div class="gtb-section">
       <div id="tab-switcher">
-        <button class="tab-btn active" data-view="network" title="Network requests">
+        <button class="tab-btn active" data-view="network" data-tooltip="Network requests">
           <i data-lucide="cable"></i>
           <span>Network</span>
         </button>
-        <button class="tab-btn" data-view="datalayer" title="DataLayer pushes">
+        <button class="tab-btn" data-view="datalayer" data-tooltip="DataLayer pushes">
           <i data-lucide="database"></i>
           <span>DataLayer</span>
         </button>
@@ -2537,32 +2537,32 @@
     </div>
     <div class="gtb-right">
       <!-- Adobe Environment Switcher Badge -->
-      <div id="adobe-env-badge" class="env-badge hidden" title="Adobe environment">
+      <div id="adobe-env-badge" class="env-badge hidden" data-tooltip="Adobe environment">
         <span class="env-badge-dot"></span>
         <span class="env-badge-label">PROD</span>
         <i data-lucide="chevron-down"></i>
       </div>
       <div class="toolbar-separator" id="env-separator" style="display:none;"></div>
       <!-- Delete cookies + Cookie Consent -->
-      <button id="btn-clear-cookies" title="Delete all cookies on this site">
+      <button id="btn-clear-cookies" data-tooltip="Delete all cookies on this site">
         <i data-lucide="eraser"></i>
       </button>
-      <button id="btn-consent" title="Cookie Consent">
+      <button id="btn-consent" data-tooltip="Cookie Consent">
         <i data-lucide="cookie"></i>
       </button>
       <div class="toolbar-separator"></div>
       <!-- Theme + Settings + Info -->
-      <button id="btn-theme-toggle" title="Toggle light/dark mode">
+      <button id="btn-theme-toggle" data-tooltip="Toggle light/dark mode">
         <span class="theme-icon-sun"><i data-lucide="sun"></i></span>
         <span class="theme-icon-moon"><i data-lucide="moon"></i></span>
       </button>
-      <button id="btn-clear-all" title="Clear all requests (Ctrl+L)">
+      <button id="btn-clear-all" data-tooltip="Clear all requests (Ctrl+L)">
         <i data-lucide="trash-2"></i>
       </button>
-      <button id="btn-settings" title="Filters &amp; settings">
+      <button id="btn-settings" data-tooltip="Filters &amp; settings">
         <i data-lucide="settings"></i>
       </button>
-      <button id="btn-info" title="About TagDragon">
+      <button id="btn-info" data-tooltip="About TagDragon">
         <i data-lucide="circle-help"></i>
       </button>
     </div>
@@ -2574,36 +2574,36 @@
       <div class="filter-wrap">
         <i data-lucide="search"></i>
         <input type="text" id="filter-input" placeholder="Filter by URL, parameter, or provider...">
-        <button id="btn-clear-filter">
+        <button id="btn-clear-filter" data-tooltip="Clear filter">
           <i data-lucide="x"></i>
         </button>
       </div>
     </div>
     <div class="ctx-right">
       <div id="quick-actions">
-        <button id="btn-quick-sort" class="quick-btn" title="Sort: Newest first">
+        <button id="btn-quick-sort" class="quick-btn" data-tooltip="Sort: Newest first">
           <i data-lucide="arrow-up-down"></i>
         </button>
-        <button id="btn-quick-wrap" class="quick-btn" title="Wrap long values">
+        <button id="btn-quick-wrap" class="quick-btn" data-tooltip="Wrap long values">
           <i data-lucide="wrap-text"></i>
         </button>
-        <button id="btn-quick-expand" class="quick-btn" title="Auto-expand">
+        <button id="btn-quick-expand" class="quick-btn" data-tooltip="Auto-expand">
           <i data-lucide="maximize-2"></i>
         </button>
-        <button id="btn-quick-compact" class="quick-btn" title="Compact list">
+        <button id="btn-quick-compact" class="quick-btn" data-tooltip="Compact list">
           <i data-lucide="align-justify"></i>
         </button>
       </div>
-      <button id="btn-providers" title="Provider filter">
+      <button id="btn-providers" data-tooltip="Provider filter">
         <i data-lucide="filter"></i>
       </button>
       <div class="toolbar-separator"></div>
-      <button id="btn-export" title="Export as JSON">
+      <button id="btn-export" data-tooltip="Export as JSON">
         <i data-lucide="download"></i>
         <span>Export</span>
       </button>
       <div class="toolbar-separator"></div>
-      <button id="btn-pause" class="pause-btn" title="Pause capture">
+      <button id="btn-pause" class="pause-btn" data-tooltip="Pause capture">
         <span class="pause-icon"><i data-lucide="pause"></i></span>
         <span class="play-icon"><i data-lucide="play"></i></span>
         <span class="pause-text">Pause</span>
@@ -2618,7 +2618,7 @@
       <div class="filter-wrap">
         <i data-lucide="search"></i>
         <input type="text" id="dl-filter-input" placeholder="Filter by event, key, or value...">
-        <button id="dl-clear-filter" title="Clear filter">
+        <button id="dl-clear-filter" data-tooltip="Clear filter">
           <i data-lucide="x"></i>
         </button>
       </div>
@@ -2626,7 +2626,7 @@
     <div class="ctx-right">
       <div id="dl-source-status" style="display:flex;align-items:center;gap:4px;"></div>
       <div class="toolbar-separator"></div>
-      <select id="dl-filter-source" title="Filter by source">
+      <select id="dl-filter-source" data-tooltip="Filter by source">
         <option value="">All sources</option>
         <option value="gtm">GTM</option>
         <option value="digitalData">W3C</option>
@@ -2635,14 +2635,14 @@
         <option value="segment">Segment</option>
       </select>
       <div class="toolbar-separator"></div>
-      <span id="dl-push-count" style="font-size:11px;color:var(--text-2);white-space:nowrap;padding:0 6px;" title="Total pushes received by panel">0 pushes</span>
+      <span id="dl-push-count" style="font-size:11px;color:var(--text-2);white-space:nowrap;padding:0 6px;" data-tooltip="Total pushes received by panel">0 pushes</span>
       <div class="toolbar-separator"></div>
-      <button id="dl-btn-export" title="Export DataLayer" style="display:flex;align-items:center;gap:4px;padding:4px 8px;font-size:12px;">
+      <button id="dl-btn-export" data-tooltip="Export DataLayer" style="display:flex;align-items:center;gap:4px;padding:4px 8px;font-size:12px;">
         <i data-lucide="download"></i>
         <span>Export</span>
       </button>
       <div class="toolbar-separator"></div>
-      <button id="dl-btn-pause" class="pause-btn" title="Pause DataLayer capture">
+      <button id="dl-btn-pause" class="pause-btn" data-tooltip="Pause DataLayer capture">
         <span class="pause-icon"><i data-lucide="pause"></i></span>
         <span class="play-icon"><i data-lucide="play"></i></span>
         <span class="pause-text">Pause</span>
@@ -2852,7 +2852,7 @@
           <span class="consent-loading">Loading...</span>
         </div>
       </div>
-      <button id="consent-refresh" class="consent-btn-small" title="Refresh" style="margin-top:2px; flex-shrink:0;">↻</button>
+      <button id="consent-refresh" class="consent-btn-small" data-tooltip="Refresh" style="margin-top:2px; flex-shrink:0;">↻</button>
     </div>
 
     <div id="consent-override-badge" class="consent-override-badge" style="display:none;"></div>
@@ -3154,7 +3154,7 @@
         <div id="dl-detail-header">
           <span id="dl-detail-badge"></span>
           <span id="dl-detail-title"></span>
-          <button id="dl-detail-close" title="Close detail">
+          <button id="dl-detail-close" data-tooltip="Close detail">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
             </svg>

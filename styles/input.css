@@ -922,6 +922,34 @@
     margin-left: 4px;
     flex-shrink: 0;
   }
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+       CUSTOM TOOLTIP (replaces native title="" — suppressed in DevTools)
+       ═══════════════════════════════════════════════════════════════════════════ */
+
+  .tooltip-popup {
+    position: fixed;
+    z-index: 10000;
+    padding: 4px 8px;
+    background-color: var(--bg-3);
+    color: var(--text-0);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: 11px;
+    line-height: 1.4;
+    pointer-events: none;
+    white-space: nowrap;
+    max-width: 280px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    animation: tooltipFadeIn 80ms var(--ease);
+  }
+
+  @keyframes tooltipFadeIn {
+    from { opacity: 0; transform: translateY(2px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
 }
 
 @layer utilities {
