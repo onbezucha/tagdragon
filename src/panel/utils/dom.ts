@@ -8,16 +8,6 @@ export function $<T extends HTMLElement = HTMLElement>(id: string): T | null {
 }
 
 /**
- * Query selector shorthand with generic type support.
- */
-export function qs<T extends Element = Element>(
-  selector: string,
-  parent: ParentNode = document
-): T | null {
-  return parent.querySelector<T>(selector);
-}
-
-/**
  * Query selector all shorthand returning array.
  */
 export function qsa<T extends Element = Element>(
@@ -41,8 +31,10 @@ interface DOMRefs {
   readonly list: HTMLElement | null;
   readonly empty: HTMLElement | null;
   readonly detail: HTMLElement | null;
-  readonly detailBadge: HTMLElement | null;
-  readonly detailUrl: HTMLElement | null;
+  readonly summaryProviderIcon: HTMLElement | null;
+  readonly summaryProviderName: HTMLElement | null;
+  readonly summaryEventName: HTMLElement | null;
+  readonly summaryMethod: HTMLElement | null;
   readonly detailContent: HTMLElement | null;
   readonly detailTabs: HTMLElement | null;
   readonly triggeredByBanner: HTMLElement | null;
@@ -51,10 +43,10 @@ interface DOMRefs {
   readonly timeBadge: HTMLElement | null;
   readonly filterInput: HTMLInputElement | null;
   readonly clearFilter: HTMLElement | null;
-  readonly metaMethod: HTMLElement | null;
-  readonly metaStatus: HTMLElement | null;
-  readonly metaDur: HTMLElement | null;
-  readonly metaTs: HTMLElement | null;
+  readonly summaryStatus: HTMLElement | null;
+  readonly summaryDuration: HTMLElement | null;
+  readonly summaryTime: HTMLElement | null;
+  readonly summaryUrl: HTMLElement | null;
   readonly providerPills: HTMLElement | null;
   readonly providerGroupList: HTMLElement | null;
   readonly providerSearchInput: HTMLInputElement | null;
@@ -112,8 +104,10 @@ export const DOM: DOMRefs = {
   get list() { return $('request-list'); },
   get empty() { return $('empty-state'); },
   get detail() { return $('detail-pane'); },
-  get detailBadge() { return $('detail-provider-badge'); },
-  get detailUrl() { return $('detail-url'); },
+  get summaryProviderIcon() { return $('summary-provider-icon'); },
+  get summaryProviderName() { return $('summary-provider-name'); },
+  get summaryEventName() { return $('summary-event-name'); },
+  get summaryMethod() { return $('summary-method'); },
   get detailContent() { return $('detail-content'); },
   get detailTabs() { return $('detail-tabs'); },
   get triggeredByBanner() { return $('triggered-by-banner'); },
@@ -122,10 +116,10 @@ export const DOM: DOMRefs = {
   get timeBadge() { return $('time-badge'); },
   get filterInput() { return $<HTMLInputElement>('filter-input'); },
   get clearFilter() { return $('btn-clear-filter'); },
-  get metaMethod() { return $('meta-method'); },
-  get metaStatus() { return $('meta-status'); },
-  get metaDur() { return $('meta-duration'); },
-  get metaTs() { return $('meta-timestamp'); },
+  get summaryStatus() { return $('summary-status'); },
+  get summaryDuration() { return $('summary-duration'); },
+  get summaryTime() { return $('summary-time'); },
+  get summaryUrl() { return $('summary-url'); },
   get providerPills() { return $('provider-pills'); },
   get providerGroupList() { return $('provider-group-list'); },
   get providerSearchInput() { return $<HTMLInputElement>('provider-search-input'); },

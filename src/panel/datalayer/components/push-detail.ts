@@ -1,21 +1,46 @@
 // ─── PUSH DETAIL COMPONENT ───────────────────────────────────────────────────
 // Detail pane with 4 sub-tabs: Push Data, Diff, Current State, Correlation.
 
-import type { DataLayerPush, ValidationResult } from '@/types/datalayer';
+import type { DataLayerPush } from '@/types/datalayer';
 import type { ParsedRequest } from '@/types/request';
-import { DOM } from '../utils/dom';
-import { formatTimestamp } from '../utils/format';
-import { getConfig, getAllRequests } from '../state';
-import { getAllDlPushes, computeCumulativeState, getValidationErrors, getCorrelationWindow, setCorrelationWindow } from './state';
-import { deepDiff, renderDiff } from './diff-renderer';
-import { renderEcommerceTable, detectEcommerceType } from './ecommerce-formatter';
-import { findCorrelatedRequests, renderCorrelation } from './correlation';
+import { DOM } from '../../utils/dom';
+import { formatTimestamp } from '../../utils/format';
+import { getConfig, getAllRequests } from '../../state';
+import { getAllDlPushes, computeCumulativeState, getValidationErrors, getCorrelationWindow, setCorrelationWindow } from '../state';
+import { deepDiff, renderDiff } from '../utils/diff-renderer';
+import { renderEcommerceTable, detectEcommerceType } from '../utils/ecommerce-formatter';
+import { findCorrelatedRequests, renderCorrelation } from '../utils/correlation';
 import { getSourceColor, getSourceBadge } from './push-list';
 import { renderLiveInspector } from './live-inspector';
 
 // ─── DETAIL RENDERING ────────────────────────────────────────────────────────
 
 let activeTab: string = 'push-data';
+
+const TAB_DESCRIPTIONS: Record<string, string> = {
+  'push-data': 'Categorized key-value pairs from this push. Click a value to copy.',
+  'diff': 'Changes from the cumulative state before this push.',
+  'current-state': 'Full merged DataLayer state after applying this push.',
+  'correlation': 'Network requests sent within the time window after this push.',
+  'live': 'Reactive tree view of current DataLayer state. Right-click a key to watch it.',
+};
+
+function showTabDescription(tabName: string): void {
+  const existing = document.querySelector('.dl-tab-description');
+  existing?.remove();
+
+  const $content = DOM.dlDetailContent;
+  if (!$content) return;
+
+  const desc = TAB_DESCRIPTIONS[tabName];
+  if (!desc) return;
+
+  const descEl = document.createElement('div');
+  descEl.className = 'dl-tab-description';
+  descEl.textContent = desc;
+
+  $content.parentElement?.insertBefore(descEl, $content);
+}
 
 /**
  * Show a DataLayer push in the detail pane.
@@ -93,6 +118,9 @@ export function initDlDetailTabHandlers(
     // Update active tab button
     $tabs.querySelectorAll('.dl-dtab').forEach((btn) => btn.classList.remove('active'));
     target.classList.add('active');
+
+    // Show tab description
+    showTabDescription(tab);
 
     const push = currentPushGetter();
     if (push) {
@@ -348,6 +376,11 @@ function renderCorrelationTab(
   valueDisplay.textContent = `${(windowMs / 1000).toFixed(1)}s`;
   valueDisplay.style.cssText = 'font-size:11px;color:var(--text-2);min-width:30px;';
   controls.appendChild(valueDisplay);
+
+  const description = document.createElement('div');
+  description.style.cssText = 'font-size:10px;color:var(--text-3);margin-top:4px;';
+  description.textContent = 'Network requests sent within this time window after the push. Includes requests already in flight (lookback: 500ms).';
+  controls.appendChild(description);
 
   container.appendChild(controls);
 

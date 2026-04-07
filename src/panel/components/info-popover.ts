@@ -6,6 +6,8 @@ import { DATA_LAYER_SOURCES } from '@/shared/datalayer-constants';
 import { DOM } from '../utils/dom';
 import { isMac, modLabel } from '../utils/platform';
 import { esc } from '../utils/format';
+import { buildGroupIcon } from '../utils/provider-icon';
+import { GROUP_ICONS } from '../utils/group-icons';
 import {
   createIcons,
   Cable,
@@ -28,6 +30,9 @@ import {
   Play,
   ChevronDown,
   X,
+  SlidersHorizontal,
+  ShoppingCart,
+  CheckCircle,
 } from 'lucide';
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
@@ -94,14 +99,21 @@ function renderProviderGroups(): void {
   $container.innerHTML = PROVIDER_GROUPS.map(group => {
     const pills = group.providers.map(name => {
       const color = colorMap.get(name) ?? '#888';
+      const icon = buildGroupIcon(name);
+      const visual = icon
+        ? `<span class="info-pill-icon">${icon}</span>`
+        : `<span class="info-pill-dot" style="background:${color}"></span>`;
       return `<span class="info-provider-pill" data-name="${esc(name)}">` +
-        `<span class="info-pill-dot" style="background:${color}"></span>${esc(name)}</span>`;
+        `${visual}${esc(name)}</span>`;
     }).join('');
+
+    const groupIcon = GROUP_ICONS[group.id] ?? '';
 
     return `
       <div class="info-provider-group" data-group="${group.id}">
         <div class="info-provider-group-label">
-          ${group.label}
+          ${groupIcon ? `<span class="info-group-icon">${groupIcon}</span>` : ''}
+          ${esc(group.label)}
           <span class="info-provider-group-count">${group.providers.length}</span>
         </div>
         <div class="info-provider-pills">${pills}</div>
@@ -236,7 +248,10 @@ function renderToolbarIcons(): void {
       Pause,
       Play,
       ChevronDown,
-  X,
+      X,
+      SlidersHorizontal,
+      ShoppingCart,
+      CheckCircle,
     },
   });
 }

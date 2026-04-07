@@ -2,13 +2,13 @@
 // Reactive tree view of cumulative DataLayer state with change highlighting
 // and watch path functionality.
 
-import { DOM } from '../utils/dom';
+import { DOM } from '../../utils/dom';
 import {
   getWatchedPaths,
   addWatchedPath,
   removeWatchedPath,
   clearWatchedPaths,
-} from './state';
+} from '../state';
 
 // ─── TYPES ─────────────────────────────────────────────────────────────────
 

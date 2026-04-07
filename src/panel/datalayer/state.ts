@@ -8,6 +8,7 @@ import type {
   ValidationResult,
   ValidationRule,
 } from '@/types/datalayer';
+import { getAppConfig, updateConfig } from '@/panel/state';
 
 // ─── STATE CONTAINERS ────────────────────────────────────────────────────────
 
@@ -28,8 +29,8 @@ const MAX_DL_PUSHES = 1000;
 interface DlFilterState {
   text: string;
   source: DataLayerSource | '';
-  eventName: string;    // TODO: No UI control yet — reserved for future filter dropdown
-  hasKey: string;       // TODO: No UI control yet — reserved for future "has key" filter
+  eventName: string;    // Filtered via DL filter popover → Event Name submenu
+  hasKey: string;       // Filtered via DL filter popover → Has Key submenu
   ecommerceOnly: boolean;
 }
 
@@ -65,6 +66,7 @@ export function clearDlPushes(): void {
   dlState.sources.clear();
   dlState.sourceLabels.clear();
   dlState.selectedId = null;
+  dlGroupBySource = false;
 }
 
 export function getAllDlPushes(): DataLayerPush[] {
@@ -263,6 +265,47 @@ export function setCorrelationWindow(ms: number): void {
 export function getCorrelationLookback(): number {
   return correlationLookbackMs;
 }
+
+// ─── SORT STATE ────────────────────────────────────────────────────────────
+
+type DlSortField = 'time' | 'keycount' | 'source';
+type DlSortOrder = 'asc' | 'desc';
+
+let dlSortField: DlSortField = 'time';
+let dlSortOrder: DlSortOrder = 'asc'; // Default: oldest first
+
+/**
+ * Initialize DataLayer sort state from persisted AppConfig.
+ * Called after loadConfig() in the panel init sequence.
+ */
+export function initDlSortState(): void {
+  const cfg = getAppConfig();
+  dlSortField = cfg.dlSortField;
+  dlSortOrder = cfg.dlSortOrder;
+}
+
+export function getDlSortField(): DlSortField { return dlSortField; }
+export function setDlSortField(field: DlSortField): void {
+  dlSortField = field;
+  updateConfig('dlSortField', field);
+}
+export function getDlSortOrder(): DlSortOrder { return dlSortOrder; }
+export function setDlSortOrder(order: DlSortOrder): void {
+  dlSortOrder = order;
+  updateConfig('dlSortOrder', order);
+}
+export function toggleDlSortOrder(): DlSortOrder {
+  dlSortOrder = dlSortOrder === 'asc' ? 'desc' : 'asc';
+  updateConfig('dlSortOrder', dlSortOrder);
+  return dlSortOrder;
+}
+
+// ─── GROUP BY SOURCE STATE ─────────────────────────────────────────────────
+
+let dlGroupBySource: boolean = false;
+
+export function getDlGroupBySource(): boolean { return dlGroupBySource; }
+export function setDlGroupBySource(group: boolean): void { dlGroupBySource = group; }
 
 // ─── DATALAYER BATCHING STATE ─────────────────────────────────────────────
 

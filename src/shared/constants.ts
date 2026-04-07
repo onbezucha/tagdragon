@@ -16,6 +16,8 @@ export interface AppConfig {
   compactRows: boolean;
   timestampFormat: 'absolute' | 'relative' | 'elapsed';
   exportFormat: 'json' | 'csv';
+  dlSortField: 'time' | 'keycount' | 'source';
+  dlSortOrder: 'asc' | 'desc';
 }
 
 export const DEFAULT_CONFIG: AppConfig = {
@@ -31,4 +33,6 @@ export const DEFAULT_CONFIG: AppConfig = {
   compactRows: false,
   timestampFormat: 'absolute',
   exportFormat: 'json',
+  dlSortField: 'time',
+  dlSortOrder: 'asc',
 };

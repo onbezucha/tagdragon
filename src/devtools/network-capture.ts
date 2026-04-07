@@ -6,13 +6,8 @@ import { getParams } from '@/providers/url-parser';
 import { headersToObj } from '@/shared/http-utils';
 import { sendToPanel, heavyDataStore, getPanelWindow } from './panel-bridge';
 import type { ParsedRequest } from '@/types/request';
+import type { HARPostData } from '@/types/har';
 import { generateId } from '@/shared/id-gen';
-
-interface HARPostData {
-  text?: string;
-  raw?: Array<{ bytes?: string }>;
-  mimeType?: string;
-}
 
 // ─── PAUSE STATE ──────────────────────────────────────────────────────────────
 // Local pause flag, kept in sync with background via RECORDING_PAUSED/RESUMED messages.

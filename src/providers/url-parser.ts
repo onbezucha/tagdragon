@@ -3,14 +3,10 @@
  * Shared URL/POST body parsing utilities used by all providers.
  */
 
+import type { HARPostData as HARPostBody } from '@/types/har';
+
 type ParamValue = string;
 type ParamRecord = Record<string, ParamValue>;
-
-interface HARPostBody {
-  text?: string;
-  raw?: Array<{ bytes?: string }>;
-  mimeType?: string;
-}
 
 /**
  * Convert any postBody format to plain string for further parsing.

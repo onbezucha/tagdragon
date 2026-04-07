@@ -3,12 +3,12 @@
 import type { ParsedRequest, TabName } from '@/types/request';
 import { DOM, qsa } from '../utils/dom';
 import { categorizeParams } from '../utils/categorize';
-import { renderCategorizedParams } from '../tabs/decoded';
-import { renderParamTable } from '../tabs/query';
-import { renderPostTab } from '../tabs/post';
-import { renderHeadersTab, loadHeavyData } from '../tabs/headers';
-import { renderResponse } from '../tabs/response';
-import { formatTimestamp } from '../utils/format';
+import { renderCategorizedParams } from '../detail-tabs/decoded';
+import { renderParamTable } from '../detail-tabs/query';
+import { renderPostTab } from '../detail-tabs/post';
+import { renderHeadersTab, loadHeavyData } from '../detail-tabs/headers';
+import { renderResponse } from '../detail-tabs/response';
+import { formatTimestamp, getEventName } from '../utils/format';
 import {
   setSelectedId,
   getSelectedId,
@@ -18,8 +18,9 @@ import {
   getConfig,
   getAllRequests,
 } from '../state';
-import { findTriggeringPush, renderTriggeredBy, hideTriggeredByBanner } from '../datalayer/reverse-correlation';
+import { findTriggeringPush, renderTriggeredBy, hideTriggeredByBanner } from '../datalayer/utils/reverse-correlation';
 import { getAllDlPushes } from '../datalayer/state';
+import { buildGroupIcon } from '../utils/provider-icon';
 
 // ─── TAB CONTENT CACHE ───────────────────────────────────────────────────────
 // LRU-like cache: requestId → tabName → rendered HTML (max 10 entries)
@@ -60,24 +61,77 @@ export function selectRequest(data: ParsedRequest, row: HTMLElement): void {
   }
 
   const $detail = DOM.detail;
-  const $detailBadge = DOM.detailBadge;
-  const $detailUrl = DOM.detailUrl;
-  
-  $detail!.classList.remove('hidden');
-  $detailBadge!.textContent = data.provider;
-  $detailBadge!.style.background = data.color + '22';
-  $detailBadge!.style.color = data.color;
-  $detailBadge!.style.border = `1px solid ${data.color}55`;
-  $detailUrl!.textContent = data.url;
-  ($detailUrl as HTMLElement).title = data.url;
-
   const cfg = getConfig();
   const sessionStart = getAllRequests()[0]?.timestamp;
 
-  if (DOM.metaMethod) DOM.metaMethod.textContent = data.method;
-  if (DOM.metaStatus) DOM.metaStatus.textContent = String(data.status || '—');
-  if (DOM.metaDur) DOM.metaDur.textContent = data.duration ? data.duration + 'ms' : '—';
-  if (DOM.metaTs) DOM.metaTs.textContent = formatTimestamp(data.timestamp, cfg.timestampFormat, sessionStart, true);
+  $detail!.classList.remove('hidden');
+
+  // ─── SUMMARY CARD RENDERING ────────────────────────────────────────────
+
+  // Provider icon
+  const iconEl = DOM.summaryProviderIcon;
+  if (iconEl) {
+    iconEl.innerHTML = '';
+    const iconSvg = buildGroupIcon(data.provider);
+    if (iconSvg) {
+      iconEl.innerHTML = iconSvg;
+      iconEl.style.display = '';
+    } else {
+      iconEl.style.display = 'none';
+    }
+  }
+
+  // Provider name
+  if (DOM.summaryProviderName) {
+    DOM.summaryProviderName.textContent = data.provider;
+    DOM.summaryProviderName.style.color = data.color;
+  }
+
+  // Event name
+  if (DOM.summaryEventName) {
+    const eventName = data._eventName || getEventName(data);
+    DOM.summaryEventName.textContent = eventName;
+  }
+
+  // Method badge
+  const methodEl = DOM.summaryMethod;
+  if (methodEl) {
+    methodEl.textContent = data.method;
+    methodEl.className = 'summary-method';
+    if (data.method === 'GET') methodEl.classList.add('method-get');
+    else if (data.method === 'POST') methodEl.classList.add('method-post');
+  }
+
+  // Status badge
+  const statusEl = DOM.summaryStatus;
+  if (statusEl) {
+    statusEl.textContent = String(data.status || '—');
+    statusEl.className = 'summary-status';
+    if (data.status) {
+      statusEl.classList.add(`status-${String(data.status)[0]}`);
+    }
+  }
+
+  // Duration
+  const durEl = DOM.summaryDuration;
+  if (durEl) {
+    durEl.textContent = data.duration ? data.duration + 'ms' : '—';
+    durEl.className = 'summary-duration';
+    if (data.duration && data.duration > 1000) durEl.classList.add('slow');
+  }
+
+  // Time
+  if (DOM.summaryTime) {
+    DOM.summaryTime.textContent = formatTimestamp(data.timestamp, cfg.timestampFormat, sessionStart, true);
+  }
+
+  // URL
+  if (DOM.summaryUrl) {
+    DOM.summaryUrl.textContent = data.url;
+    DOM.summaryUrl.title = data.url;
+  }
+
+  // ─── END SUMMARY CARD RENDERING ────────────────────────────────────────
 
   // Tab memory: keep current tab if it has data, otherwise fallback to defaultTab
   const availableTabs = getAvailableTabs(data);
@@ -86,7 +140,7 @@ export function selectRequest(data: ParsedRequest, row: HTMLElement): void {
     const defaultTab = cfg.defaultTab;
     setActiveTab(availableTabs.includes(defaultTab) ? defaultTab : 'decoded');
   }
-  
+
   updateTabStates(availableTabs);
   renderTab(getActiveTab(), data);
   autoExpandSections();

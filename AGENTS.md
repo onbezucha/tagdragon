@@ -4,7 +4,7 @@ Instructions for AI coding agents working in this repository.
 
 ## Project Overview
 
-**TagDragon v1.5.5** — Chrome DevTools extension (Manifest V3) for capturing and decoding marketing/analytics tracking requests. Built with TypeScript, Rollup (JS bundler) and Tailwind CSS.
+**TagDragon v1.5.6** — Chrome DevTools extension (Manifest V3) for capturing and decoding marketing/analytics tracking requests. Built with TypeScript, Rollup (JS bundler) and Tailwind CSS.
 
 ## Build Commands
 
@@ -189,6 +189,13 @@ Providers are defined as objects with `name`, `color`, `pattern` (RegExp), and `
 - `selectedId`, `isPaused`, `sources` (Set), `sourceLabels` (Map)
 - `dlFilterState` — text, source, eventName, hasKey, ecommerceOnly
 - `dlPending` batch queue + `requestAnimationFrame` batching
+- `watchedPaths` — pinned dot-notation paths for Live Inspector (max 10)
+- `validationErrors` / `validationRules` — rule-based push validation state
+- `correlationWindowMs` / `correlationLookbackMs` — configurable correlation time windows
+- `dlSortField` / `dlSortOrder` — sort state (persisted via AppConfig)
+- `dlGroupBySource` — group push list by source flag
+- `sharedCumulativeState` — single mutable cumulative state with `structuredClone` snapshots
+- `MAX_DL_PUSHES = 1000` — auto-prune threshold (prunes to 75%)
 
 ### Configuration (persisted settings)
 
@@ -207,6 +214,8 @@ const DEFAULT_CONFIG: AppConfig = {
   compactRows: false,          // Compact row display in request list
   timestampFormat: 'absolute', // 'absolute' | 'relative' | 'elapsed'
   exportFormat: 'json',        // 'json' | 'csv'
+  dlSortField: 'time',         // DataLayer sort field: 'time' | 'keycount' | 'source'
+  dlSortOrder: 'asc',          // DataLayer sort order: 'asc' | 'desc'
 };
 ```
 
@@ -246,6 +255,7 @@ Hidden providers are persisted in `AppConfig.hiddenProviders` (restored on load 
 - Template cloning for row rendering
 - Pre-computed search indexes (`_searchIndex`)
 - Lazy loading for heavy data (response bodies, headers)
+- Cached SVG icon fragments (`getCachedIcon()` in `src/panel/utils/provider-icon.ts`)
 
 ### Keyboard Shortcuts
 
@@ -284,11 +294,11 @@ Hidden providers are persisted in `AppConfig.hiddenProviders` (restored on load 
 | `src/panel/components/adobe-env-switcher.ts` | Adobe environment switcher UI |
 | `src/panel/components/consent-panel.ts` | Consent/cookie state inspector |
 | `src/panel/components/info-popover.ts` | About/Help popover |
-| `src/panel/tabs/decoded.ts` | Decoded tab — categorized parameter display |
-| `src/panel/tabs/query.ts` | Query tab — raw URL query params |
-| `src/panel/tabs/post.ts` | POST tab — POST body display |
-| `src/panel/tabs/headers.ts` | Headers tab — request/response headers |
-| `src/panel/tabs/response.ts` | Response tab — lazy-loaded response body |
+| `src/panel/detail-tabs/decoded.ts` | Decoded tab — categorized parameter display |
+| `src/panel/detail-tabs/query.ts` | Query tab — raw URL query params |
+| `src/panel/detail-tabs/post.ts` | POST tab — POST body display |
+| `src/panel/detail-tabs/headers.ts` | Headers tab — request/response headers |
+| `src/panel/detail-tabs/response.ts` | Response tab — lazy-loaded response body |
 | `src/panel/utils/dom.ts` | Cached DOM references (`DOM.*`) and query helpers |
 | `src/panel/utils/format.ts` | Value formatting helpers |
 | `src/panel/utils/filter.ts` | Filter logic — applies filterState to requests |
@@ -298,6 +308,7 @@ Hidden providers are persisted in `AppConfig.hiddenProviders` (restored on load 
 | `src/panel/utils/platform.ts` | Platform detection — `isMac` constant for Mac keyboard shortcuts |
 | `src/panel/utils/group-icons.ts` | Inline SVG icons for provider groups (analytics, tagmanager, marketing, etc.) |
 | `src/panel/utils/provider-icons.ts` | Brand SVG icons for individual providers (GA4, GTM, Meta Pixel, etc.) |
+| `src/panel/utils/provider-icon.ts` | Provider icon cache — `buildGroupIcon()` and `getCachedIcon()` for fast SVG rendering |
 | `src/panel/utils/tooltip.ts` | Shared tooltip system — event delegation, data-tooltip attributes |
 | `src/devtools/index.ts` | DevTools page — registers panel, sets up network capture |
 | `src/devtools/network-capture.ts` | HAR network request capture — provider matching, POST body parsing, request building |
@@ -331,9 +342,11 @@ Hidden providers are persisted in `AppConfig.hiddenProviders` (restored on load 
 | `src/shared/provider-groups.ts` | PROVIDER_GROUPS — grouping/categorization of providers in the popover |
 | `src/shared/categories.ts` | Per-provider parameter display categories |
 | `src/shared/cmp-detection.ts` | CMP detection scripts — OneTrust, UserCentrics, Cookiebot, CookieYes, Didomi, iubenda, TCF |
+| `src/types/index.ts` | Barrel re-export of all type modules |
 | `src/types/provider.ts` | Provider and ProviderRegistry type definitions |
 | `src/types/request.ts` | TypeScript types — ParsedRequest, TabName, etc. |
-| `src/types/datalayer.ts` | DataLayer types — DataLayerPush, DataLayerState, DiffEntry, message types |
+| `src/types/datalayer.ts` | DataLayer types — DataLayerPush, DataLayerState, DiffEntry, ValidationRule, ValidationResult, message types |
+| `src/types/har.ts` | HAR post data interface type |
 | `src/types/consent.ts` | Consent types — ConsentCategory, GoogleConsentMode, TCFData, CMPInfo, ConsentData |
 | `src/types/popup.ts` | Popup types — ProviderStats, TabPopupStats, PopupStatsResponse |
 | `src/types/categories.ts` | Category types — CategoryConfig, ProviderCategories |
@@ -344,20 +357,20 @@ Hidden providers are persisted in `AppConfig.hiddenProviders` (restored on load 
 | `src/shared/id-gen.ts` | Unique ID generation with timestamp + counter |
 | `src/content/data-layer-main.ts` | MAIN world script — intercepts data layer pushes from GTM, Tealium, Adobe, Segment, digitalData |
 | `src/content/data-layer-bridge.ts` | ISOLATED world bridge — relays postMessage to background service worker |
-| `src/panel/datalayer/state.ts` | DataLayer state — push array, filtered IDs, sources, filter state |
-| `src/panel/datalayer/push-list.ts` | DataLayer push list rendering |
-| `src/panel/datalayer/push-detail.ts` | DataLayer detail pane — 4 sub-tabs (push data, diff, current state, correlation) |
-| `src/panel/datalayer/diff-renderer.ts` | Deep diff algorithm and rendering for DataLayer push comparisons |
-| `src/panel/datalayer/ecommerce-formatter.ts` | E-commerce detection and product table rendering |
-| `src/panel/datalayer/correlation.ts` | Correlation engine — finds network requests correlated with DataLayer pushes |
-| `src/panel/datalayer/live-inspector.ts` | Reactive tree view of cumulative DataLayer state with change highlighting |
-| `src/panel/datalayer/reverse-correlation.ts` | Reverse correlation — finds DataLayer push that triggered a network request |
-| `src/panel/datalayer/validator.ts` | Rule-based validation engine for DataLayer pushes |
+| `src/panel/datalayer/state.ts` | DataLayer state — push array, filtered IDs, sources, filter state, validation, sort, correlation config, watch paths, shared cumulative state |
+| `src/panel/datalayer/components/push-list.ts` | DataLayer push list rendering — source colors, badges, event names, group by source |
+| `src/panel/datalayer/components/push-detail.ts` | DataLayer detail pane — 4 sub-tabs (push data, diff, current state, correlation) |
+| `src/panel/datalayer/components/live-inspector.ts` | Reactive tree view of cumulative DataLayer state with change highlighting and watch paths |
+| `src/panel/datalayer/utils/diff-renderer.ts` | Deep diff algorithm and rendering for DataLayer push comparisons |
+| `src/panel/datalayer/utils/ecommerce-formatter.ts` | E-commerce detection and product table rendering |
+| `src/panel/datalayer/utils/correlation.ts` | Correlation engine — finds network requests correlated with DataLayer pushes (configurable window) |
+| `src/panel/datalayer/utils/reverse-correlation.ts` | Reverse correlation — finds DataLayer push that triggered a network request |
+| `src/panel/datalayer/utils/validator.ts` | Rule-based validation engine for DataLayer pushes with preset and custom rules |
 | `public/panel.html` | Panel DOM + inline CSS |
 
 ## Chrome Extension Notes
 
-- Manifest V3 with permissions: `webRequest`, `storage`, `declarativeNetRequest`, `cookies`, `tabs`, `activeTab`, `scripting`
+- Manifest V3 with permissions: `webRequest`, `storage`, `declarativeNetRequest`, `cookies`, `tabs`, `scripting`
 - Content scripts: `dist/data-layer-bridge.js` injected on all URLs at `document_idle`
 - Web accessible resources: `dist/data-layer-main.js` (injected dynamically via `chrome.scripting.executeScript`)
 - Host permissions: `<all_urls>`
@@ -419,12 +432,15 @@ Content scripts are injected both via the manifest `content_scripts` entry (brid
 
 | File | Purpose |
 |------|---------|
-| `src/panel/datalayer/state.ts` | DataLayer push state — all pushes, filtered IDs, selected ID, sources, filter state |
-| `src/panel/datalayer/push-list.ts` | Push list rendering — source colors, badges, event names |
-| `src/panel/datalayer/push-detail.ts` | Detail pane with 4 sub-tabs: Push Data, Diff, Current State, Correlation |
-| `src/panel/datalayer/diff-renderer.ts` | Deep diff algorithm and visual rendering between consecutive pushes |
-| `src/panel/datalayer/ecommerce-formatter.ts` | E-commerce detection (purchase, checkout, impression, promo, refund) and product table rendering |
-| `src/panel/datalayer/correlation.ts` | Correlation engine — finds network requests within a time window of a DataLayer push |
+| `src/panel/datalayer/state.ts` | DataLayer push state — all pushes, filtered IDs, selected ID, sources, filter state, validation, sort, correlation config, watch paths |
+| `src/panel/datalayer/components/push-list.ts` | Push list rendering — source colors, badges, event names, group by source |
+| `src/panel/datalayer/components/push-detail.ts` | Detail pane with 4 sub-tabs: Push Data, Diff, Current State, Correlation |
+| `src/panel/datalayer/components/live-inspector.ts` | Reactive tree view of cumulative state with change highlighting and watch paths |
+| `src/panel/datalayer/utils/diff-renderer.ts` | Deep diff algorithm and visual rendering between consecutive pushes |
+| `src/panel/datalayer/utils/ecommerce-formatter.ts` | E-commerce detection (purchase, checkout, impression, promo, refund) and product table rendering |
+| `src/panel/datalayer/utils/correlation.ts` | Correlation engine — finds network requests within a configurable time window of a DataLayer push |
+| `src/panel/datalayer/utils/reverse-correlation.ts` | Reverse correlation — finds DataLayer push that triggered a network request |
+| `src/panel/datalayer/utils/validator.ts` | Rule-based validation engine — preset rules (required keys, key types, forbidden keys) and custom rules |
 
 ### DataLayer Filter State
 
@@ -443,7 +459,7 @@ interface DlFilterState {
 1. **Push Data** — raw data object of the selected push
 2. **Diff** — deep diff from previous push (added/removed/changed keys with dot-notation paths)
 3. **Current State** — cumulative merged state up to the selected push
-4. **Correlation** — network requests that occurred within 2s of the push, sorted by delay
+4. **Correlation** — network requests that occurred within the configurable correlation window of the push, sorted by delay
 
 ## Extension Popup
 

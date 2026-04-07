@@ -3,33 +3,33 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
 import type { ParsedRequest } from '@/types/request';
-import type { DataLayerPush, DataLayerSource, ValidationRule } from '@/types/datalayer';
+import type { DataLayerPush, DataLayerSource } from '@/types/datalayer';
 
 import * as state from './state';
 import * as dlState from './datalayer/state';
 import { DOM } from './utils/dom';
-import { getEventName, formatBytes } from './utils/format';
+import { getEventName, esc } from './utils/format';
 import { createRequestRow, navigateList, navigateToEdge, updateRowVisibility } from './components/request-list';
 import { selectRequest, initTabHandlers, closeDetailPane, clearTabCache } from './components/detail-pane';
 import { updateStatusBar, updateDlStatusBar, updateNetworkStatusBar, showPruneNotification, clearPruneTimer, resetStatusBar } from './components/status-bar';
-import { ensureProviderPill, initProviderBarHandlers, updateProviderCounts, updateFilterBarVisibility } from './components/provider-bar';
+import { ensureProviderPill, initProviderBarHandlers, initProviderBar, updateProviderCounts, updateFilterBarVisibility } from './components/provider-bar';
 import { initFilterPopoverHandlers, updateActiveFilters } from './components/filter-bar';
 import { initAdobeEnvSwitcher } from './components/adobe-env-switcher';
 import { initConsentPanel, clearAllCookies, clearConsentOverride } from './components/consent-panel';
 import { initInfoPopover, closeInfoPopover } from './components/info-popover';
 import { applyFilters, matchesFilter } from './utils/filter';
 import { downloadCsv, downloadJson } from './utils/export';
-import { createDlPushRow, getSourceColor, setActiveDlRow, updateDlStatusText, dlMatchesFilter, exportDlJson, exportDlCsv, updateDlRowValidation } from './datalayer/push-list';
-import { selectDlPush, closeDlDetail, initDlDetailTabHandlers } from './datalayer/push-detail';
-import { queueHighlights, checkWatchPaths, clearLiveState } from './datalayer/live-inspector';
-import { validatePush, loadValidationRules, saveValidationRules } from './datalayer/validator';
-import { getValidationErrors, setValidationErrors, clearValidationErrors, getValidationRules, setValidationRules, isValidationLoaded, setValidationLoaded } from './datalayer/state';
+import { createDlPushRow, getSourceColor, setActiveDlRow, updateDlStatusText, dlMatchesFilter, exportDlJson, exportDlCsv, updateDlRowValidation, getSortedDlPushIds, renderGroupedPushList } from './datalayer/components/push-list';
+import { selectDlPush, closeDlDetail, initDlDetailTabHandlers } from './datalayer/components/push-detail';
+import { queueHighlights, checkWatchPaths, clearLiveState } from './datalayer/components/live-inspector';
+import { validatePush, loadValidationRules, saveValidationRules } from './datalayer/utils/validator';
+import { getValidationErrors, setValidationErrors, clearValidationErrors, getValidationRules, setValidationRules, isValidationLoaded, setValidationLoaded, getDlSortField, setDlSortField, getDlSortOrder, toggleDlSortOrder, getDlGroupBySource, setDlGroupBySource, initDlSortState } from './datalayer/state';
 import { initTheme } from './theme';
 import { savePanelSetting, loadPanelSetting } from './utils/persistence';
 import { isMac } from './utils/platform';
 import { init as initTooltip } from './utils/tooltip';
 import { SOURCE_DESCRIPTIONS } from '@/shared/datalayer-constants';
-import { createIcons, Cable, Database, ChevronDown, Eraser, Cookie, Sun, Moon, Trash2, Settings, CircleHelp, Search, X, ArrowUpDown, WrapText, Maximize2, AlignJustify, Filter, Download, Pause, Play } from 'lucide';
+import { createIcons, Cable, Database, ChevronDown, Eraser, Cookie, Sun, Moon, Trash2, Settings, CircleHelp, Search, X, ArrowUpDown, WrapText, Maximize2, AlignJustify, Filter, Download, Pause, Play, SlidersHorizontal, ShoppingCart, CheckCircle } from 'lucide';
 
 // ─── LOCAL HELPERS ───────────────────────────────────────────────────────────
 
@@ -256,13 +256,64 @@ function switchView(view: 'network' | 'datalayer'): void {
     updateDlStatusBar();
   }
 
-  // Update clear button tooltip
-  const $clearBtn = document.getElementById('btn-clear-all');
-  if ($clearBtn) {
-    $clearBtn.dataset.tooltip = view === 'network'
-      ? 'Clear all requests (Ctrl+L)'
-      : 'Clear all DataLayer pushes (Ctrl+L)';
+  // Update status hint
+  const $hint = document.querySelector('.status-hint') as HTMLElement | null;
+  if ($hint) {
+    if (view === 'datalayer') {
+      $hint.innerHTML = 'Ctrl+L clear · Ctrl+F filter · ↑↓ navigate · Esc close';
+    } else {
+      $hint.textContent = 'Ctrl+L to clear';
+    }
   }
+
+  // Close DL popovers when switching views
+  const $dlFilterPopover = document.getElementById('dl-filter-popover');
+  if ($dlFilterPopover) $dlFilterPopover.classList.remove('visible');
+  const $dlSubmenu = document.getElementById('dl-filter-submenu-dl');
+  if ($dlSubmenu) $dlSubmenu.classList.remove('visible');
+  const $dlValPopover = document.getElementById('dl-validation-popover');
+  if ($dlValPopover) $dlValPopover.classList.remove('visible');
+}
+
+// ─── NETWORK CLEAR ───────────────────────────────────────────────────────────
+
+/**
+ * Clear Network request data only.
+ * Preserves filters, hidden providers, settings, and configuration.
+ */
+function clearNetworkData(): void {
+  state.clearRequests();
+  state.clearPendingRequests();
+  state.setSelectedId(null);
+  state.resetStats();
+
+  const rafId = state.getRafId();
+  if (rafId) {
+    cancelAnimationFrame(rafId);
+    state.setRafId(null);
+  }
+
+  // Clear DOM
+  const list = DOM.list;
+  const empty = DOM.empty;
+  if (list) {
+    list.innerHTML = '';
+    if (empty) list.appendChild(empty);
+  }
+  if (empty) empty.style.display = '';
+
+  const detail = DOM.detail;
+  if (detail) detail.classList.add('hidden');
+
+  // Reset tab badge
+  const $networkBadge = DOM.tabBadgeNetwork;
+  if ($networkBadge) $networkBadge.textContent = '0';
+
+  // Cleanup
+  clearPruneTimer();
+  clearTabCache();
+  if (window._clearHeavyData) window._clearHeavyData();
+  resetStatusBar();
 }
 
 // ─── DATALAYER CLEAR ──────────────────────────────────────────────────────────
@@ -270,6 +321,7 @@ function switchView(view: 'network' | 'datalayer'): void {
 function dlClearAll(): void {
   dlState.clearDlPushes();
   dlState.clearDlFilteredIds();
+  dlState.clearDlPendingPushes();
 
   const $list = DOM.dlPushList;
   if ($list) $list.innerHTML = '';
@@ -285,6 +337,10 @@ function dlClearAll(): void {
 
   const $count = document.getElementById('dl-push-count');
   if ($count) $count.textContent = '0 pushes';
+
+  // Reset filter bar
+  const $dlFilterBar = DOM.dlFilterBar;
+  if ($dlFilterBar) $dlFilterBar.classList.remove('visible');
 }
 
 // ─── DATALAYER FILTER ─────────────────────────────────────────────────────────
@@ -313,6 +369,99 @@ function dlApplyFilter(): void {
   }
 
   updateDlStatusText(dlState.getDlVisibleCount(), dlState.getDlTotalCount());
+}
+
+// ─── DATALAYER FILTER CHIPS ─────────────────────────────────────────────────
+
+function createDlFilterChip(
+  label: string,
+  value: string,
+  onRemove: () => void,
+): HTMLElement {
+  const chip = document.createElement('span');
+  chip.className = 'filter-chip';
+  chip.innerHTML = `
+    <span class="chip-label">${label}:</span>
+    <span class="chip-value">${esc(value)}</span>
+  `;
+
+  const removeBtn = document.createElement('button');
+  removeBtn.className = 'chip-remove';
+  removeBtn.textContent = '×';
+  removeBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    onRemove();
+  });
+  chip.appendChild(removeBtn);
+
+  return chip;
+}
+
+function updateDlFilterChips(): void {
+  const $bar = document.getElementById('dl-filter-bar');
+  if (!$bar) return;
+  $bar.innerHTML = '';
+
+  const chips: HTMLElement[] = [];
+
+  const text = dlState.getDlFilterText();
+  if (text) {
+    const chip = createDlFilterChip('Search', text, () => {
+      dlState.setDlFilterText('');
+      const $input = DOM.dlFilterInput;
+      if ($input) $input.value = '';
+      const $clearBtn = document.getElementById('dl-clear-filter');
+      if ($clearBtn) $clearBtn.style.display = 'none';
+      dlApplyFilter();
+      updateDlFilterChips();
+    });
+    chips.push(chip);
+  }
+
+  const source = dlState.getDlFilterSource();
+  if (source) {
+    const label = SOURCE_DESCRIPTIONS[source as keyof typeof SOURCE_DESCRIPTIONS] ?? source;
+    const chip = createDlFilterChip('Source', label, () => {
+      dlState.setDlFilterSource('');
+      dlApplyFilter();
+      updateDlFilterChips();
+    });
+    chips.push(chip);
+  }
+
+  const eventName = dlState.getDlFilterEventName();
+  if (eventName) {
+    const chip = createDlFilterChip('Event', eventName, () => {
+      dlState.setDlFilterEventName('');
+      dlApplyFilter();
+      updateDlFilterChips();
+    });
+    chips.push(chip);
+  }
+
+  const hasKey = dlState.getDlFilterHasKey();
+  if (hasKey) {
+    const chip = createDlFilterChip('Key', hasKey, () => {
+      dlState.setDlHasKey('');
+      dlApplyFilter();
+      updateDlFilterChips();
+    });
+    chips.push(chip);
+  }
+
+  if (dlState.getDlEcommerceOnly()) {
+    const chip = createDlFilterChip('E-commerce', 'only', () => {
+      dlState.setDlEcommerceOnly(false);
+      const $btn = document.getElementById('dl-btn-ecommerce');
+      if ($btn) $btn.classList.remove('active');
+      dlApplyFilter();
+      updateDlFilterChips();
+    });
+    chips.push(chip);
+  }
+
+  chips.forEach(c => $bar.appendChild(c));
+  $bar.classList.toggle('visible', chips.length > 0);
 }
 
 // ─── DATALAYER BATCHED RENDERING ─────────────────────────────────────────
@@ -364,7 +513,12 @@ function flushPendingDlPushes(): void {
         console.warn('[TagDragon] Failed to create push row:', e);
       }
     }
-    $list.appendChild(fragment);
+    // Respect sort order: prepend if desc, append if asc
+    if (getDlSortOrder() === 'desc' && getDlSortField() === 'time') {
+      $list.insertBefore(fragment, $list.firstChild);
+    } else {
+      $list.appendChild(fragment);
+    }
   }
 
   dlState.clearDlPendingPushes();
@@ -381,20 +535,8 @@ function flushPendingDlPushes(): void {
     $count.textContent = `${n} push${n !== 1 ? 'es' : ''}`;
   }
 
-  // 5. Validation error count badge (single computation)
-  const $rulesCount = document.getElementById('dl-rules-count');
-  if ($rulesCount) {
-    const totalErrors = dlState.getAllDlPushes().reduce(
-      (sum, p) => sum + dlState.getValidationErrors(p.id).length, 0,
-    );
-    if (totalErrors > 0) {
-      $rulesCount.style.display = '';
-      $rulesCount.textContent = String(totalErrors);
-      $rulesCount.style.color = 'var(--red)';
-    } else {
-      $rulesCount.style.display = 'none';
-    }
-  }
+  // 5. Update filter chips
+  updateDlFilterChips();
 }
 
 // ─── DATALAYER RECEIVERS ──────────────────────────────────────────────────────
@@ -441,6 +583,21 @@ window.receiveDataLayerSources = function (sources: DataLayerSource[], labels: R
     pill.style.setProperty('--pill-color', getSourceColor(s));
     $status.appendChild(pill);
   });
+
+  // Update source detection status in empty state
+  const $detection = document.getElementById('dl-source-detection');
+  if ($detection) {
+    const allSources: DataLayerSource[] = ['gtm', 'tealium', 'adobe', 'segment', 'digitalData'];
+    $detection.innerHTML = '';
+    for (const source of allSources) {
+      const detected = sources.includes(source);
+      const statusPill = document.createElement('span');
+      statusPill.className = `dl-source-status-pill ${detected ? 'detected' : 'not-detected'}`;
+      const label = SOURCE_DESCRIPTIONS[source as keyof typeof SOURCE_DESCRIPTIONS] ?? source.toUpperCase();
+      statusPill.textContent = `${detected ? '✓ ' : '○ '}${label}`;
+      $detection.appendChild(statusPill);
+    }
+  }
 };
 
 window.clearDataLayer = function (): void {
@@ -656,64 +813,22 @@ function initToolbarHandlers(): void {
   const btnSettings = document.getElementById('btn-settings');
   const btnResetFilters = document.getElementById('btn-reset-filters');
 
-  // Clear button — clears active view (network or datalayer)
+  // Clear button — clears ALL data (both network and datalayer)
   btnClearAll?.addEventListener('click', () => {
-    if (activeView === 'network') {
-      state.clearRequests();
-      state.resetFilters();
-      state.resetProviders();
-      state.resetStats();
-      state.clearPendingRequests();
+    clearNetworkData();
+    dlClearAll();
+  });
 
-      const rafId = state.getRafId();
-      if (rafId) {
-        cancelAnimationFrame(rafId);
-        state.setRafId(null);
-      }
+  // Per-tab clear — Network
+  const btnClearNetwork = document.getElementById('btn-clear-network');
+  btnClearNetwork?.addEventListener('click', () => {
+    clearNetworkData();
+  });
 
-      if (DOM.filterInput) DOM.filterInput.value = '';
-
-      const clearFilter = DOM.clearFilter;
-      if (clearFilter) clearFilter.style.display = 'none';
-
-      const list = DOM.list;
-      if (list) {
-        list.innerHTML = '';
-        const empty = DOM.empty;
-        if (empty) list.appendChild(empty);
-      }
-
-      const empty = DOM.empty;
-      if (empty) empty.style.display = '';
-
-      const detail = DOM.detail;
-      if (detail) detail.classList.add('hidden');
-
-      const groupList = DOM.providerGroupList;
-      if (groupList) groupList.innerHTML = '';
-
-      const searchInput = DOM.providerSearchInput;
-      if (searchInput) searchInput.value = '';
-
-      const filters = DOM.activeFilters;
-      if (filters) filters.innerHTML = '';
-
-      clearPruneTimer();
-      clearTabCache();
-
-      if (window._clearHeavyData) window._clearHeavyData();
-
-      DOM.providerPopover?.classList.remove('visible');
-      DOM.btnProviders?.classList.remove('active');
-
-      const filterBar = DOM.filterBar;
-      if (filterBar) filterBar.classList.remove('visible');
-
-      resetStatusBar();
-      updateFilterBarVisibility();
-    } else {
-      dlClearAll();
-    }
+  // Per-tab clear — DataLayer
+  const btnDlClear = document.getElementById('dl-btn-clear');
+  btnDlClear?.addEventListener('click', () => {
+    dlClearAll();
   });
 
   // Pause button
@@ -1077,6 +1192,53 @@ function initRequestListHandler(): void {
   });
 }
 
+// ─── DATALAYER FULL LIST RENDER ─────────────────────────────────────────────
+
+function renderDlPushListFull(): void {
+  const $list = DOM.dlPushList;
+  const $empty = DOM.dlEmptyState;
+  if (!$list) return;
+
+  $list.innerHTML = '';
+
+  if (dlState.getDlTotalCount() === 0) {
+    if ($empty) $empty.style.display = '';
+    return;
+  }
+
+  if ($empty) $empty.style.display = 'none';
+
+  const onSelect = (p: DataLayerPush, r: HTMLElement) => {
+    dlState.setDlSelectedId(p.id);
+    setActiveDlRow(r);
+    selectDlPush(p, r, gotoNetworkRequest);
+  };
+
+  if (getDlGroupBySource()) {
+    renderGroupedPushList($list, dlState.getDlFilteredIds(), onSelect);
+  } else {
+    const sortedIds = getSortedDlPushIds();
+    const filteredIds = dlState.getDlFilteredIds();
+    const fragment = document.createDocumentFragment();
+
+    for (const id of sortedIds) {
+      const push = dlState.getDlPushById(id);
+      if (!push) continue;
+      const isVisible = filteredIds.has(id);
+      try {
+        const row = createDlPushRow(push, isVisible, onSelect);
+        fragment.appendChild(row);
+      } catch (e) {
+        console.warn('[TagDragon] Failed to create push row:', e);
+      }
+    }
+
+    $list.appendChild(fragment);
+  }
+
+  updateDlStatusText(dlState.getDlVisibleCount(), dlState.getDlTotalCount());
+}
+
 // ─── DATALAYER HANDLERS ───────────────────────────────────────────────────────
 
 async function initDatalayerHandlers(): Promise<void> {
@@ -1103,54 +1265,9 @@ async function initDatalayerHandlers(): Promise<void> {
     $dlPause.dataset.tooltip = isPaused ? 'Resume DataLayer capture' : 'Pause DataLayer capture';
   });
 
-  // DL active filter pills
+  // DL active filter pills — delegates to shared function
   function updateDlActiveFilters(): void {
-    const $bar = document.getElementById('dl-filter-bar');
-    if (!$bar) return;
-    $bar.innerHTML = '';
-
-    const pills: { label: string; onRemove: () => void }[] = [];
-
-    const text = dlState.getDlFilterText();
-    const $dlInput = DOM.dlFilterInput;
-    const $dlClearBtn = document.getElementById('dl-clear-filter');
-
-    if (text) {
-      pills.push({
-        label: `"${text}"`,
-        onRemove: () => {
-          dlState.setDlFilterText('');
-          if ($dlInput) $dlInput.value = '';
-          if ($dlClearBtn) $dlClearBtn.style.display = 'none';
-          dlApplyFilter();
-          updateDlActiveFilters();
-        },
-      });
-    }
-
-    const src = dlState.getDlFilterSource();
-    if (src) {
-      pills.push({
-        label: `Source: ${SOURCE_DESCRIPTIONS[src as keyof typeof SOURCE_DESCRIPTIONS] ?? src}`,
-        onRemove: () => {
-          dlState.setDlFilterSource('');
-          const $sel = document.getElementById('dl-filter-source');
-          if ($sel) $sel.value = '';
-          dlApplyFilter();
-          updateDlActiveFilters();
-        },
-      });
-    }
-
-    pills.forEach((p) => {
-      const el = document.createElement('span');
-      el.className = 'filter-pill filter-pill--search';
-      el.innerHTML = `<span class="filter-pill-label" style="font-size:11px">${p.label}</span><span class="filter-pill-remove" style="margin-left:4px;cursor:pointer;opacity:0.6">&times;</span>`;
-      el.querySelector('.filter-pill-remove')?.addEventListener('click', p.onRemove);
-      $bar.appendChild(el);
-    });
-
-    $bar.classList.toggle('visible', pills.length > 0);
+    updateDlFilterChips();
   }
 
   // DL filter input
@@ -1180,14 +1297,6 @@ async function initDatalayerHandlers(): Promise<void> {
     updateDlActiveFilters();
   });
 
-  // DL source filter select
-  const $dlSourceSelect = document.getElementById('dl-filter-source') as HTMLSelectElement | null;
-  $dlSourceSelect?.addEventListener('change', () => {
-    dlState.setDlFilterSource($dlSourceSelect.value);
-    dlApplyFilter();
-    updateDlActiveFilters();
-  });
-
   // DL Export button — respects AppConfig.exportFormat (json or csv), exports only visible pushes
   document.getElementById('dl-btn-export')?.addEventListener('click', () => {
     const filteredIds = dlState.getDlFilteredIds();
@@ -1200,6 +1309,543 @@ async function initDatalayerHandlers(): Promise<void> {
   // DL Re-inject button (shown in empty state)
   document.getElementById('dl-btn-reinject')?.addEventListener('click', () => {
     window['triggerReinject']?.();
+  });
+
+  // DL E-commerce filter toggle
+  const $dlEcBtn = document.getElementById('dl-btn-ecommerce');
+  $dlEcBtn?.addEventListener('click', () => {
+    const newVal = !dlState.getDlEcommerceOnly();
+    dlState.setDlEcommerceOnly(newVal);
+    $dlEcBtn.classList.toggle('active', newVal);
+    dlApplyFilter();
+    updateDlFilterChips();
+  });
+
+  // DL Sort toggle
+  const $dlSortBtn = document.getElementById('dl-btn-sort');
+  $dlSortBtn?.addEventListener('click', () => {
+    const newOrder = toggleDlSortOrder();
+    $dlSortBtn.classList.toggle('active', newOrder === 'desc');
+    // Re-render list with new sort order
+    renderDlPushListFull();
+  });
+
+  // DL Filter popover
+  const $dlFilterBtn = document.getElementById('dl-btn-filter');
+  const $dlFilterPopover = document.getElementById('dl-filter-popover');
+  const $dlSubmenu = document.getElementById('dl-filter-submenu-dl');
+
+  $dlFilterBtn?.addEventListener('click', (e: Event) => {
+    e.stopPropagation();
+    closeDlFilterPopover();
+    closeDlValidationPopover();
+    if ($dlFilterPopover) {
+      const isVisible = $dlFilterPopover.classList.contains('visible');
+      $dlFilterPopover.classList.toggle('visible', !isVisible);
+      if (!isVisible) {
+        positionDlFilterPopover();
+      }
+    }
+  });
+
+  function closeDlFilterPopover(): void {
+    if ($dlFilterPopover) $dlFilterPopover.classList.remove('visible');
+    if ($dlSubmenu) $dlSubmenu.classList.remove('visible');
+  }
+
+  function positionDlFilterPopover(): void {
+    if (!$dlFilterBtn || !$dlFilterPopover) return;
+    const rect = $dlFilterBtn.getBoundingClientRect();
+    $dlFilterPopover.style.top = `${rect.bottom + 4}px`;
+    $dlFilterPopover.style.left = `${Math.min(rect.left, window.innerWidth - 260)}px`;
+  }
+
+  // DL Filter popover item clicks
+  $dlFilterPopover?.addEventListener('click', (e: Event) => {
+    const target = (e.target as HTMLElement).closest('.filter-popover-item') as HTMLElement | null;
+    if (!target) return;
+
+    const action = target.dataset['action'];
+    const submenu = target.dataset['submenu'];
+
+    if (action === 'open-dl-submenu' && submenu) {
+      openDlSubmenu(submenu, target);
+    } else if (action === 'toggle-dl-ecommerce') {
+      const newVal = !dlState.getDlEcommerceOnly();
+      dlState.setDlEcommerceOnly(newVal);
+      target.classList.toggle('active-filter', newVal);
+      const $ecBtn = document.getElementById('dl-btn-ecommerce');
+      if ($ecBtn) $ecBtn.classList.toggle('active', newVal);
+      dlApplyFilter();
+      updateDlFilterChips();
+    }
+  });
+
+  function openDlSubmenu(type: string, anchor: HTMLElement): void {
+    if (!$dlSubmenu) return;
+    const $content = document.getElementById('dl-filter-submenu-content');
+    if (!$content) return;
+
+    // Position submenu
+    const rect = anchor.getBoundingClientRect();
+    $dlSubmenu.style.top = `${rect.top}px`;
+    $dlSubmenu.style.left = `${rect.right + 4}px`;
+    $dlSubmenu.classList.add('visible');
+
+    switch (type) {
+      case 'dl-source': renderDlSourceSubmenu($content); break;
+      case 'dl-event': renderDlEventSubmenu($content); break;
+      case 'dl-haskey': renderDlHasKeySubmenu($content); break;
+      case 'dl-sort': renderDlSortSubmenu($content); break;
+    }
+  }
+
+  // === SOURCE SUBMENU ===
+  function renderDlSourceSubmenu($content: HTMLElement): void {
+    const sources: DataLayerSource[] = ['gtm', 'tealium', 'adobe', 'segment', 'digitalData'];
+    const currentSource = dlState.getDlFilterSource();
+
+    let html = `
+      <div class="filter-submenu-item ${currentSource === '' ? 'selected' : ''}" data-source="">
+        <span class="item-label">All sources</span>
+        <span class="item-count">${dlState.getAllDlPushes().length}</span>
+      </div>
+    `;
+
+    for (const src of sources) {
+      const count = dlState.getAllDlPushes().filter(p => p.source === src).length;
+      const label = SOURCE_DESCRIPTIONS[src as keyof typeof SOURCE_DESCRIPTIONS] ?? src;
+      const color = getSourceColor(src);
+      html += `
+        <div class="filter-submenu-item ${currentSource === src ? 'selected' : ''}" data-source="${src}">
+          <span class="item-label" style="color:${color}">${esc(label)}</span>
+          <span class="item-count">${count}</span>
+        </div>
+      `;
+    }
+
+    $content.innerHTML = html;
+
+    $content.querySelectorAll('.filter-submenu-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const src = (item as HTMLElement).dataset['source'] as DataLayerSource | '';
+        dlState.setDlFilterSource(src);
+        dlApplyFilter();
+        updateDlFilterChips();
+        closeDlFilterPopover();
+      });
+    });
+  }
+
+  // === EVENT NAME SUBMENU ===
+  function renderDlEventSubmenu($content: HTMLElement): void {
+    const pushes = dlState.getAllDlPushes();
+    const eventCounts = new Map<string, number>();
+    for (const p of pushes) {
+      if (p._eventName) {
+        eventCounts.set(p._eventName, (eventCounts.get(p._eventName) ?? 0) + 1);
+      }
+    }
+
+    const currentEvent = dlState.getDlFilterEventName();
+
+    let html = `
+      <div class="filter-submenu-search">
+        <input type="text" id="dl-event-search" placeholder="Search events...">
+      </div>
+      <div class="filter-submenu-item ${currentEvent === '' ? 'selected' : ''}" data-event="">
+        <span class="item-label">All events</span>
+        <span class="item-count">${pushes.length}</span>
+      </div>
+      <div class="filter-submenu-divider"></div>
+    `;
+
+    const sorted = [...eventCounts.entries()].sort((a, b) => b[1] - a[1]);
+    for (const [name, count] of sorted) {
+      html += `
+        <div class="filter-submenu-item ${currentEvent === name ? 'selected' : ''}" data-event="${esc(name)}">
+          <span class="item-label">${esc(name)}</span>
+          <span class="item-count">${count}</span>
+        </div>
+      `;
+    }
+
+    $content.innerHTML = html;
+
+    const $search = document.getElementById('dl-event-search') as HTMLInputElement | null;
+    $search?.addEventListener('input', () => {
+      const query = $search.value.toLowerCase();
+      $content.querySelectorAll('.filter-submenu-item[data-event]').forEach(item => {
+        const event = (item as HTMLElement).dataset['event'] ?? '';
+        item.style.display = event === '' || event.toLowerCase().includes(query) ? '' : 'none';
+      });
+    });
+
+    $content.querySelectorAll('.filter-submenu-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const event = (item as HTMLElement).dataset['event'] ?? '';
+        dlState.setDlFilterEventName(event);
+        dlApplyFilter();
+        updateDlFilterChips();
+        closeDlFilterPopover();
+      });
+    });
+  }
+
+  // === HAS KEY SUBMENU ===
+  function renderDlHasKeySubmenu($content: HTMLElement): void {
+    const keyCounts = new Map<string, number>();
+    for (const p of dlState.getAllDlPushes()) {
+      for (const key of Object.keys(p.data)) {
+        keyCounts.set(key, (keyCounts.get(key) ?? 0) + 1);
+      }
+    }
+
+    const sorted = [...keyCounts.entries()]
+      .filter(([k]) => !k.includes('.'))
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 50);
+
+    const currentKey = dlState.getDlFilterHasKey();
+
+    const quickpicks = ['ecommerce', 'page_location', 'page_title', 'user_id', 'transaction_id', 'items', 'currency', 'value'];
+    const availableQuickpicks = quickpicks.filter(q => keyCounts.has(q));
+
+    let html = `
+      <div class="filter-submenu-input-row">
+        <input type="text" id="dl-haskey-input" placeholder="Enter key name..." value="${esc(currentKey)}">
+        <button id="dl-haskey-apply">Filter</button>
+      </div>
+    `;
+
+    if (availableQuickpicks.length > 0) {
+      html += '<div class="filter-submenu-quickpicks">';
+      for (const qp of availableQuickpicks) {
+        html += `<span class="filter-submenu-quickpick" data-key="${esc(qp)}">${esc(qp)}</span>`;
+      }
+      html += '</div>';
+    }
+
+    html += '<div class="filter-submenu-divider"></div>';
+
+    for (const [key, count] of sorted) {
+      html += `
+        <div class="filter-submenu-item ${currentKey === key ? 'selected' : ''}" data-key="${esc(key)}">
+          <span class="item-label">${esc(key)}</span>
+          <span class="item-count">${count}</span>
+        </div>
+      `;
+    }
+
+    $content.innerHTML = html;
+
+    document.getElementById('dl-haskey-apply')?.addEventListener('click', () => {
+      const val = (document.getElementById('dl-haskey-input') as HTMLInputElement)?.value.trim();
+      dlState.setDlHasKey(val);
+      dlApplyFilter();
+      updateDlFilterChips();
+      closeDlFilterPopover();
+    });
+
+    (document.getElementById('dl-haskey-input') as HTMLInputElement)?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        document.getElementById('dl-haskey-apply')?.click();
+      }
+    });
+
+    $content.querySelectorAll('.filter-submenu-quickpick').forEach(qp => {
+      qp.addEventListener('click', () => {
+        const key = (qp as HTMLElement).dataset['key'] ?? '';
+        dlState.setDlHasKey(key);
+        dlApplyFilter();
+        updateDlFilterChips();
+        closeDlFilterPopover();
+      });
+    });
+
+    $content.querySelectorAll('.filter-submenu-item[data-key]').forEach(item => {
+      item.addEventListener('click', () => {
+        const key = (item as HTMLElement).dataset['key'] ?? '';
+        dlState.setDlHasKey(key);
+        dlApplyFilter();
+        updateDlFilterChips();
+        closeDlFilterPopover();
+      });
+    });
+  }
+
+  // === SORT SUBMENU ===
+  function renderDlSortSubmenu($content: HTMLElement): void {
+    const currentField = getDlSortField();
+    const currentOrder = getDlSortOrder();
+
+    type DlSortField = 'time' | 'keycount' | 'source';
+    const options: { field: DlSortField; label: string; icon: string }[] = [
+      { field: 'time', label: 'Time', icon: '🕐' },
+      { field: 'keycount', label: 'Key count', icon: '🔢' },
+      { field: 'source', label: 'Source', icon: '🏷️' },
+    ];
+
+    let html = '';
+    for (const opt of options) {
+      const isSelected = currentField === opt.field;
+      html += `
+        <div class="filter-submenu-item ${isSelected ? 'selected' : ''}" data-sort="${opt.field}">
+          <span class="item-label">${opt.icon} ${opt.label}</span>
+          ${isSelected ? `<span style="font-size:10px;color:var(--accent)">${currentOrder === 'asc' ? '↑ asc' : '↓ desc'}</span>` : ''}
+        </div>
+      `;
+    }
+
+    html += '<div class="filter-submenu-divider"></div>';
+    html += `
+      <div class="filter-submenu-item" data-action="toggle-sort-order" style="justify-content:center;">
+        <span class="item-label" style="color:var(--accent)">
+          ${currentOrder === 'asc' ? '↑ Switch to newest first' : '↓ Switch to oldest first'}
+        </span>
+      </div>
+    `;
+
+    html += '<div class="filter-submenu-divider"></div>';
+    html += `
+      <div class="filter-submenu-item ${getDlGroupBySource() ? 'selected' : ''}" data-action="toggle-group-by-source">
+        <span class="item-label">🏷️ Group by source</span>
+      </div>
+    `;
+
+    $content.innerHTML = html;
+
+    $content.querySelectorAll('.filter-submenu-item[data-sort]').forEach(item => {
+      item.addEventListener('click', () => {
+        const field = (item as HTMLElement).dataset['sort'] as DlSortField;
+        setDlSortField(field);
+        renderDlPushListFull();
+        closeDlFilterPopover();
+      });
+    });
+
+    $content.querySelector('[data-action="toggle-sort-order"]')?.addEventListener('click', () => {
+      toggleDlSortOrder();
+      renderDlPushListFull();
+      closeDlFilterPopover();
+    });
+
+    $content.querySelector('[data-action="toggle-group-by-source"]')?.addEventListener('click', () => {
+      setDlGroupBySource(!getDlGroupBySource());
+      renderDlPushListFull();
+      closeDlFilterPopover();
+    });
+  }
+
+  // DL Validation popover
+  const $dlValBtn = document.getElementById('dl-btn-validation');
+  const $dlValPopover = document.getElementById('dl-validation-popover');
+
+  function closeDlValidationPopover(): void {
+    if ($dlValPopover) $dlValPopover.classList.remove('visible');
+  }
+
+  $dlValBtn?.addEventListener('click', (e: Event) => {
+    e.stopPropagation();
+    closeDlFilterPopover();
+    closeDlValidationPopover();
+    if ($dlValPopover) {
+      const isVisible = $dlValPopover.classList.contains('visible');
+      $dlValPopover.classList.toggle('visible', !isVisible);
+      if (!isVisible) {
+        renderDlValidationRules();
+        updateDlValidationSummary();
+      }
+    }
+  });
+
+  function renderDlValidationRules(): void {
+    const $list = document.getElementById('dl-val-rules-list');
+    if (!$list) return;
+
+    const rules = dlState.getValidationRules();
+    $list.innerHTML = '';
+
+    for (const rule of rules) {
+      const row = document.createElement('div');
+      row.className = 'dl-val-rule';
+
+      const toggle = document.createElement('button');
+      toggle.className = `dl-val-rule-toggle ${rule.enabled ? 'enabled' : ''}`;
+      toggle.addEventListener('click', () => {
+        rule.enabled = !rule.enabled;
+        toggle.classList.toggle('enabled', rule.enabled);
+        saveValidationRules(dlState.getValidationRules());
+        revalidateAllDlPushes();
+      });
+
+      const name = document.createElement('span');
+      name.className = 'dl-val-rule-name';
+      name.textContent = rule.name;
+
+      const scope = document.createElement('span');
+      scope.className = 'dl-val-rule-scope';
+      const scopeParts: string[] = [];
+      if (rule.scope.eventName) {
+        const events = Array.isArray(rule.scope.eventName) ? rule.scope.eventName : rule.scope.eventName;
+        scopeParts.push(String(events));
+      }
+      if (rule.scope.ecommerceType) scopeParts.push(rule.scope.ecommerceType);
+      if (rule.scope.source) scopeParts.push(rule.scope.source);
+      scope.textContent = scopeParts.length > 0 ? scopeParts.join(' · ') : 'all';
+
+      row.appendChild(toggle);
+      row.appendChild(name);
+      row.appendChild(scope);
+      $list.appendChild(row);
+    }
+  }
+
+  function renderDlCustomRules(): void {
+    const $list = document.getElementById('dl-val-custom-rules');
+    if (!$list) return;
+
+    const rules = dlState.getValidationRules().filter(r => r.id.startsWith('custom-'));
+    $list.innerHTML = '';
+
+    for (const rule of rules) {
+      const row = document.createElement('div');
+      row.className = 'dl-val-rule';
+
+      const toggle = document.createElement('button');
+      toggle.className = `dl-val-rule-toggle ${rule.enabled ? 'enabled' : ''}`;
+      toggle.addEventListener('click', () => {
+        rule.enabled = !rule.enabled;
+        toggle.classList.toggle('enabled', rule.enabled);
+        saveValidationRules(dlState.getValidationRules());
+        revalidateAllDlPushes();
+      });
+
+      const name = document.createElement('span');
+      name.className = 'dl-val-rule-name';
+      name.textContent = rule.name;
+
+      const deleteBtn = document.createElement('button');
+      deleteBtn.textContent = '×';
+      deleteBtn.style.cssText = 'background:none;border:none;color:var(--red);cursor:pointer;font-size:14px;padding:0 4px;';
+      deleteBtn.addEventListener('click', () => {
+        const updated = dlState.getValidationRules().filter(r => r.id !== rule.id);
+        dlState.setValidationRules(updated);
+        saveValidationRules(updated);
+        renderDlCustomRules();
+        revalidateAllDlPushes();
+        updateDlValidationSummary();
+      });
+
+      row.appendChild(toggle);
+      row.appendChild(name);
+      row.appendChild(deleteBtn);
+      $list.appendChild(row);
+    }
+  }
+
+  function updateDlValidationSummary(): void {
+    const $count = document.getElementById('dl-val-error-count');
+    if (!$count) return;
+
+    const pushes = dlState.getAllDlPushes();
+    let affectedCount = 0;
+    for (const p of pushes) {
+      if (dlState.getValidationErrors(p.id).length > 0) affectedCount++;
+    }
+    $count.textContent = String(affectedCount);
+
+    const $btn = document.getElementById('dl-btn-validation');
+    if ($btn) {
+      $btn.classList.toggle('active', affectedCount > 0);
+    }
+
+    // Also render custom rules
+    renderDlCustomRules();
+  }
+
+  function revalidateAllDlPushes(): void {
+    const rules = dlState.getValidationRules().filter(r => r.enabled);
+    const pushes = dlState.getAllDlPushes();
+
+    dlState.clearValidationErrors();
+
+    for (const push of pushes) {
+      const errors = validatePush(push, rules);
+      if (errors.length > 0) {
+        dlState.setValidationErrors(push.id, errors);
+      }
+    }
+
+    updateDlRowValidation();
+    updateDlValidationSummary();
+  }
+
+  // Add custom rule handler
+  document.getElementById('dl-val-add-rule')?.addEventListener('click', () => {
+    const $container = document.getElementById('dl-val-custom-rules');
+    if (!$container) return;
+    if ($container.querySelector('.dl-val-add-form')) return;
+
+    const form = document.createElement('div');
+    form.className = 'dl-val-add-form';
+    form.style.cssText = 'padding:8px 0;';
+    form.innerHTML = `
+      <div style="margin-bottom:6px;">
+        <input type="text" id="dl-val-new-name" placeholder="Rule name" class="dl-val-add-form">
+      </div>
+      <div style="display:flex;gap:4px;margin-bottom:6px;">
+        <select id="dl-val-new-type" class="dl-val-add-form">
+          <option value="required_key">Required key</option>
+          <option value="forbidden_key">Forbidden key</option>
+        </select>
+      </div>
+      <div style="margin-bottom:6px;">
+        <input type="text" id="dl-val-new-key" placeholder="Key path (e.g. ecommerce.transaction_id)" class="dl-val-add-form">
+      </div>
+      <div style="display:flex;gap:4px;">
+        <input type="text" id="dl-val-new-event" placeholder="Event name (optional)" class="dl-val-add-form">
+        <button id="dl-val-save-new" style="
+          padding:4px 12px;background:var(--accent);color:#fff;border:none;
+          border-radius:4px;font-size:11px;font-weight:600;cursor:pointer;
+        ">Add</button>
+        <button id="dl-val-cancel-new" style="
+          padding:4px 8px;background:var(--bg-2);color:var(--text-1);border:1px solid var(--border);
+          border-radius:4px;font-size:11px;cursor:pointer;
+        ">Cancel</button>
+      </div>
+    `;
+
+    $container.appendChild(form);
+    (document.getElementById('dl-val-new-name') as HTMLInputElement)?.focus();
+
+    document.getElementById('dl-val-cancel-new')?.addEventListener('click', () => form.remove());
+    document.getElementById('dl-val-save-new')?.addEventListener('click', () => {
+      const name = (document.getElementById('dl-val-new-name') as HTMLInputElement)?.value.trim();
+      const type = (document.getElementById('dl-val-new-type') as HTMLSelectElement)?.value;
+      const key = (document.getElementById('dl-val-new-key') as HTMLInputElement)?.value.trim();
+      const event = (document.getElementById('dl-val-new-event') as HTMLInputElement)?.value.trim();
+
+      if (!name || !key) return;
+
+      const newRule = {
+        id: `custom-${Date.now()}`,
+        name,
+        enabled: true,
+        scope: event ? { eventName: event } : {},
+        checks: [{
+          type,
+          key,
+          message: `${type === 'required_key' ? 'Missing' : 'Forbidden'} ${key}`,
+        }],
+      };
+
+      const rules = [...dlState.getValidationRules(), newRule];
+      dlState.setValidationRules(rules);
+      saveValidationRules(rules);
+      revalidateAllDlPushes();
+      form.remove();
+    });
   });
 
   // DL Detail close button
@@ -1255,7 +1901,14 @@ async function init(): Promise<void> {
       Cable, Database, ChevronDown, Eraser, Cookie, Sun, Moon,
       Trash2, Settings, CircleHelp, Search, X, ArrowUpDown,
       WrapText, Maximize2, AlignJustify, Filter, Download, Pause, Play,
+      SlidersHorizontal, ShoppingCart, CheckCircle,
     },
+  });
+
+  // Remove data-lucide attributes from processed SVGs to prevent re-processing
+  // by subsequent createIcons() calls (e.g., in info-popover.ts renderToolbarIcons)
+  document.querySelectorAll('svg[data-lucide]').forEach(svg => {
+    svg.removeAttribute('data-lucide');
   });
 
   // Remove inline width/height attributes from Lucide SVGs so CSS controls sizing
@@ -1272,9 +1925,17 @@ async function init(): Promise<void> {
   await state.loadConfig();
   await initTheme();
 
+  // Initialize DataLayer sort state from persisted config
+  initDlSortState();
+
+  // Sync DataLayer sort button visual state
+  const $dlSortBtn = document.getElementById('dl-btn-sort');
+  $dlSortBtn?.classList.toggle('active', getDlSortOrder() === 'desc');
+
   // Initialize all handlers
   initTabHandlers();
   initProviderBarHandlers(doApplyFilters, doUpdateActiveFilters);
+  initProviderBar();
   initFilterPopoverHandlers(doApplyFilters, doUpdateActiveFilters);
   initToolbarHandlers();
   initKeyboardHandlers();
@@ -1297,6 +1958,28 @@ async function init(): Promise<void> {
   // Initialize Info Popover
   initInfoPopover();
 
+  // Close DL popovers on outside click
+  document.addEventListener('click', (e: Event) => {
+    const $dlFilterPopover = document.getElementById('dl-filter-popover');
+    const $dlSubmenu = document.getElementById('dl-filter-submenu-dl');
+    const $dlValPopover = document.getElementById('dl-validation-popover');
+    const $dlFilterBtn = document.getElementById('dl-btn-filter');
+    const $dlValBtn = document.getElementById('dl-btn-validation');
+
+    if ($dlFilterPopover?.classList.contains('visible') &&
+        !$dlFilterPopover.contains(e.target as Node) &&
+        !$dlFilterBtn?.contains(e.target as Node)) {
+      $dlFilterPopover.classList.remove('visible');
+      $dlSubmenu?.classList.remove('visible');
+    }
+
+    if ($dlValPopover?.classList.contains('visible') &&
+        !$dlValPopover.contains(e.target as Node) &&
+        !$dlValBtn?.contains(e.target as Node)) {
+      $dlValPopover.classList.remove('visible');
+    }
+  });
+
   // Initialize DataLayer handlers
   await initDatalayerHandlers();
 
@@ -1312,99 +1995,6 @@ async function init(): Promise<void> {
     setValidationLoaded(true);
     updateDlRowValidation();
   }).catch(() => { /* ignore */ });
-
-  // Validation rules panel
-  const $rulesBtn = document.getElementById('dl-btn-rules');
-  const $rulesPanel = document.getElementById('dl-rules-panel');
-  const $rulesPanelClose = document.getElementById('dl-rules-panel-close');
-  const $rulesPanelBody = document.getElementById('dl-rules-panel-body');
-
-  if ($rulesBtn && $rulesPanel && $rulesPanelClose && $rulesPanelBody) {
-    $rulesBtn.addEventListener('click', () => {
-      $rulesPanel.classList.toggle('hidden');
-      if (!$rulesPanel.classList.contains('hidden')) {
-        renderRulesPanel($rulesPanelBody);
-      }
-    });
-
-    $rulesPanelClose.addEventListener('click', () => {
-      $rulesPanel.classList.add('hidden');
-    });
-  }
-
-  function renderRulesPanel(container: HTMLElement): void {
-    container.innerHTML = '';
-    const rules = dlState.getValidationRules();
-    const presetRules = rules.filter(r => r.id.startsWith('preset-'));
-    const customRules = rules.filter(r => r.id.startsWith('custom-'));
-
-    if (presetRules.length > 0) {
-      const label = document.createElement('div');
-      label.className = 'dl-rules-group-label';
-      label.textContent = 'Preset Rules';
-      container.appendChild(label);
-
-      for (const rule of presetRules) {
-        container.appendChild(createRuleItem(rule));
-      }
-    }
-
-    if (customRules.length > 0) {
-      const label = document.createElement('div');
-      label.className = 'dl-rules-group-label';
-      label.textContent = 'Custom Rules';
-      container.appendChild(label);
-
-      for (const rule of customRules) {
-        container.appendChild(createRuleItem(rule));
-      }
-    }
-
-    if (rules.length === 0) {
-      const empty = document.createElement('div');
-      empty.style.cssText = 'font-size:11px;color:var(--text-2);padding:8px;';
-      empty.textContent = 'No validation rules configured';
-      container.appendChild(empty);
-    }
-  }
-
-  function createRuleItem(rule: ValidationRule): HTMLElement {
-    const item = document.createElement('div');
-    item.className = `dl-rule-item${rule.enabled ? '' : ' disabled'}`;
-
-    const toggle = document.createElement('div');
-    toggle.className = `dl-rule-toggle${rule.enabled ? ' checked' : ''}`;
-    toggle.addEventListener('click', () => {
-      rule.enabled = !rule.enabled;
-      toggle.classList.toggle('checked');
-      item.classList.toggle('disabled');
-      void saveValidationRules(dlState.getValidationRules());
-    });
-
-    const info = document.createElement('div');
-    info.className = 'dl-rule-info';
-
-    const name = document.createElement('div');
-    name.className = 'dl-rule-name';
-    name.textContent = rule.name;
-    info.appendChild(name);
-
-    const scope = document.createElement('div');
-    scope.className = 'dl-rule-scope';
-    const parts: string[] = [];
-    if (rule.scope.eventName) {
-      const events = Array.isArray(rule.scope.eventName) ? rule.scope.eventName : [rule.scope.eventName];
-      parts.push(`event: ${events.join(', ')}`);
-    }
-    if (rule.scope.source) parts.push(`source: ${rule.scope.source}`);
-    if (rule.scope.ecommerceType) parts.push(`ecom: ${rule.scope.ecommerceType}`);
-    scope.textContent = parts.length > 0 ? parts.join(' · ') : 'all pushes';
-    info.appendChild(scope);
-
-    item.appendChild(toggle);
-    item.appendChild(info);
-    return item;
-  }
 }
 
 // Start initialization

@@ -2,18 +2,19 @@
 // Renders the list of DataLayer pushes. Parallels request-list.ts.
 
 import type { DataLayerPush, DataLayerSource } from '@/types/datalayer';
-import { DOM } from '../utils/dom';
-import { formatTimestamp } from '../utils/format';
-import { getConfig } from '../state';
-import { downloadCsv, downloadJson } from '../utils/export';
+import { DOM } from '../../utils/dom';
+import { formatTimestamp } from '../../utils/format';
+import { getConfig } from '../../state';
+import { downloadCsv, downloadJson } from '../../utils/export';
 import { SOURCE_LABELS } from '@/shared/datalayer-constants';
 import {
   getAllDlPushes,
   getDlFilteredIds,
   getDlSelectedId,
-  setDlSelectedId,
   getValidationErrors,
-} from './state';
+  getDlSortField,
+  getDlSortOrder,
+} from '../state';
 
 export type DlSelectCallback = (push: DataLayerPush, row: HTMLElement) => void;
 
@@ -111,7 +112,8 @@ export function createDlPushRow(
   if (valErrors.length > 0) {
     const dot = document.createElement('span');
     dot.className = 'dl-validation-dot has-errors';
-    dot.title = valErrors.map(e => e.ruleName).join('\n');
+    const lines = valErrors.map(e => `• ${e.ruleName}: ${e.checkMessage}`);
+    dot.title = `${valErrors.length} validation error(s):\n${lines.join('\n')}`;
     const badge = document.createElement('span');
     badge.className = 'dl-validation-badge';
     badge.textContent = String(valErrors.length);
@@ -274,6 +276,46 @@ export function exportDlCsv(pushes: DataLayerPush[]): void {
 
 // ─── FILTER ──────────────────────────────────────────────────────────────────
 
+interface DlTextFilterParsed {
+  positiveTerms: { text: string; scope: 'all' | 'event' | 'key' | 'value' }[];
+  negativeTerms: string[];
+}
+
+function parseDlTextFilter(text: string): DlTextFilterParsed {
+  const filter: DlTextFilterParsed = {
+    positiveTerms: [],
+    negativeTerms: [],
+  };
+
+  const parts = text.split(/\s+/).filter(Boolean);
+  for (const part of parts) {
+    if (part.startsWith('-')) {
+      filter.negativeTerms.push(part.slice(1).toLowerCase());
+    } else if (part.startsWith('event:')) {
+      filter.positiveTerms.push({ text: part.slice(6).toLowerCase(), scope: 'event' });
+    } else if (part.startsWith('key:')) {
+      filter.positiveTerms.push({ text: part.slice(4).toLowerCase(), scope: 'key' });
+    } else if (part.startsWith('val:')) {
+      filter.positiveTerms.push({ text: part.slice(4).toLowerCase(), scope: 'value' });
+    } else {
+      filter.positiveTerms.push({ text: part.toLowerCase(), scope: 'all' });
+    }
+  }
+
+  return filter;
+}
+
+function getDlSearchIndex(push: DataLayerPush): string {
+  if (!push._searchIndex) {
+    const parts: string[] = [push.source, push._eventName ?? '', push.pushIndex.toString()];
+    for (const [k, v] of Object.entries(push.data)) {
+      parts.push(k, String(v));
+    }
+    (push as { _searchIndex?: string })._searchIndex = parts.join(' ').toLowerCase();
+  }
+  return push._searchIndex ?? '';
+}
+
 /**
  * Check if a push matches the current filter state.
  */
@@ -291,19 +333,126 @@ export function dlMatchesFilter(
   if (hasKey && !(hasKey in push.data)) return false;
 
   if (text) {
-    const lower = text.toLowerCase();
-    // Build search index lazily
-    if (!push._searchIndex) {
-      const parts: string[] = [push.source, push._eventName ?? '', push.pushIndex.toString()];
-      for (const [k, v] of Object.entries(push.data)) {
-        parts.push(k, String(v));
-      }
-      (push as { _searchIndex?: string })._searchIndex = parts.join(' ').toLowerCase();
+    const parsed = parseDlTextFilter(text);
+
+    // Negative terms
+    for (const neg of parsed.negativeTerms) {
+      const idx = getDlSearchIndex(push);
+      if (idx.includes(neg)) return false;
     }
-    if (!push._searchIndex?.includes(lower)) return false;
+
+    // Positive terms
+    for (const term of parsed.positiveTerms) {
+      let matches = false;
+
+      switch (term.scope) {
+        case 'event':
+          matches = (push._eventName ?? '').toLowerCase().includes(term.text);
+          break;
+        case 'key':
+          matches = Object.keys(push.data).some(k => k.toLowerCase().includes(term.text));
+          break;
+        case 'value':
+          matches = Object.values(push.data).some(v =>
+            String(v).toLowerCase().includes(term.text)
+          );
+          break;
+        case 'all':
+        default:
+          matches = getDlSearchIndex(push).includes(term.text);
+          break;
+      }
+
+      if (!matches) return false;
+    }
   }
 
   return true;
+}
+
+/**
+ * Get sorted push IDs for rendering.
+ * Default is array order (time asc). Sort modifies display order.
+ */
+export function getSortedDlPushIds(): number[] {
+  const all = getAllDlPushes();
+  const field = getDlSortField();
+  const order = getDlSortOrder();
+
+  if (field === 'time') {
+    return order === 'asc'
+      ? all.map(p => p.id)
+      : [...all].reverse().map(p => p.id);
+  }
+
+  if (field === 'keycount') {
+    return [...all]
+      .sort((a, b) => {
+        const diff = Object.keys(b.data).length - Object.keys(a.data).length;
+        return order === 'desc' ? diff : -diff;
+      })
+      .map(p => p.id);
+  }
+
+  if (field === 'source') {
+    return [...all]
+      .sort((a, b) => {
+        const diff = a.source.localeCompare(b.source);
+        return order === 'asc' ? diff : -diff;
+      })
+      .map(p => p.id);
+  }
+
+  return all.map(p => p.id);
+}
+
+/**
+ * Render push list grouped by source.
+ */
+export function renderGroupedPushList(
+  $list: HTMLElement,
+  filteredIds: Set<number>,
+  onSelect: DlSelectCallback,
+): void {
+  const all = getAllDlPushes();
+  const groups = new Map<DataLayerSource, DataLayerPush[]>();
+
+  for (const p of all) {
+    if (!groups.has(p.source)) groups.set(p.source, []);
+    groups.get(p.source)!.push(p);
+  }
+
+  const sortedGroups = [...groups.entries()]
+    .sort((a, b) => b[1].length - a[1].length);
+
+  for (const [source, pushes] of sortedGroups) {
+    const color = getSourceColor(source);
+    const label = getSourceBadge(source);
+
+    const header = document.createElement('div');
+    header.className = 'dl-group-header';
+    header.style.borderLeftColor = color;
+    header.innerHTML = `
+      <span style="color:${color};font-weight:600;font-size:11px;">${label}</span>
+      <span style="font-size:10px;color:var(--text-2);font-family:var(--font-mono);">${pushes.length} pushes</span>
+      <span class="dl-group-chevron">▼</span>
+    `;
+    const groupBody = document.createElement('div');
+    groupBody.className = 'dl-group-body';
+    header.addEventListener('click', () => {
+      header.classList.toggle('collapsed');
+      groupBody.classList.toggle('collapsed');
+    });
+    $list.appendChild(header);
+
+    for (const push of pushes) {
+      const isVisible = filteredIds.has(push.id);
+      const row = createDlPushRow(push, isVisible, onSelect);
+      groupBody.appendChild(row);
+    }
+
+    $list.appendChild(groupBody);
+  }
 }
 
 /**
@@ -320,7 +469,8 @@ export function updateDlRowValidation(): void {
     if (errors.length > 0 && !existing) {
       const dot = document.createElement('span');
       dot.className = 'dl-validation-dot has-errors';
-      dot.title = errors.map(e => e.ruleName).join('\n');
+      const lines = errors.map(e => `• ${e.ruleName}: ${e.checkMessage}`);
+      dot.title = `${errors.length} validation error(s):\n${lines.join('\n')}`;
       const badge = document.createElement('span');
       badge.className = 'dl-validation-badge';
       badge.textContent = String(errors.length);
@@ -329,5 +479,4 @@ export function updateDlRowValidation(): void {
     }
   });
 }
-
 

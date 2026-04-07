@@ -1,7 +1,7 @@
 {
   "name": "tagdragon",
   "type": "module",
-  "version": "1.5.5",
+  "version": "1.5.6",
   "description": "Chrome DevTools extension that captures and decodes network requests from marketing/analytics tracking services",
   "main": "dist/panel.js",
   "scripts": {

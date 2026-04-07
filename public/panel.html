@@ -117,6 +117,7 @@
     #btn-export svg.lucide, #dl-btn-export svg.lucide { width: 12px; height: 12px; }
     #btn-clear-filter svg.lucide { width: 12px; height: 12px; }
     #dl-clear-filter svg.lucide { width: 10px; height: 10px; }
+    #btn-clear-network svg.lucide, #dl-btn-clear svg.lucide { width: 14px; height: 14px; }
 
     /* Theme toggle button */
     #btn-theme-toggle {
@@ -696,7 +697,7 @@
 
     .provider-bar-btn:hover { color: var(--text-0); background: var(--bg-3); border-color: var(--border); }
 
-    #provider-group-list { overflow-y: auto; max-height: 300px; }
+    #provider-group-list { overflow-y: auto; max-height: 420px; }
 
     .pgroup.search-empty { display: none; }
 
@@ -758,6 +759,239 @@
     }
 
     .ppill.search-hidden { display: none; }
+
+    /* Pill redesign — brand icon + color accent */
+    .ppill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 8px 3px 6px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 500;
+      cursor: pointer;
+      user-select: none;
+      background: var(--bg-2);
+      border: 1px solid var(--border-subtle);
+      border-left: 2px solid var(--pill-color, var(--border-subtle));
+      transition: all 150ms var(--ease);
+      position: relative;
+    }
+
+    .ppill:hover {
+      background: var(--bg-3);
+      border-color: var(--border);
+      border-left-color: var(--pill-color, var(--accent));
+    }
+
+    .ppill.active {
+      background: var(--bg-2);
+      border-color: var(--border-subtle);
+      border-left-color: var(--pill-color, var(--accent));
+      color: var(--text-0);
+    }
+
+    .ppill.inactive {
+      opacity: 1;
+      background: var(--bg-2);
+      border-color: var(--border-subtle);
+      border-left-color: var(--border-subtle);
+      color: var(--text-3);
+    }
+
+    .ppill.inactive .ppill-name {
+      text-decoration: line-through;
+      text-decoration-color: var(--text-3);
+    }
+
+    /* Pill brand icon */
+    .ppill-icon {
+      display: flex;
+      align-items: center;
+      flex-shrink: 0;
+      width: 14px;
+      height: 14px;
+      transition: filter 150ms var(--ease), opacity 150ms var(--ease);
+    }
+
+    .ppill-icon svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    /* Active pill — full color icon */
+    .ppill.active .ppill-icon {
+      opacity: 1;
+    }
+
+    /* Inactive pill — grayscale + dimmed icon */
+    .ppill.inactive .ppill-icon {
+      filter: grayscale(1);
+      opacity: 0.4;
+    }
+
+    /* icon-hidden class — toggle target */
+    .ppill .ppill-icon.icon-hidden {
+      filter: grayscale(1);
+      opacity: 0.4;
+    }
+
+    /* Pill toggle animation */
+    @keyframes pillToggle {
+      0% { transform: scale(1); }
+      50% { transform: scale(0.92); }
+      100% { transform: scale(1); }
+    }
+
+    .ppill.toggling {
+      animation: pillToggle 200ms var(--ease);
+    }
+
+    /* Group header icon */
+    .pgroup-icon {
+      display: flex;
+      align-items: center;
+      flex-shrink: 0;
+      width: 12px;
+      height: 12px;
+      color: var(--text-2);
+      margin-left: 2px;
+    }
+
+    .pgroup-icon svg {
+      width: 12px;
+      height: 12px;
+    }
+
+    /* Group tri-state indicator */
+    .pgroup-state {
+      width: 14px;
+      height: 14px;
+      border-radius: 3px;
+      border: 1.5px solid var(--text-3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: all 150ms var(--ease);
+      font-size: 9px;
+      color: var(--accent);
+      background: var(--bg-2);
+    }
+
+    .pgroup-state.all {
+      background: var(--accent-muted);
+      border-color: var(--accent);
+    }
+
+    .pgroup-state.none {
+      background: transparent;
+      border-color: var(--text-3);
+      color: transparent;
+    }
+
+    .pgroup-state.partial {
+      background: var(--accent-muted);
+      border-color: var(--accent);
+    }
+
+    /* Hidden count badge on toolbar button */
+    .provider-hidden-badge {
+      position: absolute;
+      top: -4px;
+      right: -6px;
+      min-width: 14px;
+      height: 14px;
+      padding: 0 3px;
+      border-radius: 7px;
+      background: var(--accent);
+      color: #fff;
+      font-size: 9px;
+      font-weight: 600;
+      font-family: var(--font-mono);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+      opacity: 0;
+      transform: scale(0.8);
+      transition: all 150ms var(--ease);
+      pointer-events: none;
+    }
+
+    .provider-hidden-badge.visible {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    /* Provider popover footer */
+    .provider-popover-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 10px;
+      border-top: 1px solid var(--border-subtle);
+      font-size: 11px;
+      color: var(--text-2);
+      background: var(--bg-2);
+      border-radius: 0 0 4px 4px;
+    }
+
+    .provider-popover-footer-count {
+      font-family: var(--font-mono);
+      color: var(--text-1);
+    }
+
+    .provider-popover-footer-btn {
+      font-size: 11px;
+      color: var(--accent);
+      cursor: pointer;
+      background: none;
+      border: none;
+      padding: 2px 6px;
+      border-radius: 3px;
+      transition: background 100ms;
+    }
+
+    .provider-popover-footer-btn:hover {
+      background: var(--accent-muted);
+    }
+
+    /* Context menu for "Show only" action */
+    .ppill-context-menu {
+      position: fixed;
+      z-index: 10001;
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+      padding: 2px 0;
+      min-width: 160px;
+    }
+
+    .ppill-context-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 10px;
+      font-size: 11px;
+      color: var(--text-1);
+      cursor: pointer;
+      transition: background 100ms;
+    }
+
+    .ppill-context-item:hover {
+      background: var(--bg-hover);
+      color: var(--text-0);
+    }
+
+    .ppill-context-item.danger {
+      color: var(--red);
+    }
+
+    .ppill-context-item.danger:hover {
+      background: rgba(239, 83, 80, 0.08);
+    }
 
     /* === FILTER BAR === */
     #filter-bar {
@@ -1273,6 +1507,509 @@
     .dl-diff-removed .dl-diff-badge { background: rgba(245, 101, 101, 0.2); color: #f56565; }
     .dl-diff-empty, .dl-diff-more { font-size: 12px; color: var(--text-2); padding: 8px 0; }
 
+    /* === DL DIFF LEGEND === */
+    .dl-diff-legend {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 6px 8px;
+      margin-bottom: 8px;
+      background: var(--bg-1);
+      border-radius: 4px;
+      font-size: 10px;
+      color: var(--text-2);
+      flex-wrap: wrap;
+    }
+
+    .dl-diff-legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .dl-diff-legend-swatch {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+    }
+
+    .dl-diff-legend-added .dl-diff-legend-swatch {
+      background: rgba(72, 187, 120, 0.4);
+      border: 1px solid rgba(72, 187, 120, 0.6);
+    }
+
+    .dl-diff-legend-removed .dl-diff-legend-swatch {
+      background: rgba(245, 101, 101, 0.4);
+      border: 1px solid rgba(245, 101, 101, 0.6);
+    }
+
+    .dl-diff-legend-changed .dl-diff-legend-swatch {
+      background: rgba(236, 201, 75, 0.4);
+      border: 1px solid rgba(236, 201, 75, 0.6);
+    }
+
+    .dl-diff-legend-note {
+      margin-left: auto;
+      font-style: italic;
+    }
+
+    /* === DL TAB DESCRIPTION === */
+    .dl-tab-description {
+      padding: 6px 12px;
+      font-size: 11px;
+      color: var(--text-2);
+      border-bottom: 1px solid var(--border-subtle, var(--border));
+      background: var(--bg-0);
+      flex-shrink: 0;
+      line-height: 1.4;
+    }
+
+    /* === DL FEATURE CARDS === */
+    .dl-feature-card {
+      padding: 8px;
+      background: var(--bg-1);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      text-align: center;
+    }
+
+    .dl-source-status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      padding: 2px 6px;
+      border-radius: 8px;
+      font-size: 10px;
+      font-weight: 600;
+    }
+
+    .dl-source-status-pill.detected {
+      background: rgba(72, 187, 120, 0.12);
+      color: var(--green, #48bb78);
+    }
+
+    .dl-source-status-pill.not-detected {
+      background: var(--bg-2);
+      color: var(--text-3);
+    }
+
+    /* === DL LIVE INSPECTOR === */
+    .dl-live-container {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+
+    .dl-live-header {
+      font-size: 12px;
+      color: var(--text-2);
+      padding: 6px 0;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 8px;
+    }
+
+    .dl-live-empty {
+      font-size: 12px;
+      color: var(--text-2);
+      padding: 12px 0;
+      text-align: center;
+    }
+
+    /* === DL WATCH BAR === */
+    .dl-watch-bar {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 0;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+
+    .dl-watch-bar-label {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      color: var(--text-2);
+    }
+
+    .dl-watch-empty {
+      font-size: 11px;
+      color: var(--text-3);
+      font-style: italic;
+    }
+
+    .dl-watch-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-size: 10px;
+      font-family: var(--font-mono);
+      color: var(--accent);
+    }
+
+    .dl-watch-remove {
+      cursor: pointer;
+      opacity: 0.6;
+      font-size: 12px;
+      line-height: 1;
+    }
+
+    .dl-watch-remove:hover {
+      opacity: 1;
+    }
+
+    /* === DL TREE VIEW === */
+    .dl-tree {
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .dl-tree-node {
+      user-select: none;
+    }
+
+    .dl-tree-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 4px;
+      padding: 2px 4px;
+      font-size: 12px;
+      border-radius: 3px;
+      cursor: default;
+    }
+
+    .dl-tree-row:hover {
+      background: var(--bg-1);
+    }
+
+    .dl-tree-toggle {
+      width: 16px;
+      height: 16px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 9px;
+      color: var(--text-2);
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: transform 100ms;
+    }
+
+    .dl-tree-toggle.expanded {
+      transform: rotate(90deg);
+    }
+
+    .dl-tree-toggle-placeholder {
+      width: 16px;
+      flex-shrink: 0;
+    }
+
+    .dl-tree-key {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-1);
+      white-space: nowrap;
+    }
+
+    .dl-tree-key-watch {
+      cursor: context-menu;
+    }
+
+    .dl-tree-separator {
+      color: var(--text-3);
+      flex-shrink: 0;
+    }
+
+    .dl-tree-value {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-0);
+      word-break: break-all;
+    }
+
+    .dl-tree-value-bracket {
+      color: var(--text-2);
+    }
+
+    .dl-tree-children {
+      display: none;
+    }
+
+    .dl-tree-node.expanded > .dl-tree-children {
+      display: block;
+    }
+
+    .dl-tree-key-added {
+      color: var(--green, #48bb78);
+      animation: dl-tree-flash 1.5s ease;
+    }
+
+    .dl-tree-key-removed {
+      color: var(--red, #f56565);
+      animation: dl-tree-flash 1.5s ease;
+    }
+
+    .dl-tree-key-changed {
+      color: var(--yellow, #ecc94b);
+      animation: dl-tree-flash 1.5s ease;
+    }
+
+    @keyframes dl-tree-flash {
+      0% { background: transparent; }
+      20% { background: rgba(234, 179, 8, 0.15); }
+      100% { background: transparent; }
+    }
+
+    /* === DL WATCH TOASTS === */
+    #dl-watch-toast-area {
+      max-height: 100px;
+      overflow-y: auto;
+    }
+
+    .dl-watch-toast {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 8px;
+      margin-bottom: 2px;
+      background: var(--bg-2);
+      border-radius: 4px;
+      font-size: 11px;
+      border-left: 3px solid var(--accent);
+      animation: dl-toast-in 200ms ease;
+    }
+
+    @keyframes dl-toast-in {
+      from { opacity: 0; transform: translateY(-4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .dl-toast-path {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--accent);
+    }
+
+    .dl-toast-arrow {
+      color: var(--text-3);
+    }
+
+    .dl-toast-value {
+      font-family: var(--font-mono);
+      font-size: 10px;
+    }
+
+    /* === DL GROUPED VIEW === */
+    .dl-group-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      background: var(--bg-1);
+      border-bottom: 1px solid var(--border);
+      border-left: 3px solid var(--border);
+      cursor: pointer;
+      user-select: none;
+      font-size: 12px;
+    }
+
+    .dl-group-header:hover {
+      background: var(--bg-2);
+    }
+
+    .dl-group-header.collapsed {
+      border-bottom-color: transparent;
+    }
+
+    .dl-group-chevron {
+      margin-left: auto;
+      font-size: 8px;
+      color: var(--text-2);
+      transition: transform 150ms;
+    }
+
+    .dl-group-header.collapsed .dl-group-chevron {
+      transform: rotate(-90deg);
+    }
+
+    .dl-group-body.collapsed {
+      display: none;
+    }
+
+    /* === DATALAYER FILTER POPOVER === */
+    #dl-filter-popover {
+      position: fixed;
+      background-color: var(--bg-1);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 2px 8px rgba(0, 0, 0, 0.2);
+      z-index: 1000;
+      min-width: 200px;
+      max-width: 260px;
+      padding: 4px 0;
+      display: none;
+    }
+
+    #dl-filter-popover.visible {
+      display: block;
+    }
+
+    #dl-filter-popover .filter-popover-item.active-filter {
+      background: var(--accent-muted);
+    }
+
+    #dl-filter-popover .filter-popover-item.active-filter .filter-popover-label {
+      color: var(--accent);
+    }
+
+    #dl-filter-submenu-dl {
+      position: fixed;
+      background-color: var(--bg-1);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 2px 8px rgba(0, 0, 0, 0.2);
+      z-index: 1001;
+      min-width: 200px;
+      max-width: 280px;
+      max-height: 350px;
+      overflow-y: auto;
+      padding: 4px 0;
+      display: none;
+    }
+
+    #dl-filter-submenu-dl.visible {
+      display: block;
+    }
+
+    /* === DL VALIDATION POPOVER === */
+    #dl-validation-popover {
+      position: fixed;
+      top: 66px;
+      right: 8px;
+      background-color: var(--bg-1);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      z-index: 1000;
+      min-width: 300px;
+      max-width: 380px;
+      max-height: 400px;
+      overflow-y: auto;
+      padding: 8px 0;
+      display: none;
+    }
+
+    #dl-validation-popover.visible {
+      display: block;
+    }
+
+    .dl-val-section {
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .dl-val-section:last-child {
+      border-bottom: none;
+    }
+
+    .dl-val-section-title {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      color: var(--text-2);
+      margin-bottom: 6px;
+    }
+
+    .dl-val-rule {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 0;
+      font-size: 12px;
+      color: var(--text-0);
+    }
+
+    .dl-val-rule-toggle {
+      width: 32px;
+      height: 18px;
+      border-radius: 9px;
+      background: var(--bg-3);
+      border: none;
+      cursor: pointer;
+      position: relative;
+      transition: background 150ms;
+      flex-shrink: 0;
+    }
+
+    .dl-val-rule-toggle.enabled {
+      background: var(--accent);
+    }
+
+    .dl-val-rule-toggle::after {
+      content: '';
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: white;
+      top: 2px;
+      left: 2px;
+      transition: transform 150ms;
+    }
+
+    .dl-val-rule-toggle.enabled::after {
+      transform: translateX(14px);
+    }
+
+    .dl-val-rule-name {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .dl-val-rule-scope {
+      font-size: 10px;
+      color: var(--text-2);
+      font-family: var(--font-mono);
+    }
+
+    .dl-val-summary {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      font-size: 11px;
+      color: var(--text-2);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .dl-val-summary-count {
+      font-weight: 600;
+      font-family: var(--font-mono);
+      color: var(--red, #f56565);
+    }
+
+    .dl-val-add-form input,
+    .dl-val-add-form select {
+      width: 100%;
+      padding: 4px 8px;
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--text-0);
+      font-size: 11px;
+      font-family: inherit;
+      outline: none;
+    }
+
     /* === ECOMMERCE TABLE === */
     .dl-ecommerce-products {
       overflow-x: auto;
@@ -1488,6 +2225,60 @@
       display: flex;
     }
 
+    /* === DL FILTER CHIPS === */
+    #dl-filter-bar .filter-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 4px 2px 8px;
+      background: var(--accent-muted);
+      border: 1px solid var(--accent-glow);
+      border-radius: 10px;
+      font-size: 10px;
+      color: var(--accent);
+      white-space: nowrap;
+    }
+
+    #dl-filter-bar .filter-chip .chip-label {
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    #dl-filter-bar .filter-chip .chip-value {
+      font-family: var(--font-mono);
+      max-width: 120px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    #dl-filter-bar .filter-chip .chip-remove {
+      padding: 0 2px;
+      font-size: 12px;
+      line-height: 1;
+      background: none;
+      border: none;
+      color: var(--accent);
+      cursor: pointer;
+      opacity: 0.6;
+    }
+
+    #dl-filter-bar .filter-chip .chip-remove:hover {
+      opacity: 1;
+    }
+
+    /* === DL FILTER EVENT SELECT === */
+    #dl-filter-event {
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      background: var(--bg-2);
+      color: var(--text-0);
+      font-size: 11px;
+      padding: 2px 4px;
+      cursor: pointer;
+      max-width: 130px;
+    }
+
     #dl-filter-input {
       flex: 1;
       border: none;
@@ -1661,36 +2452,56 @@
       display: none;
     }
 
-    #detail-header {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px;
+    /* === SUMMARY CARD === */
+    #detail-summary {
       background-color: var(--bg-1);
       border-bottom: 1px solid var(--border);
-      min-height: 36px;
-    }
-
-    #detail-provider-badge {
-      display: inline-block;
-      padding: 2px 8px;
-      border-radius: 12px;
-      font-size: 11px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.3px;
-      white-space: nowrap;
+      padding: 8px 10px;
       flex-shrink: 0;
     }
 
-    #detail-url {
-      flex: 1;
-      font-family: 'IBM Plex Mono', monospace;
+    /* Row 1: Provider icon + name + event name + close */
+    .summary-row-1 {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      line-height: 1;
+    }
+    .summary-provider-icon {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      color: var(--text-2);
+    }
+
+    .summary-provider-icon svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .summary-provider-name {
       font-size: 11px;
-      color: var(--text-1);
-      white-space: nowrap;
+      font-weight: 600;
+      flex-shrink: 0;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .summary-separator {
+      color: var(--text-3);
+      font-size: 11px;
+      flex-shrink: 0;
+    }
+
+    .summary-event-name {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-0);
       overflow: hidden;
       text-overflow: ellipsis;
+      white-space: nowrap;
+      flex: 1;
       min-width: 0;
     }
 
@@ -1699,29 +2510,112 @@
       flex-shrink: 0;
     }
 
-    #detail-meta {
-      display: flex;
-      gap: 12px;
-      padding: 6px 8px;
-      background-color: var(--bg-1);
-      border-bottom: 1px solid var(--border);
-      font-size: 11px;
-      flex-wrap: wrap;
-    }
 
-    .detail-meta-item {
+    /* Row 2: Method + Status + Duration + Time */
+    .summary-row-2 {
       display: flex;
+      align-items: center;
       gap: 4px;
+      margin-top: 5px;
+      font-size: 11px;
     }
 
-    .detail-meta-label {
+    .summary-meta {
+      display: flex;
+      align-items: center;
+      gap: 0;
+    }
+
+    .summary-meta + .summary-meta::before {
+      content: '';
+      display: inline-block;
+      width: 1px;
+      height: 12px;
+      background-color: var(--border);
+      margin: 0 6px;
+    }
+
+
+    /* Method badge */
+    .summary-method {
+      font-family: var(--font-mono);
+      font-weight: 600;
+      font-size: 10px;
+      padding: 1px 6px;
+      border-radius: 3px;
+    }
+    .summary-method.method-get {
+      color: var(--green);
+      background: rgba(62, 207, 142, 0.12);
+    }
+
+    .summary-method.method-post {
+      color: var(--accent);
+      background: var(--accent-muted);
+    }
+
+    /* Status badge */
+    .summary-status {
+      font-family: var(--font-mono);
+      font-weight: 600;
+      font-size: 10px;
+      padding: 1px 6px;
+      border-radius: 3px;
+    }
+
+    .summary-status.status-2 {
+      color: var(--green);
+      background: rgba(62, 207, 142, 0.12);
+    }
+
+    .summary-status.status-3 {
+      color: var(--accent);
+      background: rgba(245, 158, 11, 0.12);
+    }
+
+    .summary-status.status-4 {
+      color: var(--dragon-orange);
+      background: rgba(232, 113, 10, 0.12);
+    }
+
+    .summary-status.status-5 {
+      color: var(--red);
+      background: rgba(239, 83, 80, 0.12);
+    }
+
+    /* Duration */
+    .summary-duration {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-1);
+    }
+
+    .summary-duration.slow {
+      color: var(--yellow);
+      font-weight: 600;
+    }
+
+    /* Time */
+    .summary-time {
+      font-family: var(--font-mono);
+      font-size: 11px;
       color: var(--text-2);
-      font-weight: 500;
     }
 
-    .detail-meta-value {
-      color: var(--text-0);
-      font-family: 'IBM Plex Mono', monospace;
+    /* Row 3: URL */
+    .summary-row-3 {
+      margin-top: 4px;
+    }
+
+    .summary-url {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--text-2);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      display: block;
+      cursor: text;
     }
 
     /* Detail tabs */
@@ -2355,6 +3249,20 @@
       gap: 5px;
     }
 
+    .info-group-icon {
+      display: flex;
+      align-items: center;
+      flex-shrink: 0;
+      width: 12px;
+      height: 12px;
+      color: var(--text-2);
+    }
+
+    .info-group-icon svg {
+      width: 12px;
+      height: 12px;
+    }
+
     .info-provider-group-count {
       font-weight: 400;
       color: var(--text-3);
@@ -2435,6 +3343,19 @@
       height: 6px;
       border-radius: 50%;
       flex-shrink: 0;
+    }
+
+    .info-pill-icon {
+      display: flex;
+      align-items: center;
+      flex-shrink: 0;
+      width: 14px;
+      height: 14px;
+    }
+
+    .info-pill-icon svg {
+      width: 14px;
+      height: 14px;
     }
 
     .info-provider-group.hidden { display: none; }
@@ -2634,7 +3555,7 @@
         <span class="theme-icon-sun"><i data-lucide="sun"></i></span>
         <span class="theme-icon-moon"><i data-lucide="moon"></i></span>
       </button>
-      <button id="btn-clear-all" data-tooltip="Clear all requests (Ctrl+L)">
+      <button id="btn-clear-all" data-tooltip="Clear all data (Ctrl+L)">
         <i data-lucide="trash-2"></i>
       </button>
       <button id="btn-settings" data-tooltip="Filters &amp; settings">
@@ -2672,8 +3593,9 @@
           <i data-lucide="align-justify"></i>
         </button>
       </div>
-      <button id="btn-providers" data-tooltip="Provider filter">
+      <button id="btn-providers" data-tooltip="Provider filter" style="position:relative;">
         <i data-lucide="filter"></i>
+        <span class="provider-hidden-badge" id="provider-hidden-badge"></span>
       </button>
       <div class="toolbar-separator"></div>
       <button id="btn-export" data-tooltip="Export as JSON">
@@ -2687,6 +3609,11 @@
         <span class="pause-text">Pause</span>
         <span class="play-text">Resume</span>
       </button>
+      <!-- Per-tab clear -->
+      <div class="toolbar-separator"></div>
+      <button id="btn-clear-network" data-tooltip="Clear requests">
+        <i data-lucide="trash-2"></i>
+      </button>
     </div>
   </div>
 
@@ -2695,7 +3622,7 @@
     <div class="ctx-left">
       <div class="filter-wrap">
         <i data-lucide="search"></i>
-        <input type="text" id="dl-filter-input" placeholder="Filter by event, key, or value...">
+        <input type="text" id="dl-filter-input" placeholder="Filter… (event:, key:, val:, -exclude)">
         <button id="dl-clear-filter" data-tooltip="Clear filter">
           <i data-lucide="x"></i>
         </button>
@@ -2704,16 +3631,22 @@
     <div class="ctx-right">
       <div id="dl-source-status" style="display:flex;align-items:center;gap:4px;"></div>
       <div class="toolbar-separator"></div>
-      <select id="dl-filter-source" data-tooltip="Filter by source">
-        <option value="">All sources</option>
-        <option value="gtm">GTM</option>
-        <option value="digitalData">W3C</option>
-        <option value="tealium">Tealium</option>
-        <option value="adobe">Adobe</option>
-        <option value="segment">Segment</option>
-      </select>
+      <button id="dl-btn-filter" class="quick-btn" data-tooltip="DataLayer filters">
+        <i data-lucide="sliders-horizontal"></i>
+      </button>
+      <div class="toolbar-separator"></div>
+      <button id="dl-btn-ecommerce" class="quick-btn" data-tooltip="E-commerce events only">
+        <i data-lucide="shopping-cart"></i>
+      </button>
+      <button id="dl-btn-sort" class="quick-btn" data-tooltip="Toggle sort order">
+        <i data-lucide="arrow-up-down"></i>
+      </button>
       <div class="toolbar-separator"></div>
       <span id="dl-push-count" style="font-size:11px;color:var(--text-2);white-space:nowrap;padding:0 6px;" data-tooltip="Total pushes received by panel">0 pushes</span>
+      <div class="toolbar-separator"></div>
+      <button id="dl-btn-validation" class="quick-btn" data-tooltip="Validation rules">
+        <i data-lucide="check-circle"></i>
+      </button>
       <div class="toolbar-separator"></div>
       <button id="dl-btn-export" data-tooltip="Export DataLayer" style="display:flex;align-items:center;gap:4px;padding:4px 8px;font-size:12px;">
         <i data-lucide="download"></i>
@@ -2725,6 +3658,11 @@
         <span class="play-icon"><i data-lucide="play"></i></span>
         <span class="pause-text">Pause</span>
         <span class="play-text">Resume</span>
+      </button>
+      <!-- Per-tab clear -->
+      <div class="toolbar-separator"></div>
+      <button id="dl-btn-clear" data-tooltip="Clear DataLayer pushes">
+        <i data-lucide="trash-2"></i>
       </button>
     </div>
   </div>
@@ -2919,6 +3857,12 @@
     <div id="provider-popover-empty" style="padding:12px; font-size:13px; color:var(--text-2); text-align:center; display:none;">
       No providers captured yet.
     </div>
+    <div class="provider-popover-footer" id="provider-popover-footer">
+      <span id="provider-footer-text">
+        <span class="provider-popover-footer-count" id="provider-footer-count">0</span> of <span id="provider-footer-total">0</span> visible
+      </span>
+      <button class="provider-popover-footer-btn" id="btn-show-all-providers">Show all</button>
+    </div>
   </div>
 
   <!-- CONSENT POPOVER -->
@@ -3039,7 +3983,7 @@
     </div>
 
     <div class="info-section">
-      <button class="info-section-header" aria-expanded="true">
+      <button class="info-section-header" aria-expanded="false">
         <svg class="info-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="m6 9 6 6 6-6"/>
         </svg>
@@ -3051,7 +3995,7 @@
     </div>
 
     <div class="info-section">
-      <button class="info-section-header" aria-expanded="true">
+      <button class="info-section-header" aria-expanded="false">
         <svg class="info-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="m6 9 6 6 6-6"/>
         </svg>
@@ -3063,7 +4007,7 @@
     </div>
 
     <div class="info-section">
-      <button class="info-section-header" aria-expanded="true">
+      <button class="info-section-header" aria-expanded="false">
         <svg class="info-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="m6 9 6 6 6-6"/>
         </svg>
@@ -3131,6 +4075,94 @@
     </div>
   </div>
 
+  <!-- DATALAYER FILTER POPOVER -->
+  <div id="dl-filter-popover">
+    <div class="filter-popover-section">
+      <div class="filter-popover-item" data-action="open-dl-submenu" data-submenu="dl-source">
+        <span class="filter-popover-icon">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <line x1="19" y1="8" x2="19" y2="14"/>
+            <line x1="22" y1="11" x2="16" y2="11"/>
+          </svg>
+        </span>
+        <span class="filter-popover-label">Source</span>
+        <span class="filter-popover-arrow">&#9656;</span>
+      </div>
+    </div>
+    <div class="filter-popover-section">
+      <div class="filter-popover-item" data-action="open-dl-submenu" data-submenu="dl-event">
+        <span class="filter-popover-icon">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/>
+          </svg>
+        </span>
+        <span class="filter-popover-label">Event Name</span>
+        <span class="filter-popover-arrow">&#9656;</span>
+      </div>
+    </div>
+    <div class="filter-popover-section">
+      <div class="filter-popover-item" data-action="open-dl-submenu" data-submenu="dl-haskey">
+        <span class="filter-popover-icon">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.78 7.78 5.5 5.5 0 0 1 7.78-7.78zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/>
+          </svg>
+        </span>
+        <span class="filter-popover-label">Has Key</span>
+        <span class="filter-popover-arrow">&#9656;</span>
+      </div>
+    </div>
+    <div class="filter-popover-divider"></div>
+    <div class="filter-popover-section">
+      <div class="filter-popover-item" data-action="toggle-dl-ecommerce">
+        <span class="filter-popover-icon">🛒</span>
+        <span class="filter-popover-label">E-commerce only</span>
+      </div>
+    </div>
+    <div class="filter-popover-divider"></div>
+    <div class="filter-popover-section">
+      <div class="filter-popover-item" data-action="open-dl-submenu" data-submenu="dl-sort">
+        <span class="filter-popover-icon">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m21 16-4 4-4-4"/><path d="M17 20V4"/>
+            <path d="m3 8 4-4 4 4"/><path d="M7 4v16"/>
+          </svg>
+        </span>
+        <span class="filter-popover-label">Sort by</span>
+        <span class="filter-popover-arrow">&#9656;</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- DATALAYER FILTER SUBMENU -->
+  <div id="dl-filter-submenu-dl" class="filter-submenu" style="max-height:350px;overflow-y:auto;">
+    <div id="dl-filter-submenu-content"></div>
+  </div>
+
+  <!-- DATALAYER VALIDATION POPOVER -->
+  <div id="dl-validation-popover">
+    <div class="dl-val-summary" id="dl-val-summary">
+      <span>Validation errors:</span>
+      <span class="dl-val-summary-count" id="dl-val-error-count">0</span>
+      <span>pushes affected</span>
+    </div>
+    <div class="dl-val-section">
+      <div class="dl-val-section-title">Preset Rules</div>
+      <div id="dl-val-rules-list"></div>
+    </div>
+    <div class="dl-val-section">
+      <div class="dl-val-section-title">Custom Rules</div>
+      <div id="dl-val-custom-rules"></div>
+      <button id="dl-val-add-rule" style="
+        display:block;width:100%;padding:6px;
+        background:var(--bg-2);border:1px dashed var(--border);
+        border-radius:4px;color:var(--text-2);
+        font-size:11px;cursor:pointer;margin-top:4px;
+      ">+ Add custom rule</button>
+    </div>
+  </div>
+
   <!-- MAIN AREA -->
   <div id="main">
     <!-- REQUEST LIST PANE -->
@@ -3160,32 +4192,38 @@
 
     <!-- DETAIL PANE -->
     <div id="detail-pane" class="hidden">
-      <div id="detail-header">
-        <div id="detail-provider-badge"></div>
-        <div id="detail-url"></div>
-        <button id="btn-close-detail">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
-          </svg>
-        </button>
-      </div>
-
-      <div id="detail-meta">
-        <div class="detail-meta-item">
-          <span class="detail-meta-label">Method:</span>
-          <span class="detail-meta-value" id="meta-method">—</span>
+      <div id="detail-summary">
+        <!-- Row 1: Provider + Event Name -->
+        <div class="summary-row-1">
+          <span id="summary-provider-icon" class="summary-provider-icon"></span>
+          <span id="summary-provider-name" class="summary-provider-name"></span>
+          <span class="summary-separator">·</span>
+          <span id="summary-event-name" class="summary-event-name"></span>
+          <button id="btn-close-detail">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+            </svg>
+          </button>
         </div>
-        <div class="detail-meta-item">
-          <span class="detail-meta-label">Status:</span>
-          <span class="detail-meta-value" id="meta-status">—</span>
+        <!-- Row 2: Method + Status + Duration + Time -->
+        <div class="summary-row-2">
+          <span class="summary-meta">
+            <span id="summary-method" class="summary-method"></span>
+          </span>
+          <span class="summary-meta">
+            <span id="summary-status" class="summary-status"></span>
+          </span>
+          <span class="summary-meta">
+            <span id="summary-duration" class="summary-duration"></span>
+          </span>
+          <span class="summary-meta">
+            <span id="summary-time" class="summary-time"></span>
+          </span>
         </div>
-        <div class="detail-meta-item">
-          <span class="detail-meta-label">Duration:</span>
-          <span class="detail-meta-value" id="meta-duration">—</span>
-        </div>
-        <div class="detail-meta-item">
-          <span class="detail-meta-label">Time:</span>
-          <span class="detail-meta-value" id="meta-timestamp">—</span>
+        <!-- Row 3: URL -->
+        <div class="summary-row-3">
+          <span id="summary-url" class="summary-url"></span>
         </div>
       </div>
 
@@ -3224,9 +4262,47 @@
             <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
             <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
           </svg>
-          <div style="font-weight:600;font-size:13px;color:var(--text-1);margin-bottom:6px">Waiting for DataLayer events</div>
-          <div style="font-size:11px;color:var(--text-2);line-height:1.6;max-width:300px;margin-bottom:12px">TagDragon intercepts GTM, W3C digitalData, Tealium, Adobe, and Segment.<br>If you navigated here with DevTools already open, click Re-inject below.</div>
-          <button id="dl-btn-reinject" style="padding:5px 12px;font-size:12px;border-radius:4px;cursor:pointer;background:var(--bg-2);color:var(--text-1);border:1px solid var(--border);">Re-inject scripts</button>
+          <div style="font-weight:600;font-size:13px;color:var(--text-1);margin-bottom:6px">
+            Waiting for DataLayer events
+          </div>
+          <div style="font-size:11px;color:var(--text-2);line-height:1.6;max-width:300px;margin-bottom:12px">
+            TagDragon intercepts GTM, W3C digitalData, Tealium, Adobe, and Segment data layers.<br>
+            If you navigated here with DevTools already open, click Re-inject below.
+          </div>
+          <div id="dl-source-detection" style="
+            display:flex;gap:8px;flex-wrap:wrap;justify-content:center;
+            margin-bottom:12px;font-size:10px;
+          "></div>
+          <div style="
+            display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;
+            margin-bottom:12px;max-width:340px;
+          ">
+            <div class="dl-feature-card">
+              <div style="font-size:16px;margin-bottom:4px">📡</div>
+              <div style="font-weight:600;font-size:11px;color:var(--text-1)">Monitor</div>
+              <div style="font-size:10px;color:var(--text-2);line-height:1.3">
+                Browse live pushes from GTM, Tealium, Adobe, Segment
+              </div>
+            </div>
+            <div class="dl-feature-card">
+              <div style="font-size:16px;margin-bottom:4px">🔍</div>
+              <div style="font-weight:600;font-size:11px;color:var(--text-1)">Inspect</div>
+              <div style="font-size:10px;color:var(--text-2);line-height:1.3">
+                Diff, correlation, cumulative state, live tree
+              </div>
+            </div>
+            <div class="dl-feature-card">
+              <div style="font-size:16px;margin-bottom:4px">✅</div>
+              <div style="font-weight:600;font-size:11px;color:var(--text-1)">Validate</div>
+              <div style="font-size:10px;color:var(--text-2);line-height:1.3">
+                Catch missing fields or incorrect values
+              </div>
+            </div>
+          </div>
+          <button id="dl-btn-reinject" style="
+            padding:5px 12px;font-size:12px;border-radius:4px;cursor:pointer;
+            background:var(--bg-2);color:var(--text-1);border:1px solid var(--border);
+          ">Re-inject scripts</button>
         </div>
         <div id="dl-status-text"></div>
       </div>
@@ -3254,6 +4330,7 @@
           <button class="dl-dtab" data-tab="diff">Diff</button>
           <button class="dl-dtab" data-tab="current-state">Current State</button>
           <button class="dl-dtab" data-tab="correlation">Correlation</button>
+          <button class="dl-dtab" data-tab="live">Live</button>
         </div>
         <div id="dl-detail-content"></div>
       </div>

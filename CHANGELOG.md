@@ -5,6 +5,26 @@ All notable changes to TagDragon will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.6] - 2025-07-17
+
+### Added
+- DataLayer validation engine — rule-based push validation with preset rules (required keys, key types, forbidden keys) and custom rule support
+- DataLayer watch paths — pin specific dot-notation paths in the Live Inspector for focused monitoring (up to 10 paths)
+- DataLayer group by source — organize push list by source (GTM, Tealium, Adobe, Segment, digitalData)
+- DataLayer sort — configurable sort by time, key count, or source (persisted across sessions)
+- DataLayer auto-prune — automatically prunes oldest pushes when limit (1000) is reached
+- DataLayer configurable correlation window — adjustable forward window and lookback for correlation matching
+- DataLayer filter popover — filter pushes by event name, key existence, e-commerce events, and source
+- Provider icon caching — `src/panel/utils/provider-icon.ts` with `buildGroupIcon()` and `getCachedIcon()` for fast SVG icon rendering
+- `src/types/har.ts` — HAR post data interface type
+- `src/types/index.ts` — barrel re-export of all type modules
+
+### Changed
+- Reorganized DataLayer panel files into `components/` (push-list, push-detail, live-inspector) and `utils/` (diff-renderer, ecommerce-formatter, correlation, reverse-correlation, validator)
+- Renamed `src/panel/tabs/` → `src/panel/detail-tabs/` (network request detail tabs)
+- Optimized cumulative state computation — shared mutable state with `structuredClone` snapshots instead of per-push shallow copies
+- Added `dlSortField` and `dlSortOrder` to persisted `AppConfig`
+
 ## [1.5.5] - 2025-07-09
 
 ### Added

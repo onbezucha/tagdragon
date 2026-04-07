@@ -15,7 +15,19 @@ import {
   getFilterHasParam,
   syncHiddenProviders,
 } from '../state';
-import { PROVIDER_GROUPS, getProviderGroup, UNGROUPED_ID, UNGROUPED_LABEL } from '@/shared/provider-groups';
+import { getProviderGroup, UNGROUPED_ID, UNGROUPED_LABEL } from '@/shared/provider-groups';
+import { getCachedIcon } from '../utils/provider-icon';
+import { GROUP_ICONS } from '../utils/group-icons';
+
+// ─── ICONS ────────────────────────────────────────────────────────────────────
+
+const CHECK_SVG = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+
+const DASH_SVG = '<span style="font-size:11px;line-height:1;font-weight:600;">—</span>';
+
+function getGroupIconSvg(groupId: string): string {
+  return GROUP_ICONS[groupId] ?? '';
+}
 
 // ─── GROUP DOM ───────────────────────────────────────────────────────────────
 
@@ -40,6 +52,8 @@ function ensureProviderGroup(groupId: string, groupLabel: string, applyFiltersCa
           <path d="M2.5 3.5L5 6.5L7.5 3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </button>
+      <span class="pgroup-icon">${getGroupIconSvg(groupId)}</span>
+      <span class="pgroup-state all">${CHECK_SVG}</span>
       <span class="pgroup-label">${esc(groupLabel)}</span>
       <span class="pgroup-count"></span>
       <button class="pgroup-all" title="Show all in group">✓</button>
@@ -68,10 +82,15 @@ function ensureProviderGroup(groupId: string, groupLabel: string, applyFiltersCa
       const name = (p as HTMLElement).dataset.provider!;
       hiddenProviders.delete(name);
       p.classList.replace('inactive', 'active');
+      const iconEl = p.querySelector('.ppill-icon');
+      iconEl?.classList.remove('icon-hidden');
     });
     syncHiddenProviders();
     applyFiltersCallback();
     updateActiveFiltersCallback();
+    updateGroupStates();
+    updateFooterSummary();
+    updateHiddenBadge();
   });
 
   $groupNone.addEventListener('click', () => {
@@ -79,10 +98,15 @@ function ensureProviderGroup(groupId: string, groupLabel: string, applyFiltersCa
       const name = (p as HTMLElement).dataset.provider!;
       hiddenProviders.add(name);
       p.classList.replace('active', 'inactive');
+      const iconEl = p.querySelector('.ppill-icon');
+      iconEl?.classList.add('icon-hidden');
     });
     syncHiddenProviders();
     applyFiltersCallback();
     updateActiveFiltersCallback();
+    updateGroupStates();
+    updateFooterSummary();
+    updateHiddenBadge();
   });
 
   groupList.appendChild($group);
@@ -116,15 +140,30 @@ export function ensureProviderPill(data: ParsedRequest, applyFiltersCallback: ()
   pill.className = `ppill ${isHidden ? 'inactive' : 'active'}`;
   pill.dataset.provider = data.provider;
   pill.innerHTML = `
-    <span class="ppill-dot" style="background:${data.color}"></span>
+    <span class="ppill-icon" style="--pill-color:${data.color}"></span>
     <span class="ppill-name">${esc(data.provider)}</span>
     <sup class="ppill-count">0</sup>
   `;
+  const iconEl = pill.querySelector('.ppill-icon') as HTMLElement;
+  const iconFragment = getCachedIcon(data.provider);
+  if (iconFragment) {
+    iconEl.appendChild(iconFragment.cloneNode(true));
+  }
+  if (isHidden) {
+    iconEl?.classList.add('icon-hidden');
+  }
   pill.addEventListener('click', () => toggleProvider(data.provider, pill, applyFiltersCallback, updateActiveFiltersCallback));
+  pill.addEventListener('contextmenu', (e: MouseEvent) => {
+    e.preventDefault();
+    showProviderContextMenu(e, data.provider, pill, applyFiltersCallback, updateActiveFiltersCallback);
+  });
   $pillsContainer.appendChild(pill);
 
   updateProviderCounts();
   updateFilterBarVisibility();
+  updateGroupStates();
+  updateFooterSummary();
+  updateHiddenBadge();
 }
 
 // ─── COUNTS ───────────────────────────────────────────────────────────────────
@@ -164,16 +203,32 @@ export function updateProviderCounts(): void {
 
 function toggleProvider(name: string, pill: HTMLElement, applyFiltersCallback: () => void, updateActiveFiltersCallback: () => void): void {
   const hiddenProviders = getHiddenProviders();
-  if (hiddenProviders.has(name)) {
+  const isCurrentlyHidden = hiddenProviders.has(name);
+
+  if (isCurrentlyHidden) {
     hiddenProviders.delete(name);
     pill.classList.replace('inactive', 'active');
   } else {
     hiddenProviders.add(name);
     pill.classList.replace('active', 'inactive');
   }
+
+  // Toggle icon visibility
+  const iconEl = pill.querySelector('.ppill-icon');
+  if (iconEl) {
+    iconEl.classList.toggle('icon-hidden', !isCurrentlyHidden);
+  }
+
+  // Toggle animation
+  pill.classList.add('toggling');
+  pill.addEventListener('animationend', () => pill.classList.remove('toggling'), { once: true });
+
   syncHiddenProviders();
   applyFiltersCallback();
   updateActiveFiltersCallback();
+  updateGroupStates();
+  updateFooterSummary();
+  updateHiddenBadge();
 }
 
 // ─── VISIBILITY ───────────────────────────────────────────────────────────────
@@ -198,6 +253,172 @@ export function updateFilterBarVisibility(): void {
   if ($empty) $empty.style.display = hasProviders ? 'none' : '';
 
   DOM.filterBar?.classList.toggle('visible', hasFilters);
+
+  updateHiddenBadge();
+
+  // Hide footer when no providers are captured yet
+  const $footer = document.getElementById('provider-popover-footer');
+  if ($footer) $footer.style.display = hasProviders ? '' : 'none';
+}
+
+// ─── TRI-STATE GROUP INDICATORS ───────────────────────────────────────────────
+
+type GroupState = 'all' | 'partial' | 'none';
+
+/**
+ * Update tri-state indicators on all group headers.
+ */
+function updateGroupStates(): void {
+  const groupList = DOM.providerGroupList;
+  if (!groupList) return;
+
+  qsa('.pgroup', groupList).forEach(group => {
+    const stateEl = group.querySelector('.pgroup-state') as HTMLElement | null;
+    if (!stateEl) return;
+
+    const pills = qsa('.ppill', group);
+    if (pills.length === 0) return;
+
+    let hiddenCount = 0;
+    pills.forEach(p => {
+      if ((p as HTMLElement).classList.contains('inactive')) hiddenCount++;
+    });
+
+    let state: GroupState;
+    if (hiddenCount === 0) state = 'all';
+    else if (hiddenCount === pills.length) state = 'none';
+    else state = 'partial';
+
+    stateEl.className = `pgroup-state ${state}`;
+    stateEl.innerHTML = state === 'all' ? CHECK_SVG : state === 'partial' ? DASH_SVG : '';
+  });
+}
+
+// ─── HIDDEN COUNT BADGE ───────────────────────────────────────────────────────
+
+/**
+ * Update the hidden count badge on the #btn-providers button.
+ */
+function updateHiddenBadge(): void {
+  const hiddenProviders = getHiddenProviders();
+  const badge = document.getElementById('provider-hidden-badge') as HTMLElement | null;
+  if (!badge) return;
+
+  const count = hiddenProviders.size;
+  badge.textContent = count > 0 ? String(count) : '';
+  badge.classList.toggle('visible', count > 0);
+}
+
+// ─── FOOTER SUMMARY ───────────────────────────────────────────────────────────
+
+/**
+ * Update the "X of Y visible" footer text.
+ */
+function updateFooterSummary(): void {
+  const activeProviders = getActiveProviders();
+  const hiddenProviders = getHiddenProviders();
+  const total = activeProviders.size;
+  const visible = total - hiddenProviders.size;
+
+  const countEl = document.getElementById('provider-footer-count');
+  const totalEl = document.getElementById('provider-footer-total');
+  if (countEl) countEl.textContent = String(visible);
+  if (totalEl) totalEl.textContent = String(total);
+
+  // Hide footer when no providers exist
+  const $footer = document.getElementById('provider-popover-footer');
+  if ($footer) $footer.style.display = activeProviders.size > 0 ? '' : 'none';
+}
+
+// ─── CONTEXT MENU ─────────────────────────────────────────────────────────────
+
+/**
+ * Show context menu on right-click for "Show only" / "Hide" actions.
+ */
+function showProviderContextMenu(
+  e: MouseEvent,
+  providerName: string,
+  pill: HTMLElement,
+  applyFiltersCallback: () => void,
+  updateActiveFiltersCallback: () => void
+): void {
+  // Remove any existing context menu
+  closeProviderContextMenu();
+
+  const hiddenProviders = getHiddenProviders();
+  const isHidden = hiddenProviders.has(providerName);
+
+  const menu = document.createElement('div');
+  menu.className = 'ppill-context-menu';
+  menu.id = 'ppill-context-menu';
+
+  menu.innerHTML = `
+    <div class="ppill-context-item" data-action="${isHidden ? 'show' : 'hide'}">
+      ${isHidden ? '👁 Show this provider' : '👁‍🗨 Hide this provider'}
+    </div>
+    <div class="ppill-context-item" data-action="show-only">
+      ⊙ Show only ${esc(providerName)}
+    </div>
+  `;
+
+  document.body.appendChild(menu);
+
+  // Position
+  let left = e.clientX;
+  let top = e.clientY;
+  if (left + 170 > window.innerWidth) left = window.innerWidth - 170;
+  if (top + 80 > window.innerHeight) top = window.innerHeight - 80;
+  menu.style.left = left + 'px';
+  menu.style.top = top + 'px';
+
+  // Handlers
+  menu.addEventListener('click', (ev: MouseEvent) => {
+    const target = (ev.target as HTMLElement).closest('.ppill-context-item') as HTMLElement;
+    if (!target) return;
+
+    const action = target.dataset.action;
+    if (action === 'show' || action === 'hide') {
+      toggleProvider(providerName, pill, applyFiltersCallback, updateActiveFiltersCallback);
+    } else if (action === 'show-only') {
+      // Hide all, then show only this one
+      const activeProviders = getActiveProviders();
+      activeProviders.forEach(name => hiddenProviders.add(name));
+      hiddenProviders.delete(providerName);
+
+      qsa('.ppill').forEach(p => {
+        const name = (p as HTMLElement).dataset.provider!;
+        if (name === providerName) {
+          p.classList.replace('inactive', 'active');
+          const iconEl = p.querySelector('.ppill-icon');
+          iconEl?.classList.remove('icon-hidden');
+        } else {
+          p.classList.replace('active', 'inactive');
+          const iconEl = p.querySelector('.ppill-icon');
+          iconEl?.classList.add('icon-hidden');
+        }
+      });
+
+      syncHiddenProviders();
+      applyFiltersCallback();
+      updateActiveFiltersCallback();
+      updateGroupStates();
+      updateFooterSummary();
+      updateHiddenBadge();
+    }
+
+    closeProviderContextMenu();
+  });
+
+  // Close on click outside
+  setTimeout(() => {
+    document.addEventListener('click', closeProviderContextMenu, { once: true });
+    document.addEventListener('contextmenu', closeProviderContextMenu, { once: true });
+  }, 0);
+}
+
+function closeProviderContextMenu(): void {
+  const existing = document.getElementById('ppill-context-menu');
+  if (existing) existing.remove();
 }
 
 // ─── SEARCH ───────────────────────────────────────────────────────────────────
@@ -251,10 +472,17 @@ export function initProviderBarHandlers(applyFiltersCallback: () => void, update
   if ($btnAll) {
     $btnAll.addEventListener('click', () => {
       hiddenProviders.clear();
-      qsa('.ppill.inactive').forEach(p => p.classList.replace('inactive', 'active'));
+      qsa('.ppill.inactive').forEach(p => {
+        p.classList.replace('inactive', 'active');
+        const iconEl = p.querySelector('.ppill-icon');
+        iconEl?.classList.remove('icon-hidden');
+      });
       syncHiddenProviders();
       applyFiltersCallback();
       updateActiveFiltersCallback();
+      updateGroupStates();
+      updateFooterSummary();
+      updateHiddenBadge();
     });
   }
 
@@ -263,12 +491,51 @@ export function initProviderBarHandlers(applyFiltersCallback: () => void, update
       for (const provider of activeProviders) {
         hiddenProviders.add(provider);
       }
-      qsa('.ppill.active').forEach(p => p.classList.replace('active', 'inactive'));
+      qsa('.ppill.active').forEach(p => {
+        p.classList.replace('active', 'inactive');
+        const iconEl = p.querySelector('.ppill-icon');
+        iconEl?.classList.add('icon-hidden');
+      });
       syncHiddenProviders();
       applyFiltersCallback();
       updateActiveFiltersCallback();
+      updateGroupStates();
+      updateFooterSummary();
+      updateHiddenBadge();
     });
   }
 
+  // "Show all" footer button
+  const btnShowAll = document.getElementById('btn-show-all-providers');
+  btnShowAll?.addEventListener('click', () => {
+    hiddenProviders.clear();
+    qsa('.ppill.inactive').forEach(p => {
+      p.classList.replace('inactive', 'active');
+      const iconEl = p.querySelector('.ppill-icon');
+      iconEl?.classList.remove('icon-hidden');
+    });
+    syncHiddenProviders();
+    applyFiltersCallback();
+    updateActiveFiltersCallback();
+    updateGroupStates();
+    updateFooterSummary();
+    updateHiddenBadge();
+  });
+
   initProviderSearch();
+  updateGroupStates();
+  updateFooterSummary();
+  updateHiddenBadge();
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+
+/**
+ * Initialize provider bar UI state (tri-state indicators, footer, badge).
+ * Safe to call at any time — reads current state and updates DOM.
+ */
+export function initProviderBar(): void {
+  updateGroupStates();
+  updateFooterSummary();
+  updateHiddenBadge();
 }

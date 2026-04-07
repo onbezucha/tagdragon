@@ -89,6 +89,23 @@ export function renderDiff(container: HTMLElement, entries: DiffEntry[], totalCo
     return;
   }
 
+  // Diff legend
+  const legend = document.createElement('div');
+  legend.className = 'dl-diff-legend';
+  legend.innerHTML = `
+    <span class="dl-diff-legend-item dl-diff-legend-added">
+      <span class="dl-diff-legend-swatch"></span> Added
+    </span>
+    <span class="dl-diff-legend-item dl-diff-legend-removed">
+      <span class="dl-diff-legend-swatch"></span> Removed
+    </span>
+    <span class="dl-diff-legend-item dl-diff-legend-changed">
+      <span class="dl-diff-legend-swatch"></span> Changed
+    </span>
+    <span class="dl-diff-legend-note">Diff from cumulative state before this push</span>
+  `;
+  container.appendChild(legend);
+
   const MAX_DISPLAY = 50;
   const displayEntries = entries.slice(0, MAX_DISPLAY);
 

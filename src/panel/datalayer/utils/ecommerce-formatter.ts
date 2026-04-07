@@ -2,7 +2,7 @@
 // Detect e-commerce type and render product tables from DataLayer pushes.
 
 import { detectEcommerceType, type EcommerceType } from '@/shared/ecommerce';
-import { esc } from '../utils/format';
+import { esc } from '../../utils/format';
 
 // Re-export for backwards compatibility
 export { detectEcommerceType };

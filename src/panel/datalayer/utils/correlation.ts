@@ -3,7 +3,7 @@
 
 import type { ParsedRequest } from '@/types/request';
 import type { DataLayerPush } from '@/types/datalayer';
-import { getCorrelationWindow, getCorrelationLookback } from './state';
+import { getCorrelationWindow, getCorrelationLookback } from '../state';
 
 export interface CorrelatedRequest {
   request: ParsedRequest;

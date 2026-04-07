@@ -177,6 +177,13 @@ export function addFilteredId(id: string): void {
   requestState.filteredIds.add(id);
 }
 
+/**
+ * Remove a request ID from the filtered set (mark as not visible).
+ */
+export function removeFromFiltered(id: string): void {
+  requestState.filteredIds.delete(id);
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // UI STATE OPERATIONS
 // ─────────────────────────────────────────────────────────────────────────────
@@ -416,14 +423,6 @@ export function removeHiddenProvider(name: string): void {
 }
 
 /**
- * Reset provider pill state (clears seen providers so pills are rebuilt on next request).
- * Does NOT clear hiddenProviders — filter preferences persist across clears.
- */
-export function resetProviders(): void {
-  activeProviders.clear();
-}
-
-/**
  * Check if a provider is hidden.
  */
 export function isProviderHidden(name: string): boolean {
@@ -477,6 +476,13 @@ export function setRafId(id: number | null): void {
  * Get a read-only view of the current configuration.
  */
 export function getConfig(): Readonly<AppConfig> {
+  return { ...config };
+}
+
+/**
+ * Alias for getConfig() — used by datalayer state for sort persistence.
+ */
+export function getAppConfig(): Readonly<AppConfig> {
   return { ...config };
 }
 

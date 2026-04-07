@@ -21,12 +21,14 @@ import {
   resetFilters,
 } from '../state';
 import { updateFilterBarVisibility } from './provider-bar';
+import { getCachedIcon } from '../utils/provider-icon';
 
 type FilterPill = {
   type: string;
   label: string;
   colorClass: string;
   dotColor: string;
+  provider?: string;
   onRemove: () => void;
 };
 
@@ -150,16 +152,21 @@ export function updateActiveFilters(applyFiltersCallback: () => void): void {
 
   // Hidden provider filters
   hiddenProviders.forEach(provider => {
-    pills.push({ 
-      type: 'provider', 
-      label: `${provider} hidden`,
+    pills.push({
+      type: 'provider',
+      label: provider,
       colorClass: 'filter-pill--provider',
       dotColor: '#ffa726',
+      provider: provider,
       onRemove: () => {
         hiddenProviders.delete(provider);
         syncHiddenProviders();
-        const p = document.querySelector(`.ppill[data-provider="${provider}"]`);
-        if (p) p.classList.replace('inactive', 'active');
+        const p = document.querySelector(`.ppill[data-provider="${CSS.escape(provider)}"]`);
+        if (p) {
+          p.classList.replace('inactive', 'active');
+          const iconEl = p.querySelector('.ppill-icon');
+          iconEl?.classList.remove('icon-hidden');
+        }
         applyFiltersCallback();
         updateActiveFilters(applyFiltersCallback);
       }
@@ -174,11 +181,41 @@ export function updateActiveFilters(applyFiltersCallback: () => void): void {
   pills.forEach((p) => {
     const el = document.createElement('div');
     el.className = `filter-pill ${p.colorClass}`;
-    el.innerHTML = `
-      <span class="filter-pill-dot" style="background:${p.dotColor}"></span>
-      <span class="filter-pill-label">${esc(p.label)}</span>
-      <span class="filter-pill-remove" aria-label="Remove filter">&times;</span>
-    `;
+
+    if (p.type === 'provider' && p.provider) {
+      // Provider pill — use brand icon instead of dot
+      const iconSpan = document.createElement('span');
+      iconSpan.className = 'filter-pill-icon';
+      const iconFragment = getCachedIcon(p.provider);
+      if (iconFragment) {
+        iconSpan.appendChild(iconFragment.cloneNode(true));
+      } else {
+        // Fallback: colored dot if no icon available
+        iconSpan.className = 'filter-pill-dot';
+        iconSpan.style.background = p.dotColor;
+      }
+
+      const label = document.createElement('span');
+      label.className = 'filter-pill-label';
+      label.textContent = p.label;
+
+      const removeBtn = document.createElement('span');
+      removeBtn.className = 'filter-pill-remove';
+      removeBtn.setAttribute('aria-label', 'Remove filter');
+      removeBtn.textContent = '×';
+
+      el.appendChild(iconSpan);
+      el.appendChild(label);
+      el.appendChild(removeBtn);
+    } else {
+      // Non-provider pill — use colored dot (existing behavior)
+      el.innerHTML = `
+        <span class="filter-pill-dot" style="background:${p.dotColor}"></span>
+        <span class="filter-pill-label">${esc(p.label)}</span>
+        <span class="filter-pill-remove" aria-label="Remove filter">&times;</span>
+      `;
+    }
+
     el.querySelector('.filter-pill-remove')!.addEventListener('click', p.onRemove);
     $activeFilters.appendChild(el);
   });
@@ -195,7 +232,11 @@ export function updateActiveFilters(applyFiltersCallback: () => void): void {
       (DOM.filterInput as HTMLInputElement).value = '';
       const clearFilter = DOM.clearFilter;
       if (clearFilter) clearFilter.style.display = 'none';
-      qsa('.ppill.inactive').forEach(p => p.classList.replace('inactive', 'active'));
+      qsa('.ppill.inactive').forEach(p => {
+        p.classList.replace('inactive', 'active');
+        const iconEl = p.querySelector('.ppill-icon');
+        iconEl?.classList.remove('icon-hidden');
+      });
       applyFiltersCallback();
       updateActiveFilters(applyFiltersCallback);
     });

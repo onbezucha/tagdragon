@@ -207,6 +207,23 @@
     border-left-color: var(--accent-muted);
   }
 
+  /* Error row tinting (NEW) */
+  .req-row.error-row {
+    background-color: rgba(239, 83, 80, 0.04);
+  }
+  .req-row.error-row:hover {
+    background-color: rgba(239, 83, 80, 0.08);
+  }
+  .req-row.error-row.active {
+    background-color: rgba(239, 83, 80, 0.10);
+  }
+
+  /* Slow request highlighting (NEW) */
+  .req-row.slow-row .req-duration {
+    color: var(--yellow);
+    font-weight: 600;
+  }
+
   .req-primary {
     display: flex;
     align-items: center;
@@ -217,14 +234,14 @@
   .req-secondary {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     font-size: 11px;
     color: var(--text-2);
     margin-top: 3px;
-    padding-left: 16px;
+    padding-left: 26px;
   }
 
-  .req-secondary > span + span::before {
+  .req-secondary > span + span:not(.req-provider-name)::before {
     content: '·';
     margin-right: 8px;
     margin-left: -8px;
@@ -232,8 +249,9 @@
   }
 
   .req-provider-name {
-    font-weight: 600;
+    font-weight: 500;
     font-size: 11px;
+    color: var(--text-1);
     flex-shrink: 0;
   }
 
@@ -245,25 +263,28 @@
   }
 
   .req-category-icon svg {
-    width: 14px;
-    height: 14px;
-  }
-
-  .req-middle {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 12px;
-    padding-left: 4px;
+    width: 20px;
+    height: 20px;
   }
 
   .req-event {
     color: var(--text-0);
     font-family: var(--font-mono);
+    font-weight: 500;
+    font-size: 12px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
     flex: 1;
+    min-width: 0;
+  }
+
+  /* Provider dot (NEW) */
+  .req-provider-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
   }
 
   .req-time {
@@ -276,23 +297,31 @@
 
   .req-status {
     font-family: var(--font-mono);
-    font-weight: 500;
+    font-weight: 600;
+    font-size: 10px;
+    padding: 0px 5px;
+    border-radius: 3px;
+    background: transparent;
   }
 
   .status-2 {
     color: var(--green);
+    background: rgba(62, 207, 142, 0.12);
   }
 
   .status-3 {
     color: var(--accent);
+    background: rgba(245, 158, 11, 0.12);
   }
 
   .status-4 {
     color: var(--dragon-orange);
+    background: rgba(232, 113, 10, 0.12);
   }
 
   .status-5 {
     color: var(--red);
+    background: rgba(239, 83, 80, 0.12);
   }
 
   .req-method {
@@ -654,62 +683,6 @@
   }
 
   /* ═════════════════════════════════════════════════════════════════════
-       PROVIDER PILLS (filter bar - dynamically created by JS)
-       ═════════════════════════════════════════════════════════════════════ */
-
-  .ppill {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 2px 8px;
-    border-radius: 12px;
-    font-size: 11px;
-    font-weight: 500;
-    cursor: pointer;
-    user-select: none;
-    background: var(--bg-2);
-    border: 1px solid var(--border-subtle);
-    transition: all 150ms var(--ease);
-  }
-
-  .ppill:hover {
-    background: var(--bg-3);
-    border-color: var(--border);
-  }
-
-  .ppill.active {
-    background: var(--accent-muted);
-    border-color: var(--accent-glow);
-  }
-
-  .ppill.inactive {
-    opacity: 0.3;
-  }
-
-  .ppill.disabled {
-    opacity: 0.2;
-    cursor: not-allowed;
-  }
-
-  .ppill-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
-
-  .ppill-name {
-    white-space: nowrap;
-  }
-
-  .ppill-count {
-    font-family: var(--font-mono);
-    font-size: 9px;
-    color: var(--text-2);
-    margin-left: 1px;
-  }
-
-  /* ═════════════════════════════════════════════════════════════════════
        FILTER PILLS (filter bar - dynamically created by JS)
        ═════════════════════════════════════════════════════════════════════ */
 
@@ -743,6 +716,19 @@
     height: 6px;
     border-radius: 50%;
     flex-shrink: 0;
+  }
+
+  .filter-pill-icon {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    width: 12px;
+    height: 12px;
+  }
+
+  .filter-pill-icon svg {
+    width: 12px;
+    height: 12px;
   }
 
   .filter-pill-label {
@@ -844,10 +830,6 @@
   }
 
   body.compact-rows .req-secondary {
-    display: none;
-  }
-
-  body.compact-rows .req-middle {
     display: none;
   }
 
