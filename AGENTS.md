@@ -4,7 +4,7 @@ Instructions for AI coding agents working in this repository.
 
 ## Project Overview
 
-**TagDragon v1.5.3** — Chrome DevTools extension (Manifest V3) for capturing and decoding marketing/analytics tracking requests. Built with TypeScript, Rollup (JS bundler) and Tailwind CSS.
+**TagDragon v1.5.5** — Chrome DevTools extension (Manifest V3) for capturing and decoding marketing/analytics tracking requests. Built with TypeScript, Rollup (JS bundler) and Tailwind CSS.
 
 ## Build Commands
 
@@ -143,7 +143,7 @@ Strict mode enabled with these checks:
 
 ### Provider System
 
-The extension currently has **68 registered providers** across 9 UI groups (Analytics, Tag Manager, Marketing, Session Replay, A/B Testing, Visitor Identification, Customer Engagement, CDP, Adobe Stack). Merkury is assigned to the Visitor Identification group. The `UNGROUPED_ID`/`UNGROUPED_LABEL` constants in `src/shared/provider-groups.ts` provide a fallback for any future ungrouped providers.
+The extension currently has **69 registered providers** across 9 UI groups (Analytics, Tag Manager, Marketing, Session Replay, A/B Testing, Visitor Identification, Customer Engagement, CDP, Adobe Stack). `Microsoft Clarity Tag` is not assigned to any group and falls into the `UNGROUPED_ID`/`UNGROUPED_LABEL` fallback in `src/shared/provider-groups.ts`. Merkury is assigned to the Visitor Identification group.
 
 Providers are defined as objects with `name`, `color`, `pattern` (RegExp), and `parseParams()`:
 
@@ -169,6 +169,7 @@ Providers are defined as objects with `name`, `color`, `pattern` (RegExp), and `
 - More specific patterns always before broader ones on the same domain
 - `tealiumEventstream` before `tealium` (`collect.tealiumiq.com/event` vs `collect.tealiumiq.com`)
 - `piwikProTm` before `piwikPro`
+- `microsoftClarityTag` before `microsoftClarity` (library load before event tracking)
 - Adobe order (specific → broad): `aepWebSDK` → `adobeHeartbeat` → `adobeTarget` → `adobeECID` → `adobeAAM` → `adobeDTM` → `adobeLaunchChina` → `adobeAA`
 - `comscore` before `scorecard` (same domain `scorecardresearch.com`, different paths)
 - `googleAds` before `doubleclick`
@@ -297,6 +298,7 @@ Hidden providers are persisted in `AppConfig.hiddenProviders` (restored on load 
 | `src/panel/utils/platform.ts` | Platform detection — `isMac` constant for Mac keyboard shortcuts |
 | `src/panel/utils/group-icons.ts` | Inline SVG icons for provider groups (analytics, tagmanager, marketing, etc.) |
 | `src/panel/utils/provider-icons.ts` | Brand SVG icons for individual providers (GA4, GTM, Meta Pixel, etc.) |
+| `src/panel/utils/tooltip.ts` | Shared tooltip system — event delegation, data-tooltip attributes |
 | `src/devtools/index.ts` | DevTools page — registers panel, sets up network capture |
 | `src/devtools/network-capture.ts` | HAR network request capture — provider matching, POST body parsing, request building |
 | `src/devtools/panel-bridge.ts` | Panel communication — request buffering, heavy data store, lazy loading |
@@ -304,15 +306,18 @@ Hidden providers are persisted in `AppConfig.hiddenProviders` (restored on load 
 | `src/background/index.ts` | Service worker — message relay, declarativeNetRequest rules, cookie clearing |
 | `src/background/badge.ts` | Badge counter — updates extension icon with request count |
 | `src/background/popup-bridge.ts` | Popup bridge — handles popup ↔ background messaging, DevTools status tracking |
-| `src/providers/index.ts` | PROVIDERS array — ordered list of all provider matchers |
+| `src/providers/index.ts` | PROVIDERS array — ordered list of all provider matchers, domain index, matchProvider() |
+| `src/providers/url-parser.ts` | URL and POST body parameter parser — `getParams()` utility used by all providers |
 | `src/providers/adform.ts` | Adform provider |
 | `src/providers/amazon-ads.ts` | Amazon Ads provider |
 | `src/providers/at-internet.ts` | AT Internet provider |
 | `src/providers/demandbase.ts` | Demandbase provider |
 | `src/providers/ensighten.ts` | Ensighten provider |
 | `src/providers/hubspot.ts` | HubSpot provider |
+| `src/providers/indicative.ts` | Indicative provider |
 | `src/providers/invoca.ts` | Invoca provider |
 | `src/providers/lytics.ts` | Lytics provider |
+| `src/providers/medallia.ts` | Medallia DXA provider |
 | `src/providers/omniconvert.ts` | Omniconvert provider |
 | `src/providers/optimizely.ts` | Optimizely provider |
 | `src/providers/piwik-pro-tm.ts` | Piwik PRO TM provider |
@@ -322,10 +327,11 @@ Hidden providers are persisted in `AppConfig.hiddenProviders` (restored on load 
 | `src/providers/sojern.ts` | Sojern provider |
 | `src/providers/split-io.ts` | Split.io provider |
 | `src/providers/microsoft/clarity-event-types.ts` | Clarity event type constants |
-| `src/providers/url-parser.ts` | URL and POST body parameter parser — `getParams()` utility used by all providers |
+| `src/providers/microsoft/clarity-tag.ts` | Microsoft Clarity library load provider (detection only) |
 | `src/shared/provider-groups.ts` | PROVIDER_GROUPS — grouping/categorization of providers in the popover |
 | `src/shared/categories.ts` | Per-provider parameter display categories |
 | `src/shared/cmp-detection.ts` | CMP detection scripts — OneTrust, UserCentrics, Cookiebot, CookieYes, Didomi, iubenda, TCF |
+| `src/types/provider.ts` | Provider and ProviderRegistry type definitions |
 | `src/types/request.ts` | TypeScript types — ParsedRequest, TabName, etc. |
 | `src/types/datalayer.ts` | DataLayer types — DataLayerPush, DataLayerState, DiffEntry, message types |
 | `src/types/consent.ts` | Consent types — ConsentCategory, GoogleConsentMode, TCFData, CMPInfo, ConsentData |

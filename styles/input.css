@@ -579,11 +579,9 @@
     background: var(--bg-2);
     border-radius: var(--radius);
     padding: 12px;
-    overflow: auto;
     white-space: pre-wrap;
     word-break: break-all;
     border: 1px solid var(--border-subtle);
-    max-height: 400px;
   }
 
   /* ═════════════════════════════════════════════════════════════════════

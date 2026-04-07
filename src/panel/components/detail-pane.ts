@@ -18,7 +18,7 @@ import {
   getConfig,
   getAllRequests,
 } from '../state';
-import { findTriggeringPush, renderTriggeredBy } from '../datalayer/reverse-correlation';
+import { findTriggeringPush, renderTriggeredBy, hideTriggeredByBanner } from '../datalayer/reverse-correlation';
 import { getAllDlPushes } from '../datalayer/state';
 
 // ─── TAB CONTENT CACHE ───────────────────────────────────────────────────────
@@ -91,18 +91,21 @@ export function selectRequest(data: ParsedRequest, row: HTMLElement): void {
   renderTab(getActiveTab(), data);
   autoExpandSections();
 
-  // Triggered by DataLayer
-  const dlPushes = getAllDlPushes();
-  if (dlPushes.length > 0) {
-    const $detailContent = DOM.detailContent;
-    if ($detailContent) {
+  // Triggered by DataLayer banner
+  const $triggerBanner = DOM.triggeredByBanner;
+  if ($triggerBanner) {
+    const dlPushes = getAllDlPushes();
+    if (dlPushes.length > 0) {
       const triggering = findTriggeringPush(data, dlPushes);
       if (triggering) {
-        renderTriggeredBy($detailContent, triggering, (pushId: number) => {
-          // Dispatch custom event for index.ts to handle cross-tab navigation
+        renderTriggeredBy($triggerBanner, triggering, (pushId: number) => {
           document.dispatchEvent(new CustomEvent('goto-datalayer-push', { detail: pushId }));
         });
+      } else {
+        hideTriggeredByBanner($triggerBanner);
       }
+    } else {
+      hideTriggeredByBanner($triggerBanner);
     }
   }
 
@@ -242,4 +245,5 @@ export function closeDetailPane(): void {
   DOM.detail?.classList.add('hidden');
   qsa('.req-row.active').forEach(r => r.classList.remove('active'));
   setSelectedId(null);
+  if (DOM.triggeredByBanner) hideTriggeredByBanner(DOM.triggeredByBanner);
 }

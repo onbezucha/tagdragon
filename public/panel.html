@@ -1380,6 +1380,84 @@
 
     .dl-correlation-goto:hover { background: var(--accent-muted); }
 
+    /* === TRIGGERED BY BANNER (Network Detail) === */
+    #triggered-by-banner {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 8px;
+      background-color: var(--bg-0);
+      border-bottom: 1px solid var(--border);
+      border-left: 3px solid var(--border);
+      font-size: 11px;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: background-color 150ms;
+    }
+
+    #triggered-by-banner.visible {
+      display: flex;
+    }
+
+    #triggered-by-banner:hover {
+      background-color: var(--bg-1);
+    }
+
+    .trigger-icon {
+      flex-shrink: 0;
+      color: var(--text-2);
+    }
+
+    .trigger-source-badge {
+      display: inline-block;
+      padding: 1px 6px;
+      border-radius: 10px;
+      font-size: 10px;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+
+    .trigger-event-name {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: var(--text-0);
+      font-size: 11px;
+      min-width: 0;
+    }
+
+    .trigger-delay {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-2);
+      flex-shrink: 0;
+    }
+
+    .trigger-goto-btn {
+      padding: 2px 8px;
+      font-size: 11px;
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      cursor: pointer;
+      flex-shrink: 0;
+      color: var(--accent);
+      white-space: nowrap;
+      transition: background-color 150ms;
+    }
+
+    .trigger-goto-btn:hover {
+      background: var(--accent-muted);
+    }
+
+    .trigger-confidence-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
     /* === DL STATE DISPLAY === */
     .dl-state-header {
       font-size: 12px;
@@ -3109,6 +3187,17 @@
           <span class="detail-meta-label">Time:</span>
           <span class="detail-meta-value" id="meta-timestamp">—</span>
         </div>
+      </div>
+
+      <div id="triggered-by-banner">
+        <svg class="trigger-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/>
+        </svg>
+        <span class="trigger-confidence-dot"></span>
+        <span class="trigger-source-badge"></span>
+        <span class="trigger-event-name"></span>
+        <span class="trigger-delay"></span>
+        <button class="trigger-goto-btn">View in DL →</button>
       </div>
 
       <div id="detail-tabs">

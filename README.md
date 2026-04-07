@@ -24,7 +24,7 @@
 </p>
 
 <p align="center">
-  <em>68 providers · DataLayer Inspector · Consent Panel · No data leaves your browser</em>
+  <em>69 providers · DataLayer Inspector · Consent Panel · No data leaves your browser</em>
 </p>
 
 ---
@@ -36,7 +36,7 @@
 <td width="33%" valign="top">
 
 ### 🔍 Request Capture
-Real-time monitoring of tracking requests from 68 providers. Pause/resume, sort, auto-prune.
+Real-time monitoring of tracking requests from 69 providers. Pause/resume, sort, auto-prune.
 
 </td>
 <td width="33%" valign="top">
@@ -55,8 +55,8 @@ Inspect and override cookie/consent state. Test consent mode behavior without ma
 <tr>
 <td width="33%" valign="top">
 
-### 📊 68 Providers
-GA4, Meta, TikTok, LinkedIn, Adobe, Hotjar, Braze, HubSpot, and 60 more across 9 categories.
+### 📊 69 Providers
+GA4, Meta, TikTok, LinkedIn, Adobe, Hotjar, Braze, HubSpot, Medallia, Indicative, and 60 more across 9 categories.
 
 </td>
 <td width="33%" valign="top">
@@ -106,7 +106,7 @@ npm run dev    # Watches CSS + JS for live changes
 
 ## 📊 Supported Providers
 
-68 providers across 9 categories — from analytics to CDPs.
+69 providers across 9 categories — from analytics to CDPs.
 
 | Category | Count | Providers |
 |----------|-------|-----------|
@@ -158,7 +158,7 @@ Full documentation available at [tagdragon.net/docs](https://www.tagdragon.net/d
 | [Features](https://www.tagdragon.net/docs/features) | Complete feature overview |
 | [DataLayer Tab](https://www.tagdragon.net/docs/datalayer) | DataLayer inspector guide |
 | [Consent Panel](https://www.tagdragon.net/docs/consent-panel) | Consent testing guide |
-| [Provider Reference](https://www.tagdragon.net/docs/providers) | All 68 providers |
+| [Provider Reference](https://www.tagdragon.net/docs/providers) | All 69 providers |
 | [Adobe Env Switcher](https://www.tagdragon.net/docs/adobe-env-switcher) | Adobe environment switching |
 | [Toolbar Reference](https://www.tagdragon.net/docs/toolbar-reference) | Complete UI reference |
 | [FAQ](https://www.tagdragon.net/docs/faq) | Frequently asked questions |

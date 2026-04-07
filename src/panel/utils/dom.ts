@@ -45,6 +45,7 @@ interface DOMRefs {
   readonly detailUrl: HTMLElement | null;
   readonly detailContent: HTMLElement | null;
   readonly detailTabs: HTMLElement | null;
+  readonly triggeredByBanner: HTMLElement | null;
   readonly statusStats: HTMLElement | null;
   readonly sizeBadge: HTMLElement | null;
   readonly timeBadge: HTMLElement | null;
@@ -115,6 +116,7 @@ export const DOM: DOMRefs = {
   get detailUrl() { return $('detail-url'); },
   get detailContent() { return $('detail-content'); },
   get detailTabs() { return $('detail-tabs'); },
+  get triggeredByBanner() { return $('triggered-by-banner'); },
   get statusStats() { return $('status-stats'); },
   get sizeBadge() { return $('size-badge'); },
   get timeBadge() { return $('time-badge'); },

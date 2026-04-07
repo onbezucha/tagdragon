@@ -24,7 +24,6 @@ import { selectDlPush, closeDlDetail, initDlDetailTabHandlers } from './datalaye
 import { queueHighlights, checkWatchPaths, clearLiveState } from './datalayer/live-inspector';
 import { validatePush, loadValidationRules, saveValidationRules } from './datalayer/validator';
 import { getValidationErrors, setValidationErrors, clearValidationErrors, getValidationRules, setValidationRules, isValidationLoaded, setValidationLoaded } from './datalayer/state';
-import { findTriggeringPush, renderTriggeredBy } from './datalayer/reverse-correlation';
 import { initTheme } from './theme';
 import { savePanelSetting, loadPanelSetting } from './utils/persistence';
 import { isMac } from './utils/platform';

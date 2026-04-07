@@ -63,66 +63,97 @@ export function findTriggeringPush(
 }
 
 /**
- * Render a compact "Triggered by DataLayer" reference in network detail.
+ * Render a compact "Triggered by DataLayer" banner in network detail.
+ * Populates pre-existing child elements in the container.
  */
 export function renderTriggeredBy(
   container: HTMLElement,
   result: TriggeringPushResult,
   onGotoPush: (pushId: number) => void,
 ): void {
-  const wrapper = document.createElement('div');
-  wrapper.className = 'dl-triggered-by';
-
-  const label = document.createElement('span');
-  label.className = 'dl-triggered-by-label';
-  label.textContent = 'Triggered by DataLayer';
-  wrapper.appendChild(label);
-
-  const row = document.createElement('div');
-  row.className = 'dl-triggered-by-row';
-
-  const delay = document.createElement('span');
-  delay.className = 'dl-correlation-delay';
-  delay.textContent = `${result.delayMs >= 0 ? '+' : ''}${result.delayMs}ms`;
-  if (result.confidence === 'high') delay.style.color = 'var(--green)';
-  else if (result.confidence === 'medium') delay.style.color = 'var(--yellow)';
-  else delay.style.color = 'var(--orange)';
-  row.appendChild(delay);
-
-  const badge = document.createElement('span');
-  badge.className = 'dl-correlation-badge';
-  badge.textContent = result.push.sourceLabel;
   const colors: Record<string, string> = {
-    gtm: '#E8710A', tealium: '#2C7A7B', adobe: '#E53E3E',
-    segment: '#3182CE', digitalData: '#38A169', custom: '#718096',
+    gtm: '#E8710A',
+    tealium: '#2C7A7B',
+    adobe: '#E53E3E',
+    segment: '#3182CE',
+    digitalData: '#38A169',
+    custom: '#718096',
   };
   const color = colors[result.push.source] ?? '#718096';
-  badge.style.background = color + '22';
-  badge.style.color = color;
-  row.appendChild(badge);
 
-  if (result.push._eventName) {
-    const event = document.createElement('span');
-    event.className = 'dl-correlation-event';
-    event.textContent = result.push._eventName;
-    row.appendChild(event);
+  // Confidence colors
+  const confidenceColors: Record<string, string> = {
+    high: 'var(--green)',
+    medium: 'var(--yellow)',
+    low: 'var(--orange)',
+  };
+  const confColor = confidenceColors[result.confidence] ?? 'var(--text-2)';
+
+  // Confidence labels for tooltip
+  const confidenceLabels: Record<string, string> = {
+    high: 'high',
+    medium: 'medium',
+    low: 'low',
+  };
+
+  // Show banner
+  container.classList.add('visible');
+  container.style.borderLeftColor = color;
+
+  // Tint icon
+  const icon = container.querySelector('.trigger-icon') as HTMLElement;
+  if (icon) icon.style.color = color;
+
+  // Confidence dot
+  const dot = container.querySelector('.trigger-confidence-dot') as HTMLElement;
+  if (dot) {
+    dot.style.background = confColor;
+    const delayAbs = Math.abs(result.delayMs);
+    dot.title = `Confidence: ${confidenceLabels[result.confidence]} — push occurred ${delayAbs}ms before this request`;
   }
 
-  const index = document.createElement('span');
-  index.style.cssText = 'font-size:10px;color:var(--text-2);margin-left:4px;';
-  index.textContent = `#${result.push.pushIndex}`;
-  row.appendChild(index);
+  // Source badge
+  const badge = container.querySelector('.trigger-source-badge') as HTMLElement;
+  if (badge) {
+    badge.textContent = result.push.sourceLabel;
+    badge.style.background = color + '22';
+    badge.style.color = color;
+  }
 
-  const gotoBtn = document.createElement('button');
-  gotoBtn.className = 'dl-correlation-goto';
-  gotoBtn.title = 'View in DataLayer tab';
-  gotoBtn.textContent = '→';
-  gotoBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
+  // Event name
+  const eventName = container.querySelector('.trigger-event-name') as HTMLElement;
+  if (eventName) {
+    eventName.textContent = result.push._eventName ?? '';
+    eventName.title = result.push._eventName ?? '';
+  }
+
+  // Delay
+  const delay = container.querySelector('.trigger-delay') as HTMLElement;
+  if (delay) {
+    delay.textContent = `${result.delayMs >= 0 ? '+' : ''}${result.delayMs}ms`;
+    delay.style.color = confColor;
+  }
+
+  // Goto button
+  const gotoBtn = container.querySelector('.trigger-goto-btn') as HTMLElement;
+  if (gotoBtn) {
+    gotoBtn.onclick = (e: MouseEvent) => {
+      e.stopPropagation();
+      onGotoPush(result.push.id);
+    };
+  }
+
+  // Entire banner is clickable
+  container.onclick = () => {
     onGotoPush(result.push.id);
-  });
-  row.appendChild(gotoBtn);
+  };
+}
 
-  wrapper.appendChild(row);
-  container.appendChild(wrapper);
+/**
+ * Hide the triggered-by banner (no correlation found).
+ */
+export function hideTriggeredByBanner(container: HTMLElement): void {
+  container.classList.remove('visible');
+  container.style.borderLeftColor = '';
+  container.onclick = null;
 }
