@@ -26,7 +26,6 @@
     "declarativeNetRequest",
     "cookies",
     "tabs",
-    "activeTab",
     "scripting"
   ],
   "content_scripts": [
