@@ -130,7 +130,7 @@ export const PROVIDER_CATEGORIES: AllProviderCategories = {
       icon: '📐',
       order: 7,
       defaultExpanded: true,
-      patterns: [/^cd\\d+$/, /^cm\\d+$/]
+      patterns: [/^cd\d+$/, /^cm\d+$/]
     },
     timing: {
       label: 'Timing',
@@ -176,14 +176,14 @@ export const PROVIDER_CATEGORIES: AllProviderCategories = {
       icon: '🔢',
       order: 4,
       defaultExpanded: true,
-      patterns: [/^eVar\\d+$/]
+      patterns: [/^eVar\d+$/]
     },
     props: {
       label: 'Props',
       icon: '📌',
       order: 5,
       defaultExpanded: true,
-      patterns: [/^prop\\d+$/]
+      patterns: [/^prop\d+$/]
     },
     products: {
       label: 'Products',
@@ -198,7 +198,7 @@ export const PROVIDER_CATEGORIES: AllProviderCategories = {
       icon: '📋',
       order: 7,
       defaultExpanded: false,
-      patterns: [/^list\\d+$/]
+      patterns: [/^list\d+$/]
     },
     contextData: {
       label: 'Context Data',
@@ -251,14 +251,14 @@ export const PROVIDER_CATEGORIES: AllProviderCategories = {
       icon: '🔢',
       order: 4,
       defaultExpanded: true,
-      patterns: [/^eVar\\d+$/]
+      patterns: [/^eVar\d+$/]
     },
     props: {
       label: 'Props',
       icon: '📌',
       order: 5,
       defaultExpanded: true,
-      patterns: [/^prop\\d+$/]
+      patterns: [/^prop\d+$/]
     },
     products: {
       label: 'Products',
@@ -273,7 +273,7 @@ export const PROVIDER_CATEGORIES: AllProviderCategories = {
       icon: '📋',
       order: 7,
       defaultExpanded: false,
-      patterns: [/^list\\d+$/]
+      patterns: [/^list\d+$/]
     },
     identity: {
       label: 'Identity',
@@ -703,7 +703,7 @@ export const PROVIDER_CATEGORIES: AllProviderCategories = {
       icon: '📐',
       order: 4,
       defaultExpanded: true,
-      patterns: [/^Custom Var \\d+$/]
+      patterns: [/^Custom Var \d+$/]
     },
     device: {
       label: 'Device & Browser',
@@ -924,26 +924,40 @@ export const PROVIDER_CATEGORIES: AllProviderCategories = {
   },
 
   'X (Twitter) Pixel': {
+    event: {
+      label: 'Event',
+      icon: '⚡',
+      order: 1,
+      defaultExpanded: true,
+      patterns: [/^Event$/, /^Event ID$/]
+    },
     tracking: {
       label: 'Tracking',
       icon: '🔑',
-      order: 1,
+      order: 2,
       defaultExpanded: true,
-      patterns: [/^Transaction ID$/, /^Pixel ID$/]
+      patterns: [/^Transaction ID$/, /^Pixel ID$/, /^Version$/, /^Type$/]
     },
     conversion: {
       label: 'Conversion',
       icon: '🎯',
-      order: 2,
+      order: 3,
       defaultExpanded: true,
       patterns: [/^Sale Amount$/, /^Order Quantity$/]
     },
     page: {
       label: 'Page',
       icon: '📄',
-      order: 3,
+      order: 4,
       defaultExpanded: true,
-      patterns: [/^URL$/]
+      patterns: [/^Page URL$/, /^Partner$/]
+    },
+    user: {
+      label: 'User',
+      icon: '👤',
+      order: 5,
+      defaultExpanded: true,
+      patterns: [/^User ID \(twpid\)$/]
     }
   },
 
@@ -1032,5 +1046,943 @@ export const PROVIDER_CATEGORIES: AllProviderCategories = {
       defaultExpanded: true,
       patterns: [/^URL$/]
     }
-  }
+  },
+
+  'Piwik PRO': {
+    hit: {
+      label: 'Hit Info',
+      icon: '📊',
+      order: 1,
+      defaultExpanded: true,
+      patterns: [/^Site ID$/, /^Action$/]
+    },
+    event: {
+      label: 'Event',
+      icon: '⚡',
+      order: 2,
+      defaultExpanded: true,
+      patterns: [/^Event Category$/, /^Event Action$/, /^Event Name$/]
+    },
+    page: {
+      label: 'Page',
+      icon: '📄',
+      order: 3,
+      defaultExpanded: true,
+      patterns: [/^URL$/]
+    },
+    identity: {
+      label: 'Identity',
+      icon: '👤',
+      order: 4,
+      defaultExpanded: true,
+      patterns: [/^User ID$/]
+    }
+  },
+
+  'AT Internet': {
+    page: {
+      label: 'Page',
+      icon: '📄',
+      order: 1,
+      defaultExpanded: true,
+      patterns: [/^Site Name$/, /^Level 2$/, /^Page$/]
+    },
+    campaign: {
+      label: 'Campaign',
+      icon: '🎯',
+      order: 2,
+      defaultExpanded: true,
+      patterns: [/^Campaign$/]
+    },
+    hit: {
+      label: 'Hit Info',
+      icon: '📊',
+      order: 3,
+      defaultExpanded: true,
+      patterns: [/^Hit Type$/, /^Click$/]
+    }
+  },
+
+  'Comscore': {
+    publisher: {
+      label: 'Publisher',
+      icon: '🔑',
+      order: 1,
+      defaultExpanded: true,
+      patterns: [/^Type$/, /^Client ID$/, /^Version$/, /^Integration Type$/, /^Config$/]
+    },
+    page: {
+      label: 'Page',
+      icon: '📄',
+      order: 2,
+      defaultExpanded: true,
+      patterns: [/^Page URL$/, /^Page Title$/, /^Referrer$/, /^Timestamp$/]
+    },
+    consent: {
+      label: 'Consent & Privacy',
+      icon: '🛡️',
+      order: 3,
+      defaultExpanded: true,
+      patterns: [/^GDPR$/, /^GDPR Purposes$/, /^GDPR LI$/, /^GDPR Country$/]
+    },
+    campaign: {
+      label: 'Campaign',
+      icon: '🎯',
+      order: 4,
+      defaultExpanded: true,
+      patterns: [/^Campaign ID$/]
+    },
+    fingerprinting: {
+      label: 'Fingerprinting',
+      icon: '🔒',
+      order: 5,
+      defaultExpanded: false,
+      patterns: [/^Fingerprint ID$/]
+    },
+    content: {
+      label: 'Content',
+      icon: '📝',
+      order: 6,
+      defaultExpanded: false,
+      patterns: [/^Segment$/]
+    },
+    customVars: {
+      label: 'Custom Variables',
+      icon: '📐',
+      order: 7,
+      defaultExpanded: false,
+      prefixMatch: ['c'],
+      patterns: []
+    }
+  },
+
+  'Parse.ly': {
+    page: {
+      label: 'Page',
+      icon: '📄',
+      order: 1,
+      defaultExpanded: true,
+      patterns: [/^URL$/, /^Referrer$/]
+    },
+    hit: {
+      label: 'Hit Info',
+      icon: '📊',
+      order: 2,
+      defaultExpanded: true,
+      patterns: [/^Action$/, /^Site ID$/, /^Timestamp$/]
+    }
+  },
+
+  'Webtrends': {
+    page: {
+      label: 'Page',
+      icon: '📄',
+      order: 1,
+      defaultExpanded: true,
+      patterns: [/^Site Name$/, /^Scene$/, /^URI$/, /^Server$/]
+    },
+    identity: {
+      label: 'Identity',
+      icon: '👤',
+      order: 2,
+      defaultExpanded: true,
+      patterns: [/^Visitor ID$/]
+    }
+  },
+
+  'Tealium EventStream': {
+    event: {
+      label: 'Event',
+      icon: '⚡',
+      order: 1,
+      defaultExpanded: true,
+      patterns: [/^Event$/]
+    },
+    account: {
+      label: 'Account',
+      icon: '🔑',
+      order: 2,
+      defaultExpanded: true,
+      patterns: [/^Account$/, /^Profile$/]
+    },
+    identity: {
+      label: 'Identity',
+      icon: '👤',
+      order: 3,
+      defaultExpanded: true,
+      patterns: [/^Visitor ID$/]
+    }
+  },
+
+  'Adobe Target': {
+    targeting: {
+      label: 'Targeting',
+      icon: '🎯',
+      order: 1,
+      defaultExpanded: true,
+      patterns: [/^Mbox$/, /^Session ID$/, /^TNT ID$/]
+    },
+    identity: {
+      label: 'Identity',
+      icon: '👤',
+      order: 2,
+      defaultExpanded: true,
+      patterns: [/^MCID$/]
+    },
+    page: {
+      label: 'Page',
+      icon: '📄',
+      order: 3,
+      defaultExpanded: true,
+      patterns: [/^Host$/, /^Page URL$/]
+    }
+  },
+
+  'Adobe AAM': {
+    hitInfo: {
+      label: 'Hit Info',
+      icon: '📊',
+      order: 1,
+      defaultExpanded: true,
+      patterns: [/^Request Type$/, /^Account$/],
+    },
+    general: {
+      label: 'General',
+      icon: '🔧',
+      order: 2,
+      defaultExpanded: true,
+      patterns: [
+        /^Caller$/, /^Callback Property$/, /^Data Provider/, /^Integration Code/,
+        /^COPPA/, /^Return Traits/, /^Data Provider ID$/, /^Data Provider User ID$/,
+        /^Return URL/, /^Adobe Analytics Integration$/, /^JSON Response/,
+        /^Experience Cloud ID/, /^Name Space ID$/, /^Platform$/,
+        /^Legacy AA/, /^Return Method$/, /^Score ID$/,
+        /^Trait Source/, /^Unique User ID$/, /^Org ID/,
+        /^Blob$/, /^Version$/, /^DCS Region$/, /^Redirect$/,
+        /^GDPR$/, /^Consent String$/,
+      ],
+    },
+    customer: {
+      label: 'Customer Attributes',
+      icon: '👥',
+      order: 3,
+      defaultExpanded: true,
+      prefixMatch: ['c_'],
+    },
+    private: {
+      label: 'Private Attributes',
+      icon: '🔒',
+      order: 4,
+      defaultExpanded: false,
+      prefixMatch: ['p_'],
+    },
+  },
+
+  'Adobe ECID': {
+    identity: {
+      label: 'Identity',
+      icon: '👤',
+      order: 1,
+      defaultExpanded: true,
+      patterns: [/^MID$/]
+    },
+    organization: {
+      label: 'Organization',
+      icon: '🔑',
+      order: 2,
+      defaultExpanded: true,
+      patterns: [/^Org ID$/]
+    },
+    technical: {
+      label: 'Technical',
+      icon: '⚙️',
+      order: 3,
+      defaultExpanded: false,
+      patterns: [/^Version$/, /^Response$/]
+    }
+  },
+
+  'Adobe Heartbeat': {
+    event: {
+      label: 'Event',
+      icon: '⚡',
+      order: 1,
+      defaultExpanded: true,
+      patterns: [/^Event Type$/]
+    },
+    stream: {
+      label: 'Stream',
+      icon: '📺',
+      order: 2,
+      defaultExpanded: true,
+      patterns: [/^Stream Name$/, /^Channel$/, /^Stream ID$/]
+    }
+  },
+
+  'Adobe DTM': {
+    library: {
+      label: 'Library',
+      icon: '📦',
+      order: 1,
+      defaultExpanded: true,
+      patterns: [/^Org ID \(partial\)$/, /^Property hash$/]
+    },
+    technical: {
+      label: 'Technical',
+      icon: '⚙️',
+      order: 2,
+      defaultExpanded: false,
+      patterns: [/^URL$/]
+    }
+  },
+
+  'HubSpot': {
+    account: {
+      label: 'Account',
+      icon: '🔑',
+      order: 1,
+      defaultExpanded: true,
+      patterns: [/^Hub ID$/]
+    },
+    event: {
+      label: 'Event',
+      icon: '⚡',
+      order: 2,
+      defaultExpanded: true,
+      patterns: [/^Event$/]
+    },
+    page: {
+      label: 'Page',
+      icon: '📄',
+      order: 3,
+      defaultExpanded: true,
+      patterns: [/^Page URL$/, /^Page Title$/]
+    },
+    campaign: {
+      label: 'Campaign',
+      icon: '🎯',
+      order: 4,
+      defaultExpanded: true,
+      patterns: [/^Campaign$/, /^Source$/]
+    }
+  },
+
+  'RudderStack': {
+    event: {
+      label: 'Event',
+      icon: '⚡',
+      order: 1,
+      defaultExpanded: true,
+      patterns: [/^Type$/, /^Event$/]
+    },
+    identity: {
+      label: 'Identity',
+      icon: '👤',
+      order: 2,
+      defaultExpanded: true,
+      patterns: [/^User ID$/, /^Anonymous ID$/]
+    },
+    account: {
+      label: 'Account',
+      icon: '🔑',
+      order: 3,
+      defaultExpanded: true,
+      patterns: [/^Write Key$/]
+    }
+  },
+
+  'mParticle': {
+    event: {
+      label: 'Event',
+      icon: '⚡',
+      order: 1,
+      defaultExpanded: true,
+      patterns: [/^Event$/, /^Event Type$/]
+    },
+    identity: {
+      label: 'Identity',
+      icon: '👤',
+      order: 2,
+      defaultExpanded: true,
+      patterns: [/^User ID$/]
+    },
+    account: {
+      label: 'Account',
+      icon: '🔑',
+      order: 3,
+      defaultExpanded: true,
+      patterns: [/^API Key$/, /^Environment$/]
+    }
+  },
+
+  'Braze': {
+    event: {
+      label: 'Event',
+      icon: '⚡',
+      order: 1,
+      defaultExpanded: true,
+      patterns: [/^Event$/]
+    },
+    identity: {
+      label: 'Identity',
+      icon: '👤',
+      order: 2,
+      defaultExpanded: true,
+      patterns: [/^User ID$/, /^Session ID$/]
+    },
+    account: {
+      label: 'Account',
+      icon: '🔑',
+      order: 3,
+      defaultExpanded: true,
+      patterns: [/^App ID$/]
+    },
+    technical: {
+      label: 'Technical',
+      icon: '⚙️',
+      order: 4,
+      defaultExpanded: false,
+      patterns: [/^SDK Version$/]
+    }
+  },
+
+  'Optimizely': {
+    identity: {
+      label: 'Identity',
+      icon: '👤',
+      order: 1,
+      defaultExpanded: true,
+      patterns: [/^User ID$/]
+    },
+    experiment: {
+      label: 'Experiment',
+      icon: '🧪',
+      order: 2,
+      defaultExpanded: true,
+      patterns: [/^Account ID$/, /^Project ID$/, /^Experiment ID$/, /^Variation ID$/]
+    },
+    event: {
+      label: 'Event',
+      icon: '⚡',
+      order: 3,
+      defaultExpanded: true,
+      patterns: [/^Event$/]
+    },
+    ecommerce: {
+      label: 'Ecommerce',
+      icon: '🛒',
+      order: 4,
+      defaultExpanded: true,
+      patterns: [/^Revenue$/]
+    }
+  },
+
+  'Dynamic Yield': {
+    identity: {
+      label: 'Identity',
+      icon: '👤',
+      order: 1,
+      defaultExpanded: true,
+      patterns: [/^DY ID$/, /^Session ID$/]
+    },
+    event: {
+      label: 'Event',
+      icon: '⚡',
+      order: 2,
+      defaultExpanded: true,
+      patterns: [/^Event$/, /^Section$/]
+    }
+  },
+
+  'Split': {
+    event: {
+      label: 'Event',
+      icon: '⚡',
+      order: 1,
+      defaultExpanded: true,
+      patterns: [/^Event$/]
+    },
+    targeting: {
+      label: 'Targeting',
+      icon: '🎯',
+      order: 2,
+      defaultExpanded: true,
+      patterns: [/^Key$/, /^Traffic Type$/, /^Value$/]
+    }
+  },
+
+  'Omniconvert': {
+    event: {
+      label: 'Event',
+      icon: '⚡',
+      order: 1,
+      defaultExpanded: true,
+      patterns: [/^Event$/]
+    },
+    experiment: {
+      label: 'Experiment',
+      icon: '🧪',
+      order: 2,
+      defaultExpanded: true,
+      patterns: [/^Experiment ID$/, /^Variation ID$/]
+    }
+  },
+
+  '6Sense': {
+    company: {
+      label: 'Company',
+      icon: '🏢',
+      order: 1,
+      defaultExpanded: true,
+      patterns: [/^Company ID$/, /^Domain$/]
+    },
+    technical: {
+      label: 'Technical',
+      icon: '⚙️',
+      order: 2,
+      defaultExpanded: true,
+      patterns: [/^Token$/, /^IP$/]
+    }
+  },
+
+  'Demandbase': {
+    company: {
+      label: 'Company',
+      icon: '🏢',
+      order: 1,
+      defaultExpanded: true,
+      patterns: [/^Company ID$/, /^Company$/]
+    },
+    page: {
+      label: 'Page',
+      icon: '📄',
+      order: 2,
+      defaultExpanded: true,
+      patterns: [/^Page Type$/]
+    },
+    technical: {
+      label: 'Technical',
+      icon: '⚙️',
+      order: 3,
+      defaultExpanded: false,
+      patterns: [/^Key$/]
+    }
+  },
+
+  'Lytics': {
+    event: {
+      label: 'Event',
+      icon: '⚡',
+      order: 1,
+      defaultExpanded: true,
+      patterns: [/^Event$/]
+    },
+    identity: {
+      label: 'Identity',
+      icon: '👤',
+      order: 2,
+      defaultExpanded: true,
+      patterns: [/^User ID$/, /^Client ID$/]
+    },
+    page: {
+      label: 'Page',
+      icon: '📄',
+      order: 3,
+      defaultExpanded: true,
+      patterns: [/^URL$/]
+    }
+  },
+
+  'Indicative': {
+    event: {
+      label: 'Event',
+      icon: '⚡',
+      order: 1,
+      defaultExpanded: true,
+      patterns: [/^Event$/]
+    },
+    identity: {
+      label: 'Identity',
+      icon: '👤',
+      order: 2,
+      defaultExpanded: true,
+      patterns: [/^User ID$/]
+    },
+    account: {
+      label: 'Account',
+      icon: '🔑',
+      order: 3,
+      defaultExpanded: true,
+      patterns: [/^API Key$/]
+    }
+  },
+
+  'Ensighten': {
+    bootstrap: {
+      label: 'Bootstrap',
+      icon: '📦',
+      order: 1,
+      defaultExpanded: true,
+      patterns: [/^Bootstrap$/, /^Client$/, /^Space$/]
+    }
+  },
+
+  'Merkury': {
+    event: {
+      label: 'Event',
+      icon: '⚡',
+      order: 1,
+      defaultExpanded: true,
+      patterns: [/^Event$/]
+    },
+    identity: {
+      label: 'Identity',
+      icon: '👤',
+      order: 2,
+      defaultExpanded: true,
+      patterns: [/^Merkury ID$/]
+    },
+    technical: {
+      label: 'Technical',
+      icon: '⚙️',
+      order: 3,
+      defaultExpanded: false,
+      patterns: [/^Segment$/]
+    }
+  },
+
+  'Snapchat Pixel': {
+    event: {
+      label: 'Event',
+      icon: '⚡',
+      order: 1,
+      defaultExpanded: true,
+      patterns: [/^Event$/]
+    },
+    pixel: {
+      label: 'Pixel Info',
+      icon: '🔑',
+      order: 2,
+      defaultExpanded: true,
+      patterns: [/^Pixel ID$/]
+    },
+    page: {
+      label: 'Page',
+      icon: '📄',
+      order: 3,
+      defaultExpanded: true,
+      patterns: [/^Page URL$/]
+    },
+    ecommerce: {
+      label: 'Ecommerce',
+      icon: '🛒',
+      order: 4,
+      defaultExpanded: true,
+      patterns: [/^Price$/, /^Currency$/]
+    },
+    identity: {
+      label: 'Identity',
+      icon: '👤',
+      order: 5,
+      defaultExpanded: false,
+      patterns: [/^Email$/]
+    }
+  },
+
+  'Reddit Pixel': {
+    general: {
+      label: 'General',
+      icon: '🔑',
+      order: 1,
+      defaultExpanded: true,
+      patterns: [/^Account ID$/, /^Event$/]
+    },
+    eventData: {
+      label: 'Event Data',
+      icon: '⚡',
+      order: 2,
+      defaultExpanded: true,
+      patterns: [/^Custom Event Name$/, /^Item Count$/, /^Conversion ID$/]
+    },
+    ecommerce: {
+      label: 'Ecommerce',
+      icon: '🛒',
+      order: 3,
+      defaultExpanded: true,
+      patterns: [/^Value$/, /^Value \(Decimal\)$/, /^Currency$/, /^Products$/]
+    }
+  },
+
+  'Amazon Ads': {
+    event: {
+      label: 'Event',
+      icon: '⚡',
+      order: 1,
+      defaultExpanded: true,
+      patterns: [/^Event$/]
+    },
+    ad: {
+      label: 'Ad Info',
+      icon: '📢',
+      order: 2,
+      defaultExpanded: true,
+      patterns: [/^Slot$/, /^Ad ID$/]
+    },
+    page: {
+      label: 'Page',
+      icon: '📄',
+      order: 3,
+      defaultExpanded: true,
+      patterns: [/^Page Type$/, /^Ref$/]
+    }
+  },
+
+  'Spotify Pixel': {
+    event: {
+      label: 'Event',
+      icon: '⚡',
+      order: 1,
+      defaultExpanded: true,
+      patterns: [/^Event$/]
+    },
+    pixel: {
+      label: 'Pixel Info',
+      icon: '🔑',
+      order: 2,
+      defaultExpanded: true,
+      patterns: [/^Pixel ID$/]
+    },
+    consent: {
+      label: 'Consent & Privacy',
+      icon: '🔒',
+      order: 3,
+      defaultExpanded: false,
+      patterns: [/^GDPR$/]
+    }
+  },
+
+  'Outbrain': {
+    event: {
+      label: 'Event',
+      icon: '⚡',
+      order: 1,
+      defaultExpanded: true,
+      patterns: [/^Event$/]
+    },
+    tracking: {
+      label: 'Tracking',
+      icon: '🎯',
+      order: 2,
+      defaultExpanded: true,
+      patterns: [/^Click ID$/]
+    },
+    ecommerce: {
+      label: 'Ecommerce',
+      icon: '🛒',
+      order: 3,
+      defaultExpanded: true,
+      patterns: [/^Order Value$/, /^Currency$/]
+    }
+  },
+
+  'Teads': {
+    event: {
+      label: 'Event',
+      icon: '⚡',
+      order: 1,
+      defaultExpanded: true,
+      patterns: [/^Event$/]
+    },
+    pixel: {
+      label: 'Pixel Info',
+      icon: '🔑',
+      order: 2,
+      defaultExpanded: true,
+      patterns: [/^Pixel ID$/]
+    },
+    technical: {
+      label: 'Technical',
+      icon: '⚙️',
+      order: 3,
+      defaultExpanded: false,
+      patterns: [/^Time on Site$/]
+    }
+  },
+
+  'RTB House': {
+    event: {
+      label: 'Event',
+      icon: '⚡',
+      order: 1,
+      defaultExpanded: true,
+      patterns: [/^Event$/]
+    },
+    identity: {
+      label: 'Identity',
+      icon: '👤',
+      order: 2,
+      defaultExpanded: true,
+      patterns: [/^User ID$/]
+    },
+    technical: {
+      label: 'Technical',
+      icon: '⚙️',
+      order: 3,
+      defaultExpanded: false,
+      patterns: [/^Category$/]
+    }
+  },
+
+  'Zemanta': {
+    event: {
+      label: 'Event',
+      icon: '⚡',
+      order: 1,
+      defaultExpanded: true,
+      patterns: [/^Event$/]
+    },
+    campaign: {
+      label: 'Campaign',
+      icon: '🎯',
+      order: 2,
+      defaultExpanded: true,
+      patterns: [/^Campaign ID$/, /^Order ID$/]
+    }
+  },
+
+  'Sojern': {
+    event: {
+      label: 'Event',
+      icon: '⚡',
+      order: 1,
+      defaultExpanded: true,
+      patterns: [/^Event$/, /^Type$/]
+    },
+    tracking: {
+      label: 'Tracking',
+      icon: '🎯',
+      order: 2,
+      defaultExpanded: true,
+      patterns: [/^Partner ID$/]
+    }
+  },
+
+  'Vibes': {
+    event: {
+      label: 'Event',
+      icon: '⚡',
+      order: 1,
+      defaultExpanded: true,
+      patterns: [/^Event$/]
+    },
+    campaign: {
+      label: 'Campaign',
+      icon: '🎯',
+      order: 2,
+      defaultExpanded: true,
+      patterns: [/^Campaign ID$/]
+    }
+  },
+
+  'Invoca': {
+    event: {
+      label: 'Event',
+      icon: '⚡',
+      order: 1,
+      defaultExpanded: true,
+      patterns: [/^Event$/]
+    },
+    tracking: {
+      label: 'Tracking',
+      icon: '🎯',
+      order: 2,
+      defaultExpanded: true,
+      patterns: [/^Transaction ID$/, /^Campaign ID$/]
+    }
+  },
+
+  'Brevo': {
+    event: {
+      label: 'Event',
+      icon: '⚡',
+      order: 1,
+      defaultExpanded: true,
+      patterns: [/^Event$/]
+    },
+    identity: {
+      label: 'Identity',
+      icon: '👤',
+      order: 2,
+      defaultExpanded: true,
+      patterns: [/^Contact ID$/, /^Email$/]
+    }
+  },
+
+  'Medallia DXA': {
+    event: {
+      label: 'Event',
+      icon: '⚡',
+      order: 1,
+      defaultExpanded: true,
+      patterns: [/^Event$/]
+    },
+    identity: {
+      label: 'Identity',
+      icon: '👤',
+      order: 2,
+      defaultExpanded: true,
+      patterns: [/^Session ID$/]
+    },
+    technical: {
+      label: 'Technical',
+      icon: '⚙️',
+      order: 3,
+      defaultExpanded: true,
+      patterns: [/^Site ID$/]
+    }
+  },
+
+  'Glassbox': {
+    identity: {
+      label: 'Identity',
+      icon: '👤',
+      order: 1,
+      defaultExpanded: true,
+      patterns: [/^Session ID$/, /^Customer ID$/]
+    },
+    page: {
+      label: 'Page',
+      icon: '📄',
+      order: 2,
+      defaultExpanded: true,
+      patterns: [/^Page URL$/]
+    }
+  },
+
+  'FullStory': {
+    identity: {
+      label: 'Identity',
+      icon: '👤',
+      order: 1,
+      defaultExpanded: true,
+      patterns: [/^User ID$/, /^Display Name$/, /^Email$/]
+    }
+  },
+
+  'Crazy Egg': {
+    account: {
+      label: 'Account',
+      icon: '🔑',
+      order: 1,
+      defaultExpanded: true,
+      patterns: [/^Account ID$/]
+    },
+    page: {
+      label: 'Page',
+      icon: '📄',
+      order: 2,
+      defaultExpanded: true,
+      patterns: [/^Page URL$/]
+    }
+  },
 };

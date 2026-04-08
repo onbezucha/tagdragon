@@ -4,8 +4,8 @@ import { getParams } from './url-parser';
 export const doubleclick: Provider = {
   name: 'DoubleClick',
   color: '#7B2D8B',
-  // Excludes Google Ads conversion URLs (handled by googleAds provider)
-  pattern: /doubleclick\.net(?!.*\/pagead\/(viewthroughconversion|conversion))|ad\.doubleclick\.net/,
+  // Matches Floodlight tracking requests (/activity;src=...;type=...;cat=...)
+  pattern: /doubleclick\.net\/activity\b/,
 
   parseParams(url: string, postBody: unknown): Record<string, string | undefined> {
     const p = getParams(url, postBody);

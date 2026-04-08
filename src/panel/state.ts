@@ -546,6 +546,18 @@ export function updateConfig<K extends keyof AppConfig>(
   scheduleSave();
 }
 
+/**
+ * Update a config value and persist immediately (no debounce).
+ * Use for user-initiated changes where persistence is critical.
+ */
+export function updateConfigImmediate<K extends keyof AppConfig>(
+  key: K,
+  value: AppConfig[K]
+): void {
+  config[key] = value;
+  void saveConfig();
+}
+
 // Flush debounced config save on panel close to prevent data loss
 window.addEventListener('beforeunload', () => {
   if (saveTimer) {

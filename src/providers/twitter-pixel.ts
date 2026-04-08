@@ -9,12 +9,26 @@ export const twitterPixel: Provider = {
 
   parseParams(url: string, postRaw: unknown): Record<string, string | undefined> {
     const p = getParams(url, postRaw);
+
+    // Parse events from URL-encoded JSON array: [["pageview",{}]]
+    let eventType = '';
+    try {
+      const events = JSON.parse(p['events'] || '[]');
+      if (Array.isArray(events[0])) eventType = events[0][0] || '';
+    } catch {}
+
     return {
-      'Transaction ID': p['txn_id'],
+      'Event': eventType || p['events'],
+      'Event ID': p['event_id'],
       'Pixel ID': p['p_id'],
+      'Page URL': p['tw_document_href'],
+      'Partner': p['pt'],
+      'User ID (twpid)': p['twpid'],
       'Sale Amount': p['tw_sale_amount'],
       'Order Quantity': p['tw_order_quantity'],
-      'URL': url,
+      'Version': p['version'],
+      'Type': p['type'],
+      'Transaction ID': p['txn_id'],
     };
   },
 } as const;

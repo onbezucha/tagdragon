@@ -8,7 +8,7 @@ import type {
   ValidationResult,
   ValidationRule,
 } from '@/types/datalayer';
-import { getAppConfig, updateConfig } from '@/panel/state';
+import { getAppConfig, updateConfigImmediate } from '@/panel/state';
 
 // ─── STATE CONTAINERS ────────────────────────────────────────────────────────
 
@@ -287,16 +287,16 @@ export function initDlSortState(): void {
 export function getDlSortField(): DlSortField { return dlSortField; }
 export function setDlSortField(field: DlSortField): void {
   dlSortField = field;
-  updateConfig('dlSortField', field);
+  updateConfigImmediate('dlSortField', field);
 }
 export function getDlSortOrder(): DlSortOrder { return dlSortOrder; }
 export function setDlSortOrder(order: DlSortOrder): void {
   dlSortOrder = order;
-  updateConfig('dlSortOrder', order);
+  updateConfigImmediate('dlSortOrder', order);
 }
 export function toggleDlSortOrder(): DlSortOrder {
   dlSortOrder = dlSortOrder === 'asc' ? 'desc' : 'asc';
-  updateConfig('dlSortOrder', dlSortOrder);
+  updateConfigImmediate('dlSortOrder', dlSortOrder);
   return dlSortOrder;
 }
 

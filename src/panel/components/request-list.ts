@@ -3,7 +3,7 @@
 import type { ParsedRequest } from '@/types/request';
 import type { AppConfig } from '@/shared/constants';
 import { DOM } from '../utils/dom';
-import { formatBytes, getEventName, formatTimestamp } from '../utils/format';
+import { getEventName, formatTimestamp } from '../utils/format';
 import {
   getHiddenProviders,
   getFilteredIds,
@@ -29,8 +29,6 @@ rowTemplate.innerHTML = `
       <span class="req-provider-name"></span>
       <span class="req-method"></span>
       <span class="req-status"></span>
-      <span class="req-size"></span>
-      <span class="req-duration"></span>
     </div>
   </div>
 `;
@@ -69,7 +67,7 @@ export function createRequestRow(
   (row.querySelector('.req-event') as HTMLElement).textContent = eventName;
   (row.querySelector('.req-time') as HTMLElement).textContent = time;
 
-  // Secondary line (dot + provider name + method + status + size + duration)
+  // Secondary line (dot + provider name + method + status)
   // Provider dot
   const dotEl = row.querySelector('.req-provider-dot') as HTMLElement;
   if (dotEl) dotEl.style.background = data.color;
@@ -97,12 +95,6 @@ export function createRequestRow(
   statusEl.textContent = String(data.status || '—');
   if (data.status) statusEl.classList.add(`status-${String(data.status)[0]}`);
 
-  // Size
-  (row.querySelector('.req-size') as HTMLElement).textContent = formatBytes(data.size || 0);
-
-  // Duration
-  (row.querySelector('.req-duration') as HTMLElement).textContent = data.duration ? data.duration + 'ms' : '—';
-
   // Status-based row classes
   if (data.status) {
     const firstDigit = String(data.status)[0];
@@ -110,11 +102,6 @@ export function createRequestRow(
     if (data.status >= 400) {
       row.classList.add('error-row');
     }
-  }
-
-  // Slow request highlighting
-  if (data.duration && data.duration > 1000) {
-    row.classList.add('slow-row');
   }
 
   // Apply filter visibility

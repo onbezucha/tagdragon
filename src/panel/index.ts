@@ -541,7 +541,18 @@ function flushPendingDlPushes(): void {
 
 // ─── DATALAYER RECEIVERS ──────────────────────────────────────────────────────
 
+// Module-level flag — set to true after init completes
+let isPanelReady = false;
+
+// Module-level buffer for pushes arriving before init completes
+const earlyDlPushBuffer: DataLayerPush[] = [];
+
 window.receiveDataLayerPush = function (push: DataLayerPush): void {
+  if (!isPanelReady) {
+    // Buffer until init completes — will be flushed by init()
+    earlyDlPushBuffer.push(push);
+    return;
+  }
   if (dlState.getDlIsPaused()) return;
 
   // Mutate shared cumulative state in-place (2.2)
@@ -1625,8 +1636,11 @@ async function initDatalayerHandlers(): Promise<void> {
     });
 
     $content.querySelector('[data-action="toggle-sort-order"]')?.addEventListener('click', () => {
-      toggleDlSortOrder();
+      const newOrder = toggleDlSortOrder();
       renderDlPushListFull();
+      // Sync toolbar button visual state
+      const $dlSortBtn = document.getElementById('dl-btn-sort');
+      $dlSortBtn?.classList.toggle('active', newOrder === 'desc');
       closeDlFilterPopover();
     });
 
@@ -1995,6 +2009,18 @@ async function init(): Promise<void> {
     setValidationLoaded(true);
     updateDlRowValidation();
   }).catch(() => { /* ignore */ });
+
+  // Mark panel as ready and flush early pushes
+  isPanelReady = true;
+
+  // Replay any pushes that arrived before init completed
+  if (earlyDlPushBuffer.length > 0) {
+    const buffered = [...earlyDlPushBuffer];
+    earlyDlPushBuffer.length = 0;
+    for (const push of buffered) {
+      try { window.receiveDataLayerPush(push); } catch { /* ignore */ }
+    }
+  }
 }
 
 // Start initialization

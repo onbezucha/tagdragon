@@ -4,16 +4,24 @@ import { getParams } from './url-parser';
 export const redditPixel: Provider = {
   name: 'Reddit Pixel',
   color: '#FF4500',
-  pattern: /reddit\.com\/t\.gif|ads\.reddit\.com/,
+  pattern: /reddit\.com\/rp\.gif/,
 
   parseParams(url: string, postBody: unknown): Record<string, string | undefined> {
     const p = getParams(url, postBody);
+
+    // Request type: custom event name takes priority over standard event
+    const requestType = p['m.customEventName'] || p.event || undefined;
+
     return {
-      'Event': p.event_name,
-      'Advertiser ID': p.advertiser_id,
-      'Conversion ID': p.conversion_id,
-      'Value': p.value,
-      'Currency': p.currency,
+      'Account ID': p.id,
+      'Event': requestType,
+      'Custom Event Name': p['m.customEventName'],
+      'Item Count': p['m.itemCount'],
+      'Value': p['m.value'],
+      'Value (Decimal)': p['m.valueDecimal'],
+      'Currency': p['m.currency'],
+      'Products': p['m.products'],
+      'Conversion ID': p['m.conversionId'],
     };
   },
 } as const;
