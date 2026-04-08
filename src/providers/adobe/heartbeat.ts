@@ -11,7 +11,7 @@ export const adobeHeartbeat: Provider = {
     return {
       'Event Type': p['s:event:type'],
       'Stream Name': p['s:sp:nam'],
-      'Channel': p['s:sp:channel'],
+      Channel: p['s:sp:channel'],
       'Stream ID': p['s:sp:id'],
     };
   },

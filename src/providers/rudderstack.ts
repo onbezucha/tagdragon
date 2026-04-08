@@ -21,10 +21,12 @@ export const rudderstack: Provider = {
         userId = body.userId as string | undefined;
         anonymousId = body.anonymousId as string | undefined;
       }
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
     return {
-      'Type': type,
-      'Event': event,
+      Type: type,
+      Event: event,
       'User ID': userId,
       'Anonymous ID': anonymousId,
       'Write Key': p.writeKey,

@@ -6,12 +6,16 @@
 
 let tooltipEl: HTMLElement | null = null;
 let currentTarget: HTMLElement | null = null;
+let _initialized = false;
 
 /**
  * Initialize the tooltip system.
  * Creates the shared tooltip DOM element and attaches delegated event listeners.
+ * Safe to call multiple times — subsequent calls are no-ops.
  */
 export function init(): void {
+  if (_initialized) return;
+  _initialized = true;
   tooltipEl = document.createElement('div');
   tooltipEl.className = 'tooltip-popup';
   tooltipEl.style.display = 'none';

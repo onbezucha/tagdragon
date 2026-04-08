@@ -26,5 +26,7 @@ export function renderParamTable(obj: Record<string, unknown> | null | undefined
     })
     .join('');
 
-  return rows ? `<table class="param-table">${rows}</table>` : '<div class="empty-tab">No parameters.</div>';
+  return rows
+    ? `<table class="param-table">${rows}</table>`
+    : '<div class="empty-tab">No parameters.</div>';
 }

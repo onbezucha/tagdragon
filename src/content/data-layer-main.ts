@@ -50,7 +50,7 @@ import { SOURCE_DESCRIPTIONS } from '@/shared/datalayer-constants';
     pushIndex: number,
     timestamp: string,
     data: unknown,
-    isReplay?: boolean,
+    isReplay?: boolean
   ): void {
     let sanitized: unknown;
 
@@ -67,23 +67,29 @@ import { SOURCE_DESCRIPTIONS } from '@/shared/datalayer-constants';
     }
 
     try {
-      window.postMessage({
-        type: 'TAGDRAGON_DL_PUSH',
-        source,
-        pushIndex,
-        timestamp,
-        data: sanitized,
-        isReplay: isReplay === true,
-      }, '*');
+      window.postMessage(
+        {
+          type: 'TAGDRAGON_DL_PUSH',
+          source,
+          pushIndex,
+          timestamp,
+          data: sanitized,
+          isReplay: isReplay === true,
+        },
+        window.location.origin || '*'
+      );
     } catch {
-      window.postMessage({
-        type: 'TAGDRAGON_DL_PUSH',
-        source,
-        pushIndex,
-        timestamp,
-        data: { _error: 'Data could not be serialized' },
-        isReplay: isReplay === true,
-      }, '*');
+      window.postMessage(
+        {
+          type: 'TAGDRAGON_DL_PUSH',
+          source,
+          pushIndex,
+          timestamp,
+          data: { _error: 'Data could not be serialized' },
+          isReplay: isReplay === true,
+        },
+        window.location.origin || '*'
+      );
     }
   }
 
@@ -92,11 +98,13 @@ import { SOURCE_DESCRIPTIONS } from '@/shared/datalayer-constants';
   function replayDataLayer(dataLayer: unknown[]): void {
     const navStart = window.performance?.timing?.navigationStart ?? Date.now();
     for (let i = 0; i < dataLayer.length; i++) {
-      const item = dataLayer[i] as Record<string, unknown>;
-      const ts = item?.['gtm.start']
-        ? new Date(navStart + (item['gtm.start'] as number)).toISOString()
+      const item = dataLayer[i];
+      if (item === null || typeof item !== 'object') continue;
+      const record = item as Record<string, unknown>;
+      const ts = record['gtm.start']
+        ? new Date(navStart + (record['gtm.start'] as number)).toISOString()
         : new Date(navStart).toISOString();
-      sendPush('gtm', i, ts, item, true);
+      sendPush('gtm', i, ts, record, true);
     }
   }
 
@@ -127,11 +135,14 @@ import { SOURCE_DESCRIPTIONS } from '@/shared/datalayer-constants';
     if (detected.segment) sources.push('segment');
     if (detected.digitalData) sources.push('digitalData');
     if (!sources.length) return;
-    window.postMessage({
-      type: 'TAGDRAGON_DL_SOURCES',
-      sources,
-      labels: SOURCE_DESCRIPTIONS,
-    }, '*');
+    window.postMessage(
+      {
+        type: 'TAGDRAGON_DL_SOURCES',
+        sources,
+        labels: SOURCE_DESCRIPTIONS,
+      },
+      window.location.origin || '*'
+    );
   }
 
   // Listen for replay requests from the ISOLATED world bridge
@@ -211,7 +222,13 @@ import { SOURCE_DESCRIPTIONS } from '@/shared/datalayer-constants';
       const origTrack = satellite['track'];
       if (typeof origTrack === 'function') {
         satellite['track'] = function (...args: unknown[]) {
-          sendPush('adobe', adobeIdx++, new Date().toISOString(), { _type: 'track', rule: args[0], info: args[1] }, false);
+          sendPush(
+            'adobe',
+            adobeIdx++,
+            new Date().toISOString(),
+            { _type: 'track', rule: args[0], info: args[1] },
+            false
+          );
           return (origTrack as (...a: unknown[]) => unknown)(...args);
         };
       }
@@ -221,7 +238,9 @@ import { SOURCE_DESCRIPTIONS } from '@/shared/datalayer-constants';
   // ─── SEGMENT / window.analytics ──────────────────────────────────────────
 
   function interceptSegment(): void {
-    const analytics = (window as Record<string, unknown>)['analytics'] as Record<string, unknown> | undefined;
+    const analytics = (window as Record<string, unknown>)['analytics'] as
+      | Record<string, unknown>
+      | undefined;
     if (!analytics || typeof analytics !== 'object') return;
 
     let segIdx = 0;
@@ -229,7 +248,13 @@ import { SOURCE_DESCRIPTIONS } from '@/shared/datalayer-constants';
       const orig = analytics[method];
       if (typeof orig === 'function') {
         analytics[method] = function (...args: unknown[]) {
-          sendPush('segment', segIdx++, new Date().toISOString(), { _method: method, name: args[0], properties: args[1] }, false);
+          sendPush(
+            'segment',
+            segIdx++,
+            new Date().toISOString(),
+            { _method: method, name: args[0], properties: args[1] },
+            false
+          );
           return (orig as (...a: unknown[]) => unknown)(...args);
         };
       }
@@ -250,7 +275,13 @@ import { SOURCE_DESCRIPTIONS } from '@/shared/datalayer-constants';
   function sendDigitalDataSnapshot(isReplay = false): void {
     const raw = win['digitalData'];
     if (!raw || typeof raw !== 'object') return;
-    sendPush('digitalData', ddPushIndex++, new Date().toISOString(), raw as Record<string, unknown>, isReplay);
+    sendPush(
+      'digitalData',
+      ddPushIndex++,
+      new Date().toISOString(),
+      raw as Record<string, unknown>,
+      isReplay
+    );
   }
 
   function makeDigitalDataProxy(target: Record<string, unknown>): object {
@@ -279,7 +310,9 @@ import { SOURCE_DESCRIPTIONS } from '@/shared/datalayer-constants';
     try {
       ddProxy = makeDigitalDataProxy(raw as Record<string, unknown>);
       Object.defineProperty(window, 'digitalData', {
-        get() { return ddProxy; },
+        get() {
+          return ddProxy;
+        },
         set(newVal) {
           // Page replaced the whole object (SPA hard navigation)
           ddProxy = makeDigitalDataProxy(newVal as Record<string, unknown>);
@@ -311,7 +344,9 @@ import { SOURCE_DESCRIPTIONS } from '@/shared/datalayer-constants';
           interceptDataLayer(dl as unknown[]);
         }
       }
-    } catch { /* skip */ }
+    } catch {
+      /* skip */
+    }
 
     try {
       if (!detected.tealium) {
@@ -321,7 +356,9 @@ import { SOURCE_DESCRIPTIONS } from '@/shared/datalayer-constants';
           interceptTealium();
         }
       }
-    } catch { /* skip */ }
+    } catch {
+      /* skip */
+    }
 
     try {
       if (!detected.adobe) {
@@ -330,17 +367,25 @@ import { SOURCE_DESCRIPTIONS } from '@/shared/datalayer-constants';
           interceptAdobe();
         }
       }
-    } catch { /* skip */ }
+    } catch {
+      /* skip */
+    }
 
     try {
       if (!detected.segment) {
         const analytics = win['analytics'];
-        if (analytics && typeof analytics === 'object' && typeof (analytics as Record<string, unknown>)['track'] === 'function') {
+        if (
+          analytics &&
+          typeof analytics === 'object' &&
+          typeof (analytics as Record<string, unknown>)['track'] === 'function'
+        ) {
           detected.segment = true;
           interceptSegment();
         }
       }
-    } catch { /* skip */ }
+    } catch {
+      /* skip */
+    }
 
     try {
       if (!detected.digitalData) {
@@ -349,7 +394,9 @@ import { SOURCE_DESCRIPTIONS } from '@/shared/datalayer-constants';
           interceptDigitalData();
         }
       }
-    } catch { /* skip */ }
+    } catch {
+      /* skip */
+    }
   }
 
   // Initial detection
@@ -368,4 +415,16 @@ import { SOURCE_DESCRIPTIONS } from '@/shared/datalayer-constants';
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => detectAndIntercept(), { once: true });
   }
+
+  // Cleanup debounce timer on page unload to avoid stale callbacks
+  window.addEventListener(
+    'beforeunload',
+    () => {
+      if (ddDebounceTimer !== null) {
+        clearTimeout(ddDebounceTimer);
+        ddDebounceTimer = null;
+      }
+    },
+    { once: true }
+  );
 })();

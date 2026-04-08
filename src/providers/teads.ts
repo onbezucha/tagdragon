@@ -9,7 +9,7 @@ export const teads: Provider = {
   parseParams(url: string, postBody: unknown): Record<string, string | undefined> {
     const p = getParams(url, postBody);
     return {
-      'Event': p.event,
+      Event: p.event,
       'Pixel ID': p.pid,
       'Time on Site': p.tos,
     };

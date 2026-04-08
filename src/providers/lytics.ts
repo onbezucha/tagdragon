@@ -9,9 +9,9 @@ export const lytics: Provider = {
   parseParams(url: string, postBody: unknown): Record<string, string | undefined> {
     const p = getParams(url, postBody);
     return {
-      'Event': p.event,
+      Event: p.event,
       'User ID': p.uid,
-      'URL': p.url,
+      URL: p.url,
       'Client ID': p.cid,
     };
   },

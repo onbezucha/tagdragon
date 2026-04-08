@@ -12,12 +12,10 @@ function escCsv(v: unknown): string {
 /**
  * Download data as a CSV file.
  */
-export function downloadCsv(
-  headers: string[],
-  rows: string[][],
-  filename: string,
-): void {
-  const csv = [headers.map(escCsv).join(','), ...rows.map(r => r.map(escCsv).join(','))].join('\n');
+export function downloadCsv(headers: string[], rows: string[][], filename: string): void {
+  const csv = [headers.map(escCsv).join(','), ...rows.map((r) => r.map(escCsv).join(','))].join(
+    '\n'
+  );
   const blob = new Blob([csv], { type: 'text/csv' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');

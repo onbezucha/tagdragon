@@ -70,10 +70,7 @@ export function extractCurrency(ec: Record<string, unknown>): string {
 /**
  * Render an e-commerce product table into a container element.
  */
-export function renderEcommerceTable(
-  container: HTMLElement,
-  ec: Record<string, unknown>,
-): void {
+export function renderEcommerceTable(container: HTMLElement, ec: Record<string, unknown>): void {
   const products = extractProducts(ec);
   if (products.length === 0) return;
 

@@ -35,7 +35,16 @@ export interface TCFData {
 
 export interface CMPInfo {
   name: string;
-  type: 'onetrust' | 'usercentrics' | 'cookiebot' | 'cookieyes' | 'didomi' | 'quantcast' | 'iubenda' | 'tcf' | 'unknown';
+  type:
+    | 'onetrust'
+    | 'usercentrics'
+    | 'cookiebot'
+    | 'cookieyes'
+    | 'didomi'
+    | 'quantcast'
+    | 'iubenda'
+    | 'tcf'
+    | 'unknown';
   isActive: boolean;
   hasTCF: boolean;
 }

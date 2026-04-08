@@ -38,18 +38,22 @@ let heavyDataSizeEstimate = 0;
 export const heavyDataStore = new Map<number, HeavyData>();
 
 function estimateSize(data: HeavyData): number {
-  return (data.responseBody?.length ?? 0) +
+  return (
+    (data.responseBody?.length ?? 0) +
     Object.keys(data.requestHeaders).reduce(
-      (s, k) => s + k.length + (data.requestHeaders[k]?.length ?? 0), 0,
+      (s, k) => s + k.length + (data.requestHeaders[k]?.length ?? 0),
+      0
     ) +
     Object.keys(data.responseHeaders).reduce(
-      (s, k) => s + k.length + (data.responseHeaders[k]?.length ?? 0), 0,
-    );
+      (s, k) => s + k.length + (data.responseHeaders[k]?.length ?? 0),
+      0
+    )
+  );
 }
 
 // Wrap set to track size and auto-evict when over budget
 const originalSet = heavyDataStore.set.bind(heavyDataStore);
-heavyDataStore.set = function(key: number, value: HeavyData): Map<number, HeavyData> {
+heavyDataStore.set = function (key: number, value: HeavyData): Map<number, HeavyData> {
   const old = heavyDataStore.get(key);
   if (old) {
     heavyDataSizeEstimate -= estimateSize(old);
@@ -69,7 +73,7 @@ heavyDataStore.set = function(key: number, value: HeavyData): Map<number, HeavyD
 
 // Wrap delete to update size estimate
 const originalDelete = heavyDataStore.delete.bind(heavyDataStore);
-heavyDataStore.delete = function(key: number): boolean {
+heavyDataStore.delete = function (key: number): boolean {
   const old = heavyDataStore.get(key);
   if (old) {
     heavyDataSizeEstimate -= estimateSize(old);
@@ -79,7 +83,7 @@ heavyDataStore.delete = function(key: number): boolean {
 
 // Wrap clear to reset size estimate
 const originalClear = heavyDataStore.clear.bind(heavyDataStore);
-heavyDataStore.clear = function(): void {
+heavyDataStore.clear = function (): void {
   heavyDataSizeEstimate = 0;
   return originalClear();
 };
@@ -130,7 +134,7 @@ export function setPanelWindow(win: PanelWindow): void {
   win._getHeavyData = getHeavyData;
   win._clearHeavyData = clearHeavyData;
   win._deleteHeavyData = (ids: number[]) => {
-    ids.forEach(id => heavyDataStore.delete(id));
+    ids.forEach((id) => heavyDataStore.delete(id));
   };
 
   // Flush all buffered requests

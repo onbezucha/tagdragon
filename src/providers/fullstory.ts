@@ -11,7 +11,7 @@ export const fullstory: Provider = {
     return {
       'User ID': p.uid,
       'Display Name': p.displayName,
-      'Email': p.email,
+      Email: p.email,
     };
   },
 } as const;

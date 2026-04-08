@@ -10,11 +10,11 @@ export const hubspot: Provider = {
     const p = getParams(url, postBody);
     return {
       'Hub ID': p.a,
-      'Event': p.e,
+      Event: p.e,
       'Page URL': p.pageUrl,
       'Page Title': p.pageTitle,
-      'Campaign': p.hsa_cam,
-      'Source': p.hsa_src,
+      Campaign: p.hsa_cam,
+      Source: p.hsa_src,
     };
   },
 } as const;

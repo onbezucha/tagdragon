@@ -12,9 +12,9 @@ export const theTradeDesk: Provider = {
     return {
       'Advertiser ID': p['adv'],
       'Universal Pixel ID': p['upid'],
-      'Value': p['v'],
+      Value: p['v'],
       'Order ID': p['orderid'],
-      'URL': url,
+      URL: url,
     };
   },
 } as const;

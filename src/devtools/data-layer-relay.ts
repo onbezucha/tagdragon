@@ -47,7 +47,11 @@ export function flushDataLayerBuffer(): void {
   const toFlush = dlBuffer;
   dlBuffer = [];
   for (const push of toFlush) {
-    try { win.receiveDataLayerPush(push); } catch { /* ignore */ }
+    try {
+      win.receiveDataLayerPush(push);
+    } catch {
+      /* ignore */
+    }
   }
 }
 
@@ -84,7 +88,7 @@ export function sendDataLayerPushToPanel(msg: {
  */
 export function sendDataLayerSourcesToPanel(
   sources: DataLayerSource[],
-  labels: Record<string, string>,
+  labels: Record<string, string>
 ): void {
   const win = getPanelWindow();
   if (!win || win.closed) return;
@@ -103,5 +107,3 @@ function extractEventName(data: Record<string, unknown>): string | undefined {
   if (typeof data['event_name'] === 'string') return data['event_name'];
   return undefined;
 }
-
-

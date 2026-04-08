@@ -9,9 +9,9 @@ export const merkury: Provider = {
   parseParams(url: string, postBody: unknown): Record<string, string | undefined> {
     const p = getParams(url, postBody);
     return {
-      'Event': p.event,
+      Event: p.event,
       'Merkury ID': p.mid,
-      'Segment': p.sv,
+      Segment: p.sv,
     };
   },
 } as const;

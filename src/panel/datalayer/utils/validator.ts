@@ -16,8 +16,16 @@ export const PRESET_RULES: ValidationRule[] = [
     enabled: false,
     scope: { eventName: 'purchase' },
     checks: [
-      { type: 'required_key', key: 'transaction_id', message: 'Missing transaction_id on purchase event' },
-      { type: 'required_key', key: 'ecommerce.transaction_id', message: 'Missing ecommerce.transaction_id on purchase event' },
+      {
+        type: 'required_key',
+        key: 'transaction_id',
+        message: 'Missing transaction_id on purchase event',
+      },
+      {
+        type: 'required_key',
+        key: 'ecommerce.transaction_id',
+        message: 'Missing ecommerce.transaction_id on purchase event',
+      },
     ],
   },
   {
@@ -44,7 +52,12 @@ export const PRESET_RULES: ValidationRule[] = [
     enabled: false,
     scope: { ecommerceType: 'purchase' },
     checks: [
-      { type: 'key_type', key: 'ecommerce.items', valueType: 'array', message: 'ecommerce.items must be an array' },
+      {
+        type: 'key_type',
+        key: 'ecommerce.items',
+        valueType: 'array',
+        message: 'ecommerce.items must be an array',
+      },
     ],
   },
   {
@@ -52,9 +65,7 @@ export const PRESET_RULES: ValidationRule[] = [
     name: 'No undefined values',
     enabled: false,
     scope: {},
-    checks: [
-      { type: 'custom', message: 'Contains undefined values' },
-    ],
+    checks: [{ type: 'custom', message: 'Contains undefined values' }],
   },
 ];
 
@@ -64,10 +75,7 @@ export const PRESET_RULES: ValidationRule[] = [
  * Validate a DataLayer push against enabled rules.
  * @returns Array of validation errors (empty if all passed).
  */
-export function validatePush(
-  push: DataLayerPush,
-  rules: ValidationRule[],
-): ValidationResult[] {
+export function validatePush(push: DataLayerPush, rules: ValidationRule[]): ValidationResult[] {
   const errors: ValidationResult[] = [];
 
   for (const rule of rules) {
@@ -101,7 +109,9 @@ export async function loadValidationRules(): Promise<ValidationRule[]> {
   try {
     const stored = await chrome.storage.local.get(STORAGE_KEY);
     persisted = (stored[STORAGE_KEY] as typeof persisted) ?? {};
-  } catch { /* fallback to defaults */ }
+  } catch {
+    /* fallback to defaults */
+  }
 
   // Build rules list: presets (with persisted enabled state) + custom rules
   const rules: ValidationRule[] = [];
@@ -151,7 +161,7 @@ function matchesScope(push: DataLayerPush, scope: ValidationRule['scope']): bool
   if (scope.eventName) {
     const pushEvent = push._eventName ?? '';
     const scopeEvents = Array.isArray(scope.eventName) ? scope.eventName : [scope.eventName];
-    if (!scopeEvents.some(e => pushEvent === e)) return false;
+    if (!scopeEvents.some((e) => pushEvent === e)) return false;
   }
 
   // E-commerce type filter
@@ -165,7 +175,7 @@ function matchesScope(push: DataLayerPush, scope: ValidationRule['scope']): bool
 
 function runCheck(
   data: Record<string, unknown>,
-  check: ValidationCheck,
+  check: ValidationCheck
 ): { message: string; key?: string } | null {
   switch (check.type) {
     case 'required_key': {
@@ -179,9 +189,7 @@ function runCheck(
 
     case 'key_type': {
       if (!check.key || !check.valueType) return null;
-      const val = check.key.includes('.')
-        ? getNestedValue(data, check.key)
-        : data[check.key];
+      const val = check.key.includes('.') ? getNestedValue(data, check.key) : data[check.key];
       if (val === undefined) return null; // Don't flag missing keys as type error
       const actualType = Array.isArray(val) ? 'array' : typeof val;
       if (actualType !== check.valueType) {
@@ -230,7 +238,9 @@ function hasUndefinedValues(obj: unknown, depth = 0): boolean {
   if (obj === undefined) return true;
   if (obj === null || typeof obj !== 'object') return false;
   if (Array.isArray(obj)) {
-    return obj.some(v => hasUndefinedValues(v, depth + 1));
+    return obj.some((v) => hasUndefinedValues(v, depth + 1));
   }
-  return Object.values(obj as Record<string, unknown>).some(v => hasUndefinedValues(v, depth + 1));
+  return Object.values(obj as Record<string, unknown>).some((v) =>
+    hasUndefinedValues(v, depth + 1)
+  );
 }

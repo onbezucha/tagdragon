@@ -141,7 +141,7 @@ export function getRequest(id: string | number | null): ParsedRequest | undefine
  */
 export function deleteRequestById(id: string | number): void {
   const strId = String(id);
-  const index = requestState.all.findIndex(r => String(r.id) === strId);
+  const index = requestState.all.findIndex((r) => String(r.id) === strId);
   if (index !== -1) {
     requestState.all.splice(index, 1);
   }
@@ -502,7 +502,7 @@ export async function loadConfig(): Promise<void> {
   }
   const storedHidden: string[] = config.hiddenProviders ?? [];
   hiddenProviders.clear();
-  storedHidden.forEach(p => hiddenProviders.add(p));
+  storedHidden.forEach((p) => hiddenProviders.add(p));
 }
 
 /**
@@ -538,10 +538,7 @@ function scheduleSave(): void {
  * Update a specific config value and persist it.
  * Generic function signature ensures type-safe key-value updates.
  */
-export function updateConfig<K extends keyof AppConfig>(
-  key: K,
-  value: AppConfig[K]
-): void {
+export function updateConfig<K extends keyof AppConfig>(key: K, value: AppConfig[K]): void {
   config[key] = value;
   scheduleSave();
 }

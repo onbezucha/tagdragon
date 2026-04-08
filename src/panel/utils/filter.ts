@@ -23,8 +23,7 @@ export function matchesFilter(data: ParsedRequest): boolean {
     } else {
       // Fallback for requests that weren't indexed (shouldn't happen, but safe)
       const matchesText =
-        data.url.toLowerCase().includes(q) ||
-        data.provider.toLowerCase().includes(q);
+        data.url.toLowerCase().includes(q) || data.provider.toLowerCase().includes(q);
       if (!matchesText) return false;
     }
   }
@@ -38,14 +37,9 @@ export function matchesFilter(data: ParsedRequest): boolean {
     } else {
       const eventName = (data._eventName || getEventName(data)).toLowerCase();
       if (filterEventType === 'page_view') {
-        if (!eventName.includes('page') && !eventName.includes('pageview'))
-          return false;
+        if (!eventName.includes('page') && !eventName.includes('pageview')) return false;
       } else if (filterEventType === 'purchase') {
-        if (
-          !eventName.includes('purchase') &&
-          !eventName.includes('transaction')
-        )
-          return false;
+        if (!eventName.includes('purchase') && !eventName.includes('transaction')) return false;
       } else if (filterEventType === 'custom') {
         if (
           eventName.includes('page') ||
@@ -76,8 +70,7 @@ export function matchesFilter(data: ParsedRequest): boolean {
 
   // Status filter – uses pre-computed _statusPrefix
   if (filterStatus) {
-    const prefix =
-      data._statusPrefix || (data.status ? String(data.status)[0] : null);
+    const prefix = data._statusPrefix || (data.status ? String(data.status)[0] : null);
     if (!prefix || prefix !== filterStatus[0]) return false;
   }
 
@@ -90,7 +83,9 @@ export function matchesFilter(data: ParsedRequest): boolean {
   if (filterHasParam) {
     const needle = filterHasParam.toLowerCase();
     const hasParamInMap = (map: Record<string, string | undefined>) =>
-      Object.entries(map).some(([k, v]) => k.toLowerCase() === needle && v !== '' && v !== undefined);
+      Object.entries(map).some(
+        ([k, v]) => k.toLowerCase() === needle && v !== '' && v !== undefined
+      );
     const found =
       (data.allParams && hasParamInMap(data.allParams)) ||
       (data.decoded && hasParamInMap(data.decoded as Record<string, string | undefined>));
@@ -105,11 +100,7 @@ export function matchesFilter(data: ParsedRequest): boolean {
  */
 export function applyFilters(
   updateRowVisibility?: () => void,
-  updateStatusBar?: (
-    visibleCount: number,
-    totalSize: number,
-    totalDuration: number
-  ) => void
+  updateStatusBar?: (visibleCount: number, totalSize: number, totalDuration: number) => void
 ): void {
   let visibleCount = 0;
   let totalSize = 0;
@@ -119,7 +110,7 @@ export function applyFilters(
   const filteredIds = state.getFilteredIds();
   const allRequests = state.getAllRequests();
   const hiddenProviders = state.getHiddenProviders();
-  
+
   filteredIds.clear();
 
   for (let i = 0; i < allRequests.length; i++) {
@@ -152,7 +143,7 @@ export function applyFilters(
 export function getKnownEventNames(): Array<[string, number]> {
   const counts = new Map<string, number>();
   const allRequests = state.getAllRequests();
-  
+
   allRequests.forEach((r) => {
     const name = r._eventName || getEventName(r);
     if (name && name !== getHostname(r.url)) {
@@ -168,7 +159,7 @@ export function getKnownEventNames(): Array<[string, number]> {
 export function getStatusCounts(): Record<string, number> {
   const counts: Record<string, number> = {};
   const allRequests = state.getAllRequests();
-  
+
   allRequests.forEach((r) => {
     if (r._statusPrefix) {
       counts[r._statusPrefix] = (counts[r._statusPrefix] || 0) + 1;
@@ -183,7 +174,7 @@ export function getStatusCounts(): Record<string, number> {
 export function getMethodCounts(): Record<string, number> {
   const counts: Record<string, number> = {};
   const allRequests = state.getAllRequests();
-  
+
   allRequests.forEach((r) => {
     if (r.method) {
       counts[r.method] = (counts[r.method] || 0) + 1;
@@ -199,7 +190,7 @@ export function getUserIdCounts(): { has: number; missing: number } {
   let has = 0;
   let missing = 0;
   const allRequests = state.getAllRequests();
-  
+
   allRequests.forEach((r) => {
     if (r._hasUserId) has++;
     else missing++;
@@ -227,10 +218,7 @@ export function getCommonParams(): string[] {
   const allRequests = state.getAllRequests();
 
   allRequests.forEach((r) => {
-    const allKeys = new Set([
-      ...Object.keys(r.allParams || {}),
-      ...Object.keys(r.decoded || {}),
-    ]);
+    const allKeys = new Set([...Object.keys(r.allParams || {}), ...Object.keys(r.decoded || {})]);
     allKeys.forEach((k) => {
       counts.set(k, (counts.get(k) || 0) + 1);
     });

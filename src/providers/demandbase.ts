@@ -10,8 +10,8 @@ export const demandbase: Provider = {
     const p = getParams(url, postBody);
     return {
       'Company ID': p.company_id,
-      'Company': p.company_name,
-      'Key': p.key,
+      Company: p.company_name,
+      Key: p.key,
       'Page Type': p.page_type,
     };
   },

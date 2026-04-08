@@ -3,11 +3,15 @@
 import type { ConsentData } from '@/types/consent';
 import { DOM } from '../utils/dom';
 import { esc } from '../utils/format';
-import { GET_CONSENT_DATA_SCRIPT, ACCEPT_ALL_SCRIPT, REJECT_ALL_SCRIPT } from '@/shared/cmp-detection';
+import {
+  GET_CONSENT_DATA_SCRIPT,
+  ACCEPT_ALL_SCRIPT,
+  REJECT_ALL_SCRIPT,
+} from '@/shared/cmp-detection';
 
 const STORAGE_KEY = 'rt_consent_override';
 const MAX_APPLY_ATTEMPTS = 6;
-const APPLY_RETRY_MS = 1500;   // retry interval between post-navigation attempts
+const APPLY_RETRY_MS = 1500; // retry interval between post-navigation attempts
 const FIRST_ATTEMPT_MS = 1000; // delay after navigation before first attempt
 
 type ConsentOverride = 'accept_all' | 'reject_all' | null;
@@ -22,7 +26,9 @@ async function loadOverride(): Promise<void> {
   try {
     const stored = await chrome.storage.local.get(STORAGE_KEY);
     consentOverride = (stored[STORAGE_KEY] as ConsentOverride) ?? null;
-  } catch { consentOverride = null; }
+  } catch {
+    consentOverride = null;
+  }
 }
 
 export async function clearConsentOverride(): Promise<void> {
@@ -38,7 +44,9 @@ async function saveOverride(value: ConsentOverride): Promise<void> {
     } else {
       await chrome.storage.local.set({ [STORAGE_KEY]: value });
     }
-  } catch { console.warn('TagDragon: consent override save failed'); }
+  } catch {
+    console.warn('TagDragon: consent override save failed');
+  }
 }
 
 // ─── AUTO-APPLY ON NAVIGATION ─────────────────────────────────────────────
@@ -62,7 +70,10 @@ function applyOverrideWithRetry(override: ConsentOverride, attempt = 1): void {
 
 function initNavigationListener(): void {
   // Fired when the inspected page navigates to a new URL
-  (chrome.devtools.network as any).onNavigated?.addListener(() => {
+  type NetworkWithNavigated = typeof chrome.devtools.network & {
+    onNavigated?: { addListener: (cb: () => void) => void };
+  };
+  (chrome.devtools.network as NetworkWithNavigated).onNavigated?.addListener(() => {
     if (!consentOverride) return;
     setTimeout(() => applyOverrideWithRetry(consentOverride), FIRST_ATTEMPT_MS);
   });
@@ -122,7 +133,9 @@ export async function initConsentPanel(): Promise<void> {
     renderOverrideBadge();
   });
 
-  const $clearCookiesBtn = document.getElementById('consent-clear-cookies') as HTMLButtonElement | null;
+  const $clearCookiesBtn = document.getElementById(
+    'consent-clear-cookies'
+  ) as HTMLButtonElement | null;
   $clearCookiesBtn?.addEventListener('click', () => {
     void runClearCookies($clearCookiesBtn);
   });
@@ -147,7 +160,7 @@ function runConsentAction(
   script: string,
   override: ConsentOverride,
   btn: HTMLButtonElement,
-  label: string,
+  label: string
 ): void {
   chrome.devtools.inspectedWindow.eval(script, (result: unknown) => {
     const apiCalled = result && result !== false;
@@ -188,8 +201,8 @@ export async function clearAllCookies(): Promise<number> {
   try {
     return await Promise.race<number>([
       new Promise<number>((resolve) => {
-        chrome.runtime.sendMessage({ type: 'CLEAR_COOKIES', url }, (resp: any) => {
-          resolve(resp?.deleted ?? 0);
+        chrome.runtime.sendMessage({ type: 'CLEAR_COOKIES', url }, (resp: unknown) => {
+          resolve((resp as { deleted?: number } | null)?.deleted ?? 0);
         });
       }),
       new Promise<never>((_, reject) =>
@@ -300,7 +313,8 @@ function renderNoData(message: string): void {
   const $timestamp = document.getElementById('consent-timestamp');
 
   if ($cmpInfo) $cmpInfo.innerHTML = '<span class="consent-no-cmp">❌ CMP not detected</span>';
-  if ($categories) $categories.innerHTML = `
+  if ($categories)
+    $categories.innerHTML = `
     <div class="consent-no-data">
       <div class="consent-no-data-icon">🍪</div>
       <div class="consent-no-data-text">${message}</div>
@@ -357,16 +371,21 @@ function renderConsentPanel(data: ConsentData): void {
   // Categories
   if ($categories) {
     if (data.categories.length > 0) {
-      $categories.innerHTML = data.categories.map(cat => `
+      $categories.innerHTML = data.categories
+        .map(
+          (cat) => `
         <div class="consent-category ${cat.granted ? 'granted' : 'denied'}">
           <div class="consent-category-header">
             <span class="consent-category-status">${cat.granted ? '✅' : '❌'}</span>
             <span class="consent-category-label">${esc(cat.label)}</span>
           </div>
         </div>
-      `).join('');
+      `
+        )
+        .join('');
     } else {
-      $categories.innerHTML = '<div class="consent-no-data"><div class="consent-no-data-text">No categories found</div></div>';
+      $categories.innerHTML =
+        '<div class="consent-no-data"><div class="consent-no-data-text">No categories found</div></div>';
     }
   }
 

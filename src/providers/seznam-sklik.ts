@@ -14,19 +14,21 @@ export const seznamSklik: Provider = {
       try {
         const ids = JSON.parse(decodeURIComponent(p.ids));
         udid = ids.udid;
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     }
 
     const typeMatch = url.match(/seznam\.cz\/([^?]+)/);
 
     return {
-      'Type':     typeMatch?.[1],
-      'ID':       p.id,
-      'Value':    p.value,
+      Type: typeMatch?.[1],
+      ID: p.id,
+      Value: p.value,
       'Page URL': p.url ? decodeURIComponent(p.url) : undefined,
-      'Consent':  p.consent,
-      'User ID':  udid,
-      'URL':      url,
+      Consent: p.consent,
+      'User ID': udid,
+      URL: url,
     };
   },
 } as const;

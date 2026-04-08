@@ -9,27 +9,116 @@ import * as state from './state';
 import * as dlState from './datalayer/state';
 import { DOM } from './utils/dom';
 import { getEventName, esc } from './utils/format';
-import { createRequestRow, navigateList, navigateToEdge, updateRowVisibility } from './components/request-list';
-import { selectRequest, initTabHandlers, closeDetailPane, clearTabCache } from './components/detail-pane';
-import { updateStatusBar, updateDlStatusBar, updateNetworkStatusBar, showPruneNotification, clearPruneTimer, resetStatusBar } from './components/status-bar';
-import { ensureProviderPill, initProviderBarHandlers, initProviderBar, updateProviderCounts, updateFilterBarVisibility } from './components/provider-bar';
+import {
+  createRequestRow,
+  navigateList,
+  navigateToEdge,
+  updateRowVisibility,
+} from './components/request-list';
+import {
+  selectRequest,
+  initTabHandlers,
+  closeDetailPane,
+  clearTabCache,
+} from './components/detail-pane';
+import {
+  updateStatusBar,
+  updateDlStatusBar,
+  updateNetworkStatusBar,
+  showPruneNotification,
+  clearPruneTimer,
+  resetStatusBar,
+} from './components/status-bar';
+import {
+  ensureProviderPill,
+  initProviderBarHandlers,
+  initProviderBar,
+  updateProviderCounts,
+  updateFilterBarVisibility,
+} from './components/provider-bar';
 import { initFilterPopoverHandlers, updateActiveFilters } from './components/filter-bar';
 import { initAdobeEnvSwitcher } from './components/adobe-env-switcher';
-import { initConsentPanel, clearAllCookies, clearConsentOverride } from './components/consent-panel';
+import {
+  initConsentPanel,
+  clearAllCookies,
+  clearConsentOverride,
+} from './components/consent-panel';
 import { initInfoPopover, closeInfoPopover } from './components/info-popover';
 import { applyFilters, matchesFilter } from './utils/filter';
 import { downloadCsv, downloadJson } from './utils/export';
-import { createDlPushRow, getSourceColor, setActiveDlRow, updateDlStatusText, dlMatchesFilter, exportDlJson, exportDlCsv, updateDlRowValidation, getSortedDlPushIds, renderGroupedPushList } from './datalayer/components/push-list';
-import { selectDlPush, closeDlDetail, initDlDetailTabHandlers } from './datalayer/components/push-detail';
-import { queueHighlights, checkWatchPaths, clearLiveState } from './datalayer/components/live-inspector';
-import { validatePush, loadValidationRules, saveValidationRules } from './datalayer/utils/validator';
-import { getValidationErrors, setValidationErrors, clearValidationErrors, getValidationRules, setValidationRules, isValidationLoaded, setValidationLoaded, getDlSortField, setDlSortField, getDlSortOrder, toggleDlSortOrder, getDlGroupBySource, setDlGroupBySource, initDlSortState } from './datalayer/state';
+import {
+  createDlPushRow,
+  getSourceColor,
+  setActiveDlRow,
+  updateDlStatusText,
+  dlMatchesFilter,
+  exportDlJson,
+  exportDlCsv,
+  updateDlRowValidation,
+  getSortedDlPushIds,
+  renderGroupedPushList,
+} from './datalayer/components/push-list';
+import {
+  selectDlPush,
+  closeDlDetail,
+  initDlDetailTabHandlers,
+} from './datalayer/components/push-detail';
+import {
+  queueHighlights,
+  checkWatchPaths,
+  clearLiveState,
+} from './datalayer/components/live-inspector';
+import {
+  validatePush,
+  loadValidationRules,
+  saveValidationRules,
+} from './datalayer/utils/validator';
+import {
+  clearValidationErrors,
+  getValidationRules,
+  setValidationRules,
+  isValidationLoaded,
+  setValidationLoaded,
+  getDlSortField,
+  setDlSortField,
+  getDlSortOrder,
+  toggleDlSortOrder,
+  getDlGroupBySource,
+  setDlGroupBySource,
+  initDlSortState,
+} from './datalayer/state';
 import { initTheme } from './theme';
 import { savePanelSetting, loadPanelSetting } from './utils/persistence';
-import { isMac } from './utils/platform';
 import { init as initTooltip } from './utils/tooltip';
+import { initSplitter } from './splitter';
+import { initKeyboardHandlers } from './keyboard-shortcuts';
 import { SOURCE_DESCRIPTIONS } from '@/shared/datalayer-constants';
-import { createIcons, Cable, Database, ChevronDown, Eraser, Cookie, Sun, Moon, Trash2, Settings, CircleHelp, Search, X, ArrowUpDown, WrapText, Maximize2, AlignJustify, Filter, Download, Pause, Play, SlidersHorizontal, ShoppingCart, CheckCircle } from 'lucide';
+import {
+  createIcons,
+  Cable,
+  Database,
+  ChevronDown,
+  Eraser,
+  Cookie,
+  Sun,
+  Moon,
+  Trash2,
+  Settings,
+  CircleHelp,
+  Search,
+  X,
+  ArrowUpDown,
+  WrapText,
+  Maximize2,
+  AlignJustify,
+  Filter,
+  Download,
+  Pause,
+  Play,
+  SlidersHorizontal,
+  ShoppingCart,
+  CheckCircle,
+} from 'lucide';
 
 // ─── LOCAL HELPERS ───────────────────────────────────────────────────────────
 
@@ -91,7 +180,6 @@ function gotoDatalayerPush(pushId: number): void {
   const push = dlState.getDlPushById(pushId);
   if (!push) return;
 
-
   const $list = DOM.dlPushList;
   if (!$list) return;
   const row = $list.querySelector(`.dl-push-row[data-id="${pushId}"]`) as HTMLElement | null;
@@ -120,7 +208,7 @@ function pruneIfNeeded(): void {
 
   // Clean up heavy data for pruned requests
   if (window._deleteHeavyData) {
-    window._deleteHeavyData(removed.map(r => r.id));
+    window._deleteHeavyData(removed.map((r) => r.id));
   }
 
   // Remove from DOM
@@ -350,7 +438,16 @@ function dlApplyFilter(): void {
   dlState.clearDlFilteredIds();
 
   for (const push of dlState.getAllDlPushes()) {
-    if (dlMatchesFilter(push, text, dlState.getDlFilterSource(), dlState.getDlFilterEventName(), dlState.getDlFilterHasKey(), dlState.getDlEcommerceOnly())) {
+    if (
+      dlMatchesFilter(
+        push,
+        text,
+        dlState.getDlFilterSource(),
+        dlState.getDlFilterEventName(),
+        dlState.getDlFilterHasKey(),
+        dlState.getDlEcommerceOnly()
+      )
+    ) {
       dlState.addDlFilteredId(push.id);
     }
   }
@@ -365,7 +462,8 @@ function dlApplyFilter(): void {
 
   const $empty = DOM.dlEmptyState;
   if ($empty) {
-    $empty.style.display = dlState.getDlVisibleCount() === 0 && dlState.getDlTotalCount() === 0 ? '' : 'none';
+    $empty.style.display =
+      dlState.getDlVisibleCount() === 0 && dlState.getDlTotalCount() === 0 ? '' : 'none';
   }
 
   updateDlStatusText(dlState.getDlVisibleCount(), dlState.getDlTotalCount());
@@ -373,11 +471,7 @@ function dlApplyFilter(): void {
 
 // ─── DATALAYER FILTER CHIPS ─────────────────────────────────────────────────
 
-function createDlFilterChip(
-  label: string,
-  value: string,
-  onRemove: () => void,
-): HTMLElement {
+function createDlFilterChip(label: string, value: string, onRemove: () => void): HTMLElement {
   const chip = document.createElement('span');
   chip.className = 'filter-chip';
   chip.innerHTML = `
@@ -460,7 +554,7 @@ function updateDlFilterChips(): void {
     chips.push(chip);
   }
 
-  chips.forEach(c => $bar.appendChild(c));
+  chips.forEach((c) => $bar.appendChild(c));
   $bar.classList.toggle('visible', chips.length > 0);
 }
 
@@ -500,24 +594,33 @@ function flushPendingDlPushes(): void {
   }
 
   if ($list) {
-    const fragment = document.createDocumentFragment();
-    for (const { push, isVisible } of pending) {
-      try {
-        const row = createDlPushRow(push, isVisible, (p, r) => {
-          dlState.setDlSelectedId(p.id);
-          setActiveDlRow(r);
-          selectDlPush(p, r, gotoNetworkRequest);
-        });
-        fragment.appendChild(row);
-      } catch (e) {
-        console.warn('[TagDragon] Failed to create push row:', e);
-      }
-    }
-    // Respect sort order: prepend if desc, append if asc
-    if (getDlSortOrder() === 'desc' && getDlSortField() === 'time') {
-      $list.insertBefore(fragment, $list.firstChild);
+    if (getDlSortField() !== 'time' || getDlGroupBySource()) {
+      // Non-time sort or grouped view: incremental insertion can't place rows correctly,
+      // full re-render is needed to respect sort order / grouping
+      renderDlPushListFull();
     } else {
-      $list.appendChild(fragment);
+      // Time-based sort: incremental DOM update
+      // For desc, reverse the batch so newest push ends up at the top of the prepended fragment
+      const isDesc = getDlSortOrder() === 'desc';
+      const pendingToRender = isDesc ? [...pending].reverse() : pending;
+      const fragment = document.createDocumentFragment();
+      for (const { push, isVisible } of pendingToRender) {
+        try {
+          const row = createDlPushRow(push, isVisible, (p, r) => {
+            dlState.setDlSelectedId(p.id);
+            setActiveDlRow(r);
+            selectDlPush(p, r, gotoNetworkRequest);
+          });
+          fragment.appendChild(row);
+        } catch (e) {
+          console.warn('[TagDragon] Failed to create push row:', e);
+        }
+      }
+      if (isDesc) {
+        $list.insertBefore(fragment, $list.firstChild);
+      } else {
+        $list.appendChild(fragment);
+      }
     }
   }
 
@@ -565,7 +668,8 @@ window.receiveDataLayerPush = function (push: DataLayerPush): void {
     ...push,
     _ts: Date.parse(push.timestamp),
     cumulativeState: dlState.snapshotCumulativeState(),
-    _eventName: push._eventName ?? (typeof push.data['event'] === 'string' ? push.data['event'] : undefined),
+    _eventName:
+      push._eventName ?? (typeof push.data['event'] === 'string' ? push.data['event'] : undefined),
     sourceLabel: push.sourceLabel || push.source.toUpperCase(),
   };
 
@@ -573,7 +677,14 @@ window.receiveDataLayerPush = function (push: DataLayerPush): void {
 
   // Queue for batched rendering — instead of immediate DOM operations (1.3)
   const filterText = dlState.getDlFilterText();
-  const isVisible = dlMatchesFilter(enrichedPush, filterText, dlState.getDlFilterSource(), dlState.getDlFilterEventName(), dlState.getDlFilterHasKey(), dlState.getDlEcommerceOnly());
+  const isVisible = dlMatchesFilter(
+    enrichedPush,
+    filterText,
+    dlState.getDlFilterSource(),
+    dlState.getDlFilterEventName(),
+    dlState.getDlFilterHasKey(),
+    dlState.getDlEcommerceOnly()
+  );
   if (isVisible) dlState.addDlFilteredId(push.id);
 
   dlState.addDlPendingPush({ push: enrichedPush, isVisible });
@@ -582,7 +693,10 @@ window.receiveDataLayerPush = function (push: DataLayerPush): void {
   }
 };
 
-window.receiveDataLayerSources = function (sources: DataLayerSource[], labels: Record<DataLayerSource, string>): void {
+window.receiveDataLayerSources = function (
+  sources: DataLayerSource[],
+  labels: Record<DataLayerSource, string>
+): void {
   sources.forEach((s) => dlState.addDlSource(s));
   const $status = document.getElementById('dl-source-status');
   if (!$status) return;
@@ -604,7 +718,8 @@ window.receiveDataLayerSources = function (sources: DataLayerSource[], labels: R
       const detected = sources.includes(source);
       const statusPill = document.createElement('span');
       statusPill.className = `dl-source-status-pill ${detected ? 'detected' : 'not-detected'}`;
-      const label = SOURCE_DESCRIPTIONS[source as keyof typeof SOURCE_DESCRIPTIONS] ?? source.toUpperCase();
+      const label =
+        SOURCE_DESCRIPTIONS[source as keyof typeof SOURCE_DESCRIPTIONS] ?? source.toUpperCase();
       statusPill.textContent = `${detected ? '✓ ' : '○ '}${label}`;
       $detection.appendChild(statusPill);
     }
@@ -624,7 +739,7 @@ window.clearDataLayer = function (): void {
 
 function computeChangedPaths(
   prev: Record<string, unknown>,
-  curr: Record<string, unknown>,
+  curr: Record<string, unknown>
 ): Map<string, 'added' | 'changed' | 'removed'> {
   const result = new Map<string, 'added' | 'changed' | 'removed'>();
   const allKeys = new Set([...Object.keys(prev), ...Object.keys(curr)]);
@@ -650,8 +765,7 @@ function computeChangedPaths(
       }
 
       // One is object, other is not — definitely changed
-      if ((prevVal === null) !== (currVal === null) ||
-          typeof prevVal !== typeof currVal) {
+      if ((prevVal === null) !== (currVal === null) || typeof prevVal !== typeof currVal) {
         result.set(key, 'changed');
         continue;
       }
@@ -696,102 +810,6 @@ window.receiveRequest = function (data: ParsedRequest): void {
   }
 };
 
-// ─── SPLITTER DRAG ───────────────────────────────────────────────────────────
-
-let isDragging = false;
-
-async function initSplitter(): Promise<void> {
-  const $splitter = DOM.splitter;
-  const $main = DOM.main;
-  if (!$splitter || !$main) return;
-
-  $splitter.addEventListener('mousedown', (e: Event) => {
-    isDragging = true;
-    document.body.style.cursor = 'col-resize';
-    document.body.style.userSelect = 'none';
-    (e as MouseEvent).preventDefault();
-  });
-
-  document.addEventListener('mousemove', (e: MouseEvent) => {
-    if (!isDragging) return;
-    const width = Math.max(280, Math.min(e.clientX, window.innerWidth - 300));
-    $main.style.gridTemplateColumns = `${width}px 4px 1fr`;
-    void savePanelSetting('list-width', String(width));
-  });
-
-  document.addEventListener('mouseup', () => {
-    if (!isDragging) return;
-    isDragging = false;
-    document.body.style.cursor = '';
-    document.body.style.userSelect = '';
-  });
-
-  // Restore saved width
-  const savedWidth = await loadPanelSetting('list-width');
-  if (savedWidth) {
-    $main.style.gridTemplateColumns = `${savedWidth}px 4px 1fr`;
-  }
-}
-
-// ─── KEYBOARD NAVIGATION ─────────────────────────────────────────────────────
-
-function initKeyboardHandlers(): void {
-  document.addEventListener('keydown', (e: KeyboardEvent) => {
-    // Ctrl+L = clear
-    if (e.ctrlKey && e.key === 'l') {
-      e.preventDefault();
-      document.getElementById('btn-clear-all')?.click();
-      return;
-    }
-
-    // Ctrl+F = focus search
-    if (e.ctrlKey && e.key === 'f') {
-      e.preventDefault();
-      if (activeView === 'network') {
-        DOM.filterInput?.focus();
-      } else {
-        DOM.dlFilterInput?.focus();
-      }
-      return;
-    }
-
-    // Escape
-    if (e.key === 'Escape') {
-      if (DOM.filterPopover?.classList.contains('visible')) return;
-      if (document.activeElement === DOM.filterInput) {
-        state.setFilterText('');
-        if (DOM.filterInput) DOM.filterInput.value = '';
-        DOM.filterInput?.blur();
-        doApplyFilters();
-        doUpdateActiveFilters();
-      } else if (!DOM.detail?.classList.contains('hidden')) {
-        closeDetailPane();
-      }
-      return;
-    }
-
-    // Arrow keys for list navigation
-    if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') &&
-        document.activeElement !== DOM.filterInput) {
-      e.preventDefault();
-      navigateList(e.key === 'ArrowDown' ? 1 : -1, doSelectRequest);
-      return;
-    }
-
-    // Home/End (on Mac: Cmd+ArrowUp / Cmd+ArrowDown)
-    if ((e.key === 'Home' || (isMac && e.metaKey && e.key === 'ArrowUp')) && document.activeElement !== DOM.filterInput) {
-      e.preventDefault();
-      navigateToEdge('first', doSelectRequest);
-      return;
-    }
-    if ((e.key === 'End' || (isMac && e.metaKey && e.key === 'ArrowDown')) && document.activeElement !== DOM.filterInput) {
-      e.preventDefault();
-      navigateToEdge('last', doSelectRequest);
-      return;
-    }
-  });
-}
-
 // ─── CSV EXPORT ──────────────────────────────────────────────────────────────
 
 function exportCsv(): void {
@@ -799,15 +817,24 @@ function exportCsv(): void {
   if (requests.length === 0) return;
 
   const allKeys = new Set<string>();
-  requests.forEach(r => Object.keys(r.allParams || {}).forEach(k => allKeys.add(k)));
+  requests.forEach((r) => Object.keys(r.allParams || {}).forEach((k) => allKeys.add(k)));
   const paramKeys = [...allKeys].sort();
 
   const metaCols = ['id', 'timestamp', 'provider', 'method', 'status', 'url', 'duration', 'size'];
   const headers = [...metaCols, ...paramKeys];
 
-  const rows = requests.map(r => {
-    const meta = [String(r.id), String(r.timestamp), r.provider, r.method, String(r.status ?? ''), r.url, String(r.duration ?? ''), String(r.size ?? '')];
-    const params = paramKeys.map(k => String(r.allParams?.[k] ?? ''));
+  const rows = requests.map((r) => {
+    const meta = [
+      String(r.id),
+      String(r.timestamp),
+      r.provider,
+      r.method,
+      String(r.status ?? ''),
+      r.url,
+      String(r.duration ?? ''),
+      String(r.size ?? ''),
+    ];
+    const params = paramKeys.map((k) => String(r.allParams?.[k] ?? ''));
     return [...meta, ...params];
   });
 
@@ -1000,7 +1027,10 @@ function syncQuickButtons(): void {
 
   if (sortBtn) {
     sortBtn.classList.toggle('active', cfg.sortOrder === 'desc');
-    sortBtn.dataset.tooltip = cfg.sortOrder === 'desc' ? 'Newest first (click for oldest first)' : 'Oldest first (click for newest first)';
+    sortBtn.dataset.tooltip =
+      cfg.sortOrder === 'desc'
+        ? 'Newest first (click for oldest first)'
+        : 'Oldest first (click for newest first)';
   }
   if (wrapBtn) {
     wrapBtn.classList.toggle('active', cfg.wrapValues);
@@ -1124,7 +1154,9 @@ function initConfigUI(): void {
     });
   }
 
-  const cfgTimestampEl = document.getElementById('cfg-timestamp-format') as HTMLSelectElement | null;
+  const cfgTimestampEl = document.getElementById(
+    'cfg-timestamp-format'
+  ) as HTMLSelectElement | null;
   if (cfgTimestampEl) {
     cfgTimestampEl.value = state.getConfig().timestampFormat;
     cfgTimestampEl.addEventListener('change', (e: Event) => {
@@ -1261,8 +1293,6 @@ async function initDatalayerHandlers(): Promise<void> {
     });
   });
 
-
-
   // DL Pause button
   const $dlPause = document.getElementById('dl-btn-pause');
   $dlPause?.addEventListener('click', () => {
@@ -1311,7 +1341,7 @@ async function initDatalayerHandlers(): Promise<void> {
   // DL Export button — respects AppConfig.exportFormat (json or csv), exports only visible pushes
   document.getElementById('dl-btn-export')?.addEventListener('click', () => {
     const filteredIds = dlState.getDlFilteredIds();
-    const pushes = dlState.getAllDlPushes().filter(p => filteredIds.has(p.id));
+    const pushes = dlState.getAllDlPushes().filter((p) => filteredIds.has(p.id));
     const fmt = state.getConfig().exportFormat;
     if (fmt === 'csv') exportDlCsv(pushes);
     else exportDlJson(pushes);
@@ -1404,10 +1434,18 @@ async function initDatalayerHandlers(): Promise<void> {
     $dlSubmenu.classList.add('visible');
 
     switch (type) {
-      case 'dl-source': renderDlSourceSubmenu($content); break;
-      case 'dl-event': renderDlEventSubmenu($content); break;
-      case 'dl-haskey': renderDlHasKeySubmenu($content); break;
-      case 'dl-sort': renderDlSortSubmenu($content); break;
+      case 'dl-source':
+        renderDlSourceSubmenu($content);
+        break;
+      case 'dl-event':
+        renderDlEventSubmenu($content);
+        break;
+      case 'dl-haskey':
+        renderDlHasKeySubmenu($content);
+        break;
+      case 'dl-sort':
+        renderDlSortSubmenu($content);
+        break;
     }
   }
 
@@ -1424,7 +1462,7 @@ async function initDatalayerHandlers(): Promise<void> {
     `;
 
     for (const src of sources) {
-      const count = dlState.getAllDlPushes().filter(p => p.source === src).length;
+      const count = dlState.getAllDlPushes().filter((p) => p.source === src).length;
       const label = SOURCE_DESCRIPTIONS[src as keyof typeof SOURCE_DESCRIPTIONS] ?? src;
       const color = getSourceColor(src);
       html += `
@@ -1437,7 +1475,7 @@ async function initDatalayerHandlers(): Promise<void> {
 
     $content.innerHTML = html;
 
-    $content.querySelectorAll('.filter-submenu-item').forEach(item => {
+    $content.querySelectorAll('.filter-submenu-item').forEach((item) => {
       item.addEventListener('click', () => {
         const src = (item as HTMLElement).dataset['source'] as DataLayerSource | '';
         dlState.setDlFilterSource(src);
@@ -1486,13 +1524,13 @@ async function initDatalayerHandlers(): Promise<void> {
     const $search = document.getElementById('dl-event-search') as HTMLInputElement | null;
     $search?.addEventListener('input', () => {
       const query = $search.value.toLowerCase();
-      $content.querySelectorAll('.filter-submenu-item[data-event]').forEach(item => {
+      $content.querySelectorAll('.filter-submenu-item[data-event]').forEach((item) => {
         const event = (item as HTMLElement).dataset['event'] ?? '';
         item.style.display = event === '' || event.toLowerCase().includes(query) ? '' : 'none';
       });
     });
 
-    $content.querySelectorAll('.filter-submenu-item').forEach(item => {
+    $content.querySelectorAll('.filter-submenu-item').forEach((item) => {
       item.addEventListener('click', () => {
         const event = (item as HTMLElement).dataset['event'] ?? '';
         dlState.setDlFilterEventName(event);
@@ -1519,8 +1557,17 @@ async function initDatalayerHandlers(): Promise<void> {
 
     const currentKey = dlState.getDlFilterHasKey();
 
-    const quickpicks = ['ecommerce', 'page_location', 'page_title', 'user_id', 'transaction_id', 'items', 'currency', 'value'];
-    const availableQuickpicks = quickpicks.filter(q => keyCounts.has(q));
+    const quickpicks = [
+      'ecommerce',
+      'page_location',
+      'page_title',
+      'user_id',
+      'transaction_id',
+      'items',
+      'currency',
+      'value',
+    ];
+    const availableQuickpicks = quickpicks.filter((q) => keyCounts.has(q));
 
     let html = `
       <div class="filter-submenu-input-row">
@@ -1558,13 +1605,16 @@ async function initDatalayerHandlers(): Promise<void> {
       closeDlFilterPopover();
     });
 
-    (document.getElementById('dl-haskey-input') as HTMLInputElement)?.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        document.getElementById('dl-haskey-apply')?.click();
+    (document.getElementById('dl-haskey-input') as HTMLInputElement)?.addEventListener(
+      'keydown',
+      (e) => {
+        if (e.key === 'Enter') {
+          document.getElementById('dl-haskey-apply')?.click();
+        }
       }
-    });
+    );
 
-    $content.querySelectorAll('.filter-submenu-quickpick').forEach(qp => {
+    $content.querySelectorAll('.filter-submenu-quickpick').forEach((qp) => {
       qp.addEventListener('click', () => {
         const key = (qp as HTMLElement).dataset['key'] ?? '';
         dlState.setDlHasKey(key);
@@ -1574,7 +1624,7 @@ async function initDatalayerHandlers(): Promise<void> {
       });
     });
 
-    $content.querySelectorAll('.filter-submenu-item[data-key]').forEach(item => {
+    $content.querySelectorAll('.filter-submenu-item[data-key]').forEach((item) => {
       item.addEventListener('click', () => {
         const key = (item as HTMLElement).dataset['key'] ?? '';
         dlState.setDlHasKey(key);
@@ -1626,7 +1676,7 @@ async function initDatalayerHandlers(): Promise<void> {
 
     $content.innerHTML = html;
 
-    $content.querySelectorAll('.filter-submenu-item[data-sort]').forEach(item => {
+    $content.querySelectorAll('.filter-submenu-item[data-sort]').forEach((item) => {
       item.addEventListener('click', () => {
         const field = (item as HTMLElement).dataset['sort'] as DlSortField;
         setDlSortField(field);
@@ -1644,11 +1694,13 @@ async function initDatalayerHandlers(): Promise<void> {
       closeDlFilterPopover();
     });
 
-    $content.querySelector('[data-action="toggle-group-by-source"]')?.addEventListener('click', () => {
-      setDlGroupBySource(!getDlGroupBySource());
-      renderDlPushListFull();
-      closeDlFilterPopover();
-    });
+    $content
+      .querySelector('[data-action="toggle-group-by-source"]')
+      ?.addEventListener('click', () => {
+        setDlGroupBySource(!getDlGroupBySource());
+        renderDlPushListFull();
+        closeDlFilterPopover();
+      });
   }
 
   // DL Validation popover
@@ -1701,7 +1753,9 @@ async function initDatalayerHandlers(): Promise<void> {
       scope.className = 'dl-val-rule-scope';
       const scopeParts: string[] = [];
       if (rule.scope.eventName) {
-        const events = Array.isArray(rule.scope.eventName) ? rule.scope.eventName : rule.scope.eventName;
+        const events = Array.isArray(rule.scope.eventName)
+          ? rule.scope.eventName
+          : rule.scope.eventName;
         scopeParts.push(String(events));
       }
       if (rule.scope.ecommerceType) scopeParts.push(rule.scope.ecommerceType);
@@ -1719,7 +1773,7 @@ async function initDatalayerHandlers(): Promise<void> {
     const $list = document.getElementById('dl-val-custom-rules');
     if (!$list) return;
 
-    const rules = dlState.getValidationRules().filter(r => r.id.startsWith('custom-'));
+    const rules = dlState.getValidationRules().filter((r) => r.id.startsWith('custom-'));
     $list.innerHTML = '';
 
     for (const rule of rules) {
@@ -1741,9 +1795,10 @@ async function initDatalayerHandlers(): Promise<void> {
 
       const deleteBtn = document.createElement('button');
       deleteBtn.textContent = '×';
-      deleteBtn.style.cssText = 'background:none;border:none;color:var(--red);cursor:pointer;font-size:14px;padding:0 4px;';
+      deleteBtn.style.cssText =
+        'background:none;border:none;color:var(--red);cursor:pointer;font-size:14px;padding:0 4px;';
       deleteBtn.addEventListener('click', () => {
-        const updated = dlState.getValidationRules().filter(r => r.id !== rule.id);
+        const updated = dlState.getValidationRules().filter((r) => r.id !== rule.id);
         dlState.setValidationRules(updated);
         saveValidationRules(updated);
         renderDlCustomRules();
@@ -1779,7 +1834,7 @@ async function initDatalayerHandlers(): Promise<void> {
   }
 
   function revalidateAllDlPushes(): void {
-    const rules = dlState.getValidationRules().filter(r => r.enabled);
+    const rules = dlState.getValidationRules().filter((r) => r.enabled);
     const pushes = dlState.getAllDlPushes();
 
     dlState.clearValidationErrors();
@@ -1847,11 +1902,13 @@ async function initDatalayerHandlers(): Promise<void> {
         name,
         enabled: true,
         scope: event ? { eventName: event } : {},
-        checks: [{
-          type,
-          key,
-          message: `${type === 'required_key' ? 'Missing' : 'Forbidden'} ${key}`,
-        }],
+        checks: [
+          {
+            type,
+            key,
+            message: `${type === 'required_key' ? 'Missing' : 'Forbidden'} ${key}`,
+          },
+        ],
       };
 
       const rules = [...dlState.getValidationRules(), newRule];
@@ -1912,22 +1969,42 @@ async function init(): Promise<void> {
   // Lucide icons — replace <i data-lucide="..."> placeholders with SVGs
   createIcons({
     icons: {
-      Cable, Database, ChevronDown, Eraser, Cookie, Sun, Moon,
-      Trash2, Settings, CircleHelp, Search, X, ArrowUpDown,
-      WrapText, Maximize2, AlignJustify, Filter, Download, Pause, Play,
-      SlidersHorizontal, ShoppingCart, CheckCircle,
+      Cable,
+      Database,
+      ChevronDown,
+      Eraser,
+      Cookie,
+      Sun,
+      Moon,
+      Trash2,
+      Settings,
+      CircleHelp,
+      Search,
+      X,
+      ArrowUpDown,
+      WrapText,
+      Maximize2,
+      AlignJustify,
+      Filter,
+      Download,
+      Pause,
+      Play,
+      SlidersHorizontal,
+      ShoppingCart,
+      CheckCircle,
     },
   });
 
   // Remove data-lucide attributes from processed SVGs to prevent re-processing
   // by subsequent createIcons() calls (e.g., in info-popover.ts renderToolbarIcons)
-  document.querySelectorAll('svg[data-lucide]').forEach(svg => {
+  document.querySelectorAll('svg[data-lucide]').forEach((svg) => {
     svg.removeAttribute('data-lucide');
   });
 
   // Remove inline width/height attributes from Lucide SVGs so CSS controls sizing
-  document.querySelectorAll('#global-tab-bar svg.lucide, .context-toolbar svg.lucide')
-    .forEach(svg => {
+  document
+    .querySelectorAll('#global-tab-bar svg.lucide, .context-toolbar svg.lucide')
+    .forEach((svg) => {
       svg.removeAttribute('width');
       svg.removeAttribute('height');
     });
@@ -1952,7 +2029,12 @@ async function init(): Promise<void> {
   initProviderBar();
   initFilterPopoverHandlers(doApplyFilters, doUpdateActiveFilters);
   initToolbarHandlers();
-  initKeyboardHandlers();
+  initKeyboardHandlers({
+    getActiveView: () => activeView,
+    doApplyFilters,
+    doUpdateActiveFilters,
+    doSelectRequest,
+  });
   await initSplitter();
   initConfigUI();
   initQuickActions();
@@ -1980,16 +2062,20 @@ async function init(): Promise<void> {
     const $dlFilterBtn = document.getElementById('dl-btn-filter');
     const $dlValBtn = document.getElementById('dl-btn-validation');
 
-    if ($dlFilterPopover?.classList.contains('visible') &&
-        !$dlFilterPopover.contains(e.target as Node) &&
-        !$dlFilterBtn?.contains(e.target as Node)) {
+    if (
+      $dlFilterPopover?.classList.contains('visible') &&
+      !$dlFilterPopover.contains(e.target as Node) &&
+      !$dlFilterBtn?.contains(e.target as Node)
+    ) {
       $dlFilterPopover.classList.remove('visible');
       $dlSubmenu?.classList.remove('visible');
     }
 
-    if ($dlValPopover?.classList.contains('visible') &&
-        !$dlValPopover.contains(e.target as Node) &&
-        !$dlValBtn?.contains(e.target as Node)) {
+    if (
+      $dlValPopover?.classList.contains('visible') &&
+      !$dlValPopover.contains(e.target as Node) &&
+      !$dlValBtn?.contains(e.target as Node)
+    ) {
       $dlValPopover.classList.remove('visible');
     }
   });
@@ -2004,11 +2090,15 @@ async function init(): Promise<void> {
   });
 
   // Load validation rules
-  loadValidationRules().then((rules) => {
-    setValidationRules(rules);
-    setValidationLoaded(true);
-    updateDlRowValidation();
-  }).catch(() => { /* ignore */ });
+  loadValidationRules()
+    .then((rules) => {
+      setValidationRules(rules);
+      setValidationLoaded(true);
+      updateDlRowValidation();
+    })
+    .catch(() => {
+      /* ignore */
+    });
 
   // Mark panel as ready and flush early pushes
   isPanelReady = true;
@@ -2018,7 +2108,11 @@ async function init(): Promise<void> {
     const buffered = [...earlyDlPushBuffer];
     earlyDlPushBuffer.length = 0;
     for (const push of buffered) {
-      try { window.receiveDataLayerPush(push); } catch { /* ignore */ }
+      try {
+        window.receiveDataLayerPush(push);
+      } catch {
+        /* ignore */
+      }
     }
   }
 }

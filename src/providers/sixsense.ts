@@ -10,9 +10,9 @@ export const sixsense: Provider = {
     const p = getParams(url, postBody);
     return {
       'Company ID': p.company_id,
-      'Domain': p.domain,
-      'Token': p.token,
-      'IP': p.ipaddr,
+      Domain: p.domain,
+      Token: p.token,
+      IP: p.ipaddr,
     };
   },
 } as const;

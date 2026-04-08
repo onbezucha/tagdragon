@@ -1,7 +1,8 @@
 // ─── SHARED CONSTANTS ────────────────────────────────────────────────────────
 // SVG icons and app-wide constants
 
-export const COPY_SVG = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="4" y="4" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M10 4V2.5A1.5 1.5 0 008.5 1H2.5A1.5 1.5 0 001 2.5v6A1.5 1.5 0 002.5 10H4" stroke="currentColor" stroke-width="1.2"/></svg>';
+export const COPY_SVG =
+  '<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="4" y="4" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M10 4V2.5A1.5 1.5 0 008.5 1H2.5A1.5 1.5 0 001 2.5v6A1.5 1.5 0 002.5 10H4" stroke="currentColor" stroke-width="1.2"/></svg>';
 
 export interface AppConfig {
   maxRequests: number;
@@ -18,12 +19,13 @@ export interface AppConfig {
   exportFormat: 'json' | 'csv';
   dlSortField: 'time' | 'keycount' | 'source';
   dlSortOrder: 'asc' | 'desc';
+  dlGroupBySource: boolean;
 }
 
 export const DEFAULT_CONFIG: AppConfig = {
   maxRequests: 500,
   autoPrune: true,
-  pruneRatio: 0.75,  // when limit reached, prune down to 75%
+  pruneRatio: 0.75, // when limit reached, prune down to 75%
   sortOrder: 'asc',
   wrapValues: false,
   autoExpand: false,
@@ -35,4 +37,5 @@ export const DEFAULT_CONFIG: AppConfig = {
   exportFormat: 'json',
   dlSortField: 'time',
   dlSortOrder: 'asc',
+  dlGroupBySource: false,
 };

@@ -25,12 +25,14 @@ export const mparticle: Provider = {
         userId = identities?.customerid as string | undefined;
         environment = body.environment as string | undefined;
       }
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
     return {
-      'Event': eventName,
+      Event: eventName,
       'Event Type': eventType,
       'User ID': userId,
-      'Environment': environment,
+      Environment: environment,
       'API Key': p.key,
     };
   },

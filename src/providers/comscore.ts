@@ -10,9 +10,22 @@ export const comscore: Provider = {
     const p = getParams(url, postBody);
 
     const knownKeys = new Set([
-      'c1', 'c2', 'cv', 'cs_it', 'c7', 'c8', 'c9', 'ns__t',
-      'gdpr', 'gdpr_purps', 'gdpr_li', 'gdpr_pcc',
-      'cs_cmp_id', 'cs_fpid', 'cs_cfg', 'c12',
+      'c1',
+      'c2',
+      'cv',
+      'cs_it',
+      'c7',
+      'c8',
+      'c9',
+      'ns__t',
+      'gdpr',
+      'gdpr_purps',
+      'gdpr_li',
+      'gdpr_pcc',
+      'cs_cmp_id',
+      'cs_fpid',
+      'cs_cfg',
+      'c12',
     ]);
 
     const extra: Record<string, string | undefined> = {};
@@ -23,22 +36,22 @@ export const comscore: Provider = {
     }
 
     return {
-      'Type': p.c1,
+      Type: p.c1,
       'Client ID': p.c2,
-      'Version': p.cv,
+      Version: p.cv,
       'Integration Type': p.cs_it,
       'Page URL': p.c7,
       'Page Title': p.c8,
-      'Referrer': p.c9,
-      'Timestamp': p.ns__t,
-      'GDPR': p.gdpr,
+      Referrer: p.c9,
+      Timestamp: p.ns__t,
+      GDPR: p.gdpr,
       'GDPR Purposes': p.gdpr_purps,
       'GDPR LI': p.gdpr_li,
       'GDPR Country': p.gdpr_pcc,
       'Campaign ID': p.cs_cmp_id,
       'Fingerprint ID': p.cs_fpid,
-      'Config': p.cs_cfg,
-      'Segment': p.c12,
+      Config: p.cs_cfg,
+      Segment: p.c12,
       ...extra,
     };
   },

@@ -9,7 +9,7 @@ export const medallia: Provider = {
   parseParams(url: string, postBody: unknown): Record<string, string | undefined> {
     const p = getParams(url, postBody);
     return {
-      'Event': p.event,
+      Event: p.event,
       'Session ID': p.sessionId,
       'Site ID': p.siteId,
     };

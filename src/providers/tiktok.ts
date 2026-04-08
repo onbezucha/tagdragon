@@ -1,14 +1,19 @@
 import type { Provider } from '@/types/provider';
 import { getParams } from './url-parser';
 
-interface HARPostBody { text?: string; raw?: Array<{ bytes?: string }>; }
+interface HARPostBody {
+  text?: string;
+  raw?: Array<{ bytes?: string }>;
+}
 
 function parseHARJson(postRaw: unknown): Record<string, unknown> {
   try {
     const har = postRaw as HARPostBody;
     const text = har?.text ?? (har?.raw?.[0]?.bytes ? atob(har.raw[0].bytes) : '');
-    return text ? JSON.parse(text) as Record<string, unknown> : {};
-  } catch { return {}; }
+    return text ? (JSON.parse(text) as Record<string, unknown>) : {};
+  } catch {
+    return {};
+  }
 }
 
 export const tiktokPixel: Provider = {
@@ -26,20 +31,20 @@ export const tiktokPixel: Provider = {
     const ctxUser = (ctx['user'] as Record<string, unknown>) ?? {};
     const ctxPage = (ctx['page'] as Record<string, unknown>) ?? {};
 
-    const str = (v: unknown): string | undefined => v != null ? String(v) : undefined;
+    const str = (v: unknown): string | undefined => (v != null ? String(v) : undefined);
 
     return {
       // Event
-      'Event': str(body['event']) ?? p['event'],
-      'Timestamp': str(body['timestamp']),
+      Event: str(body['event']) ?? p['event'],
+      Timestamp: str(body['timestamp']),
       // Pixel Info
       'Pixel Code': str(body['pixel_code']) ?? p['pixel_code'],
       // Page
-      'URL': str(props['url']) ?? str(ctxPage['url']) ?? p['url'],
-      'Referrer': str(ctxPage['referrer']) || undefined,
+      URL: str(props['url']) ?? str(ctxPage['url']) ?? p['url'],
+      Referrer: str(ctxPage['referrer']) || undefined,
       // Ecommerce
-      'Value': str(props['value']) ?? p['value'],
-      'Currency': str(props['currency']) ?? p['currency'],
+      Value: str(props['value']) ?? p['value'],
+      Currency: str(props['currency']) ?? p['currency'],
       'Content ID': str(props['content_id']),
       'Content Type': str(props['content_type']),
       'Content Name': str(props['content_name']),
@@ -48,7 +53,7 @@ export const tiktokPixel: Provider = {
       // User
       'Click ID': str(ctxUser['ttclid']),
       'User ID': str(ctxUser['external_id']),
-      'Locale': str(ctxUser['locale']),
+      Locale: str(ctxUser['locale']),
     };
   },
 } as const;

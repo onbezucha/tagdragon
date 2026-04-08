@@ -12,7 +12,7 @@ import type { DiffEntry } from '@/types/datalayer';
 export function deepDiff(
   prev: Record<string, unknown>,
   curr: Record<string, unknown>,
-  maxEntries = 100,
+  maxEntries = 100
 ): DiffEntry[] {
   const entries: DiffEntry[] = [];
   collectDiff(prev, curr, '', entries, maxEntries);
@@ -24,7 +24,7 @@ function collectDiff(
   curr: unknown,
   path: string,
   entries: DiffEntry[],
-  maxEntries: number,
+  maxEntries: number
 ): void {
   if (entries.length >= maxEntries) return;
 
@@ -170,7 +170,9 @@ function formatDiffValue(val: unknown): string {
     try {
       const s = JSON.stringify(val);
       return s.length > 80 ? s.slice(0, 77) + '...' : s;
-    } catch { return '[Object]'; }
+    } catch {
+      return '[Object]';
+    }
   }
   return String(val);
 }

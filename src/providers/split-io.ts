@@ -20,12 +20,14 @@ export const splitIo: Provider = {
         trafficType = first?.trafficTypeName as string | undefined;
         value = first?.value !== undefined ? String(first.value) : undefined;
       }
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
     return {
-      'Event': eventType,
-      'Key': key,
+      Event: eventType,
+      Key: key,
       'Traffic Type': trafficType,
-      'Value': value,
+      Value: value,
     };
   },
 } as const;

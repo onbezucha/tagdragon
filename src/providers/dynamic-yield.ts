@@ -11,8 +11,8 @@ export const dynamicYield: Provider = {
     return {
       'DY ID': p.dyid,
       'Session ID': p.ses,
-      'Event': p.name,
-      'Section': p.section,
+      Event: p.name,
+      Section: p.section,
     };
   },
 } as const;

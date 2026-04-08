@@ -9,10 +9,10 @@ export const outbrain: Provider = {
   parseParams(url: string, postBody: unknown): Record<string, string | undefined> {
     const p = getParams(url, postBody);
     return {
-      'Event': p.name,
+      Event: p.name,
       'Click ID': p.ob_click_id,
       'Order Value': p.orderValue,
-      'Currency': p.currency,
+      Currency: p.currency,
     };
   },
 } as const;

@@ -5,27 +5,28 @@ export const ga4: Provider = {
   name: 'GA4',
   color: '#E8710A',
   // Matches standard GA4, analytics.google.com, and server-side GTM custom domains (v=2 = GA4 Measurement Protocol)
-  pattern: /google-analytics\.com\/g\/collect|analytics\.google\.com\/g\/collect|\/g\/collect\?v=2(?:&|$)/,
-  
+  pattern:
+    /google-analytics\.com\/g\/collect|analytics\.google\.com\/g\/collect|\/g\/collect\?v=2(?:&|$)/,
+
   parseParams(url: string, postBody: unknown): Record<string, string | undefined> {
     const p = getParams(url, postBody);
 
     const decoded: Record<string, string | undefined> = {
       // Hit Info
-      'Event': p.en,
+      Event: p.en,
       'Session ID': p.sid,
       'Session Count': p.sct,
       'Session Engaged': p.seg,
       'Hit Sequence': p._s,
-      'Engagement': p._et ? `${p._et}ms` : undefined,
+      Engagement: p._et ? `${p._et}ms` : undefined,
       // User & Session
       'Client ID': p.cid,
       'User ID': p.uid,
-      'ECID': p.ecid,
+      ECID: p.ecid,
       // Page & Content
-      'Page': p.dl ?? p.dp,
+      Page: p.dl ?? p.dp,
       'Page title': p.dt,
-      'Referrer': p.dr,
+      Referrer: p.dr,
       // Measurement
       'Measurement ID': p.tid,
       'GTM Version': p.gtm,
@@ -36,7 +37,7 @@ export const ga4: Provider = {
       'DMA Compliance': p.dma,
       'DMA Consent': p.dma_cps,
       // Ecommerce
-      'Currency': p.cu,
+      Currency: p.cu,
       // Device & Browser
       'Screen Resolution': p.sr,
       'User Language': p.ul,
@@ -49,7 +50,10 @@ export const ga4: Provider = {
         decoded[key] = value;
       }
       // User properties: up.*, upn.*
-      else if ((key.startsWith('up.') && key.length > 3) || (key.startsWith('upn.') && key.length > 4)) {
+      else if (
+        (key.startsWith('up.') && key.length > 3) ||
+        (key.startsWith('upn.') && key.length > 4)
+      ) {
         decoded[key] = value;
       }
       // Product-scoped: pr1, pr1id, pr1nm, etc.

@@ -14,13 +14,13 @@ export const redditPixel: Provider = {
 
     return {
       'Account ID': p.id,
-      'Event': requestType,
+      Event: requestType,
       'Custom Event Name': p['m.customEventName'],
       'Item Count': p['m.itemCount'],
-      'Value': p['m.value'],
+      Value: p['m.value'],
       'Value (Decimal)': p['m.valueDecimal'],
-      'Currency': p['m.currency'],
-      'Products': p['m.products'],
+      Currency: p['m.currency'],
+      Products: p['m.products'],
       'Conversion ID': p['m.conversionId'],
     };
   },

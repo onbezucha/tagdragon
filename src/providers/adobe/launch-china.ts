@@ -8,10 +8,12 @@ export const adobeLaunchChina: Provider = {
   parseParams(url: string): Record<string, string | undefined> {
     const envMatch = url.match(/launch-EN([a-f0-9]+)(?:-(development|staging))?\.min\.js/);
     return {
-      'Type': 'Adobe Tags (CN)',
-      'Environment': envMatch?.[2] ? envMatch[2].charAt(0).toUpperCase() + envMatch[2].slice(1) : 'Production',
+      Type: 'Adobe Tags (CN)',
+      Environment: envMatch?.[2]
+        ? envMatch[2].charAt(0).toUpperCase() + envMatch[2].slice(1)
+        : 'Production',
       'Library ID': envMatch?.[1],
-      'URL': url,
+      URL: url,
     };
   },
 } as const;

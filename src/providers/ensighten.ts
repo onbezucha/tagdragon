@@ -9,9 +9,9 @@ export const ensighten: Provider = {
   parseParams(url: string, postBody: unknown): Record<string, string | undefined> {
     const p = getParams(url, postBody);
     return {
-      'Bootstrap': p.bootstrap,
-      'Client': p.client,
-      'Space': p.pub,
+      Bootstrap: p.bootstrap,
+      Client: p.client,
+      Space: p.pub,
     };
   },
 } as const;

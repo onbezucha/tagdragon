@@ -9,9 +9,9 @@ export const spotifyPixel: Provider = {
   parseParams(url: string, postBody: unknown): Record<string, string | undefined> {
     const p = getParams(url, postBody);
     return {
-      'Event': p.event,
+      Event: p.event,
       'Pixel ID': p.pixel_id,
-      'GDPR': p.gdpr,
+      GDPR: p.gdpr,
     };
   },
 } as const;

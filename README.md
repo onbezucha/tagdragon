@@ -14,6 +14,7 @@
   <a href="LICENSE"><img src="https://img.shields.io/github/license/onbezucha/tagdragon?style=flat-square" alt="License: ISC"></a>
   <a href="https://www.google.com/chrome/"><img src="https://img.shields.io/badge/chrome-88%2B-brightgreen?style=flat-square" alt="Chrome 88+"></a>
   <a href="https://github.com/onbezucha/tagdragon/stargazers"><img src="https://img.shields.io/github/stars/onbezucha/tagdragon?style=flat-square" alt="Stars"></a>
+  <a href="https://github.com/onbezucha/tagdragon/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/onbezucha/tagdragon/ci.yml?style=flat-square&label=CI" alt="CI"></a>
 </p>
 
 <p align="center">
@@ -167,12 +168,7 @@ Full documentation available at [tagdragon.net/docs](https://www.tagdragon.net/d
 
 ## 🤝 Contributing
 
-Contributions are welcome! To add a new provider:
-1. Create a provider file in `src/providers/`
-2. Import it in `src/providers/index.ts` and add it to the `PROVIDERS` array
-3. Add the provider name to the correct group in `src/shared/provider-groups.ts`
-
-See [AGENTS.md](AGENTS.md) for code style guidelines and project conventions.
+Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for setup instructions, code style, and how to add a new provider.
 
 ---
 

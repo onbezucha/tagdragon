@@ -9,10 +9,10 @@ export const adobeECID: Provider = {
   parseParams(url: string, postBody: unknown): Record<string, string | undefined> {
     const p = getParams(url, postBody);
     return {
-      'MID': p.d_mid,
+      MID: p.d_mid,
       'Org ID': p.d_orgid,
-      'Version': p.d_ver,
-      'Response': p.d_rtbd,
+      Version: p.d_ver,
+      Response: p.d_rtbd,
     };
   },
 } as const;

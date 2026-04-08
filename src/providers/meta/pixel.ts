@@ -32,42 +32,42 @@ export const metaPixel: Provider = {
 
     return {
       // Event
-      'Event': p.ev,
-      'Action': p.a,
+      Event: p.ev,
+      Action: p.a,
       'Event ID': p.eid,
       'Event Count': p.ec,
-      'Ordinal': p.o,
+      Ordinal: p.o,
       'Last Event Result': p.ler,
       // Pixel Info
       'Pixel ID': p.id,
       'Pixel Version': p.v,
-      'Release': p.r,
+      Release: p.r,
       // Page
-      'URL': p.dl,
-      'Referrer': p.rl || undefined,
+      URL: p.dl,
+      Referrer: p.rl || undefined,
       // Ecommerce
-      'Value': p['cd[value]'],
-      'Currency': p['cd[currency]'],
+      Value: p['cd[value]'],
+      Currency: p['cd[currency]'],
       'Content IDs': p['cd[content_ids]'],
       'Content Name': p['cd[content_name]'],
       'Content Type': p['cd[content_type]'],
       'Content Category': p['cd[content_category]'],
       'Num Items': p['cd[num_items]'],
-      'Contents': contentsDisplay,
+      Contents: contentsDisplay,
       // Tracking
-      'FBP': p.fbp,
-      'FBC': p.fbc,
+      FBP: p.fbp,
+      FBC: p.fbc,
       // Device
       'Screen Resolution': screenRes,
       // Technical
-      'Timestamp': p.ts,
+      Timestamp: p.ts,
       'Page Load Time': plt,
       'Init Time': p.it ? new Date(parseInt(p.it, 10)).toISOString() : undefined,
       'In iFrame': p.if,
       'Click-Only': p.coo,
       'Consent Data Layer': p.cdl,
       'Consent Flag': p.cf,
-      'Experiments': experiments.length > 0 ? experiments.join(', ') : undefined,
+      Experiments: experiments.length > 0 ? experiments.join(', ') : undefined,
     };
   },
 } as const;

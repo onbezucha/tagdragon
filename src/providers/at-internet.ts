@@ -11,10 +11,10 @@ export const atInternet: Provider = {
     return {
       'Site Name': p.x2,
       'Level 2': p.s2,
-      'Page': p.p,
-      'Campaign': p.xtor,
+      Page: p.p,
+      Campaign: p.xtor,
       'Hit Type': p.type,
-      'Click': p.clic,
+      Click: p.clic,
     };
   },
 } as const;

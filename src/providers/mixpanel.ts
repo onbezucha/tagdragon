@@ -27,14 +27,16 @@ export const mixpanel: Provider = {
           token = props['token'] != null ? String(props['token']) : token;
           currentUrl = props['$current_url'] != null ? String(props['$current_url']) : currentUrl;
         }
-      } catch { /* Ignore decode errors */ }
+      } catch {
+        /* Ignore decode errors */
+      }
     }
 
     return {
-      'Event': eventName,
+      Event: eventName,
       'Distinct ID': distinctId,
-      'Token': token,
-      'URL': currentUrl ?? url,
+      Token: token,
+      URL: currentUrl ?? url,
     };
   },
 } as const;

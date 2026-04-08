@@ -106,16 +106,16 @@ function decodeEnvelope(e: unknown[]): {
   return {
     envelope: env,
     params: {
-      'Version': env.version,
+      Version: env.version,
       'Project ID': env.projectId,
       'User ID': env.userId,
       'Session ID': env.sessionId,
       'Page Number': String(env.pageNum),
-      'Sequence': String(env.sequence),
+      Sequence: String(env.sequence),
       'Duration (ms)': String(env.duration),
       'Upload Type': CLARITY_UPLOAD_NAMES[env.upload] ?? String(env.upload),
       'Is Last Payload': env.end === 1 ? 'Yes (Beacon)' : 'No',
-      'Platform': CLARITY_PLATFORM_NAMES[env.platform] ?? String(env.platform),
+      Platform: CLARITY_PLATFORM_NAMES[env.platform] ?? String(env.platform),
       'Page URL': env.url,
     },
   };
@@ -148,10 +148,12 @@ function decodeAnalyticsEvents(events: unknown[][]): Record<string, string | und
         break;
 
       case 16: // DoubleClick
-        params[`DoubleClick [${i}]`] = `target=${ev[2] ?? '?'}, x=${ev[3] ?? '?'}, y=${ev[4] ?? '?'}`;
+        params[`DoubleClick [${i}]`] =
+          `target=${ev[2] ?? '?'}, x=${ev[3] ?? '?'}, y=${ev[4] ?? '?'}`;
         break;
 
-      case 24: { // Custom
+      case 24: {
+        // Custom
         const key = ev[2] != null ? String(ev[2]) : '';
         const value = ev[3] != null ? String(ev[3]) : '';
         params[`Custom Event [${i}]`] = key ? `${key} = ${value}` : value;
@@ -182,16 +184,19 @@ function decodeAnalyticsEvents(events: unknown[][]): Record<string, string | und
         params[`Form Submit [${i}]`] = `target=${ev[2] ?? '?'}`;
         break;
 
-      case 47: { // Consent
+      case 47: {
+        // Consent
         const source = Number(ev[2] ?? 0);
         const adStorage = ev[3] === 1 ? 'Granted' : 'Denied';
         const analyticsStorage = ev[4] === 1 ? 'Granted' : 'Denied';
         const sourceName = CLARITY_CONSENT_SOURCES[source] ?? `Unknown(${source})`;
-        params[`Consent [${i}]`] = `source=${sourceName}, ad_storage=${adStorage}, analytics_storage=${analyticsStorage}`;
+        params[`Consent [${i}]`] =
+          `source=${sourceName}, ad_storage=${adStorage}, analytics_storage=${analyticsStorage}`;
         break;
       }
 
-      case 0: { // Metric — decode sub-key/value pairs
+      case 0: {
+        // Metric — decode sub-key/value pairs
         for (let j = 2; j + 1 < ev.length; j += 2) {
           const metricKey = Number(ev[j]);
           const metricValue = ev[j + 1];
@@ -203,7 +208,8 @@ function decodeAnalyticsEvents(events: unknown[][]): Record<string, string | und
         break;
       }
 
-      case 1: { // Dimension — decode sub-key/value pairs
+      case 1: {
+        // Dimension — decode sub-key/value pairs
         for (let j = 2; j + 1 < ev.length; j += 2) {
           const dimKey = Number(ev[j]);
           const dimValue = ev[j + 1];
@@ -216,21 +222,24 @@ function decodeAnalyticsEvents(events: unknown[][]): Record<string, string | und
       }
 
       case 2: // Upload
-        params[`Upload [${i}]`] = `seq=${ev[2] ?? '?'}, attempts=${ev[3] ?? '?'}, status=${ev[4] ?? '?'}`;
+        params[`Upload [${i}]`] =
+          `seq=${ev[2] ?? '?'}, attempts=${ev[3] ?? '?'}, status=${ev[4] ?? '?'}`;
         break;
 
       case 3: // Upgrade
         params[`Upgrade [${i}]`] = String(ev[2] ?? '');
         break;
 
-      case 34: { // Variable
+      case 34: {
+        // Variable
         for (let j = 2; j + 1 < ev.length; j += 2) {
           params[`Variable: ${ev[j]}`] = String(ev[j + 1]);
         }
         break;
       }
 
-      case 35: { // Limit
+      case 35: {
+        // Limit
         const checkKey = Number(ev[2] ?? 0);
         params[`Limit [${i}]`] = CLARITY_CHECK_NAMES[checkKey] ?? String(checkKey);
         break;
@@ -238,7 +247,10 @@ function decodeAnalyticsEvents(events: unknown[][]): Record<string, string | und
 
       default: {
         // For other event types, show type name + raw params
-        const raw = ev.slice(2).map(v => String(v ?? '')).join(', ');
+        const raw = ev
+          .slice(2)
+          .map((v) => String(v ?? ''))
+          .join(', ');
         if (raw) {
           params[`${eventName} [${i}]`] = raw;
         }
@@ -273,7 +285,7 @@ function extractEventName(events: unknown[][]): string | undefined {
 
     // Custom events: append key name
     if (priorityType === 24) {
-      const customEv = events.find(e => Array.isArray(e) && Number(e[1]) === 24);
+      const customEv = events.find((e) => Array.isArray(e) && Number(e[1]) === 24);
       if (customEv && customEv[2]) {
         return `Custom: ${customEv[2]}`;
       }
@@ -281,7 +293,7 @@ function extractEventName(events: unknown[][]): string | undefined {
 
     // Consent events: append source name
     if (priorityType === 47) {
-      const consentEv = events.find(e => Array.isArray(e) && Number(e[1]) === 47);
+      const consentEv = events.find((e) => Array.isArray(e) && Number(e[1]) === 47);
       if (consentEv) {
         const source = CLARITY_CONSENT_SOURCES[Number(consentEv[2] ?? 0)] ?? '';
         return `Consent${source ? ` (${source})` : ''}`;
@@ -290,7 +302,7 @@ function extractEventName(events: unknown[][]): string | undefined {
 
     // Navigation events: append target URL (truncated)
     if (priorityType === 29) {
-      const navEv = events.find(e => Array.isArray(e) && Number(e[1]) === 29);
+      const navEv = events.find((e) => Array.isArray(e) && Number(e[1]) === 29);
       if (navEv && navEv[2]) {
         return `Nav: ${String(navEv[2]).slice(0, 40)}`;
       }
@@ -320,8 +332,8 @@ export const microsoftClarity: Provider = {
     if (!payload) {
       // Can't parse payload (gzip, empty, or invalid)
       return {
-        'URL': url,
-        '_eventName': 'Upload (compressed)',
+        URL: url,
+        _eventName: 'Upload (compressed)',
       };
     }
 
@@ -336,7 +348,7 @@ export const microsoftClarity: Provider = {
 
     // Build event type summary
     const eventTypes = new Set<string>();
-    for (const ev of (payload.a || [])) {
+    for (const ev of payload.a || []) {
       if (Array.isArray(ev) && ev.length >= 2) {
         const name = CLARITY_EVENT_NAMES[Number(ev[1])];
         if (name) eventTypes.add(name);
@@ -350,7 +362,7 @@ export const microsoftClarity: Provider = {
       'Event Count': String(eventCount),
       'Event Types': eventSummary,
       ...eventParams,
-      '_eventName': eventName ?? `Upload (seq: ${envelope.sequence})`,
+      _eventName: eventName ?? `Upload (seq: ${envelope.sequence})`,
     };
   },
 } as const;

@@ -3,6 +3,19 @@
 import { renderParamTable } from './query';
 import type { ParsedRequest } from '@/types/request';
 
+declare global {
+  interface Window {
+    _getHeavyData?: (id: number) =>
+      | {
+          responseBody?: string | null;
+          requestHeaders?: Record<string, string> | null;
+          responseHeaders?: Record<string, string> | null;
+        }
+      | null
+      | undefined;
+  }
+}
+
 /**
  * Render merged headers tab (request + response headers).
  */
@@ -29,7 +42,7 @@ export function renderHeadersTab(data: ParsedRequest): string {
  */
 export function loadHeavyData(data: ParsedRequest): void {
   // Retrieve heavy data from devtools.js via the exposed function
-  const getHeavyData = (window as any)._getHeavyData;
+  const getHeavyData = window._getHeavyData;
   if (getHeavyData) {
     const heavy = getHeavyData(data.id);
     if (heavy) {

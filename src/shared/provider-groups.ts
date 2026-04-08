@@ -16,8 +16,22 @@ export const PROVIDER_GROUPS: readonly ProviderGroup[] = [
     label: 'Analytics',
     icon: '📊',
     providers: [
-      'GA4', 'GA (UA)', 'Adobe Client-Side', 'Adobe Server-Side', 'Scorecard', 'Amplitude', 'Mixpanel', 'Matomo',
-      'Piwik PRO', 'AT Internet', 'Comscore', 'Parse.ly', 'Webtrends', 'Medallia DXA', 'Indicative', 'RudderStack',
+      'GA4',
+      'GA (UA)',
+      'Adobe Client-Side',
+      'Adobe Server-Side',
+      'Scorecard',
+      'Amplitude',
+      'Mixpanel',
+      'Matomo',
+      'Piwik PRO',
+      'AT Internet',
+      'Comscore',
+      'Parse.ly',
+      'Webtrends',
+      'Medallia DXA',
+      'Indicative',
+      'RudderStack',
     ],
   },
   {
@@ -31,10 +45,30 @@ export const PROVIDER_GROUPS: readonly ProviderGroup[] = [
     label: 'Marketing',
     icon: '🎯',
     providers: [
-      'Google Ads', 'Meta Pixel', 'Bing Ads', 'Adform', 'DoubleClick', 'Criteo', 'Sklik',
-      'TikTok Pixel', 'X (Twitter) Pixel', 'Pinterest Pixel', 'The Trade Desk',
-      'Reddit Pixel', 'Snapchat Pixel', 'Amazon Ads', 'Outbrain', 'Teads', 'Spotify Pixel',
-      'RTB House', 'Zemanta', 'Sojern', 'Vibes', 'Brevo', 'Invoca', 'HubSpot',
+      'Google Ads',
+      'Meta Pixel',
+      'Bing Ads',
+      'Adform',
+      'DoubleClick',
+      'Criteo',
+      'Sklik',
+      'TikTok Pixel',
+      'X (Twitter) Pixel',
+      'Pinterest Pixel',
+      'The Trade Desk',
+      'Reddit Pixel',
+      'Snapchat Pixel',
+      'Amazon Ads',
+      'Outbrain',
+      'Teads',
+      'Spotify Pixel',
+      'RTB House',
+      'Zemanta',
+      'Sojern',
+      'Vibes',
+      'Brevo',
+      'Invoca',
+      'HubSpot',
     ],
   },
   {
@@ -72,15 +106,19 @@ export const PROVIDER_GROUPS: readonly ProviderGroup[] = [
     label: 'Adobe Stack',
     icon: '🅰️',
     providers: [
-      'Adobe Target', 'Adobe AAM', 'Adobe ECID', 'Adobe Heartbeat',
-      'Adobe DTM', 'Adobe Launch (CN)',
+      'Adobe Target',
+      'Adobe AAM',
+      'Adobe ECID',
+      'Adobe Heartbeat',
+      'Adobe DTM',
+      'Adobe Launch (CN)',
     ],
   },
 ];
 
 // Utility: finds the group for a given provider name
 export function getProviderGroup(providerName: string): ProviderGroup | undefined {
-  return PROVIDER_GROUPS.find(g => g.providers.includes(providerName));
+  return PROVIDER_GROUPS.find((g) => g.providers.includes(providerName));
 }
 
 // Fallback group for providers without an assigned group

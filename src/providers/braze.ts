@@ -21,10 +21,12 @@ export const braze: Provider = {
           eventName = (body.event_name ?? body.name) as string | undefined;
         }
       }
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
     return {
       'App ID': p.app_id,
-      'Event': eventName ?? p.event_name ?? p.name,
+      Event: eventName ?? p.event_name ?? p.name,
       'User ID': p.external_user_id,
       'Session ID': p.session_id,
       'SDK Version': p.sdk_version,

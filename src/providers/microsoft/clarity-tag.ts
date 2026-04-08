@@ -16,7 +16,7 @@ export const microsoftClarityTag: Provider = {
     return {
       'Project ID': match ? match[1] : undefined,
       'Request Type': 'Library Load',
-      '_eventName': 'Library Load',
+      _eventName: 'Library Load',
     };
   },
 } as const;

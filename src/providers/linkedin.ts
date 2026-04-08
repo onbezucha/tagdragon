@@ -7,13 +7,13 @@ export const linkedin: Provider = {
   // linkedin.com/li/track — Insight Tag beacon (all implementations)
   // px.ads.linkedin.com  — newer Insight Tag / Conversions API endpoint
   pattern: /linkedin\.com\/li\/track|px\.ads\.linkedin\.com/,
-  
+
   parseParams(url: string, postBody: unknown): Record<string, string | undefined> {
     const p = getParams(url, postBody);
     return {
       'Partner ID': p.pid,
-      'Conversion': p.conversionId,
-      'URL': url,
+      Conversion: p.conversionId,
+      URL: url,
     };
   },
 } as const;

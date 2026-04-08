@@ -9,11 +9,11 @@ export const adobeTarget: Provider = {
   parseParams(url: string, postBody: unknown): Record<string, string | undefined> {
     const p = getParams(url, postBody);
     return {
-      'Mbox': p.mbox,
+      Mbox: p.mbox,
       'Session ID': p.sessionId,
       'TNT ID': p.tntId,
-      'MCID': p.marketingCloudVisitorId,
-      'Host': p.mboxHost,
+      MCID: p.marketingCloudVisitorId,
+      Host: p.mboxHost,
       'Page URL': p.mboxURL,
     };
   },

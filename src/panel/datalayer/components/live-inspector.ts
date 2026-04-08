@@ -3,12 +3,7 @@
 // and watch path functionality.
 
 import { DOM } from '../../utils/dom';
-import {
-  getWatchedPaths,
-  addWatchedPath,
-  removeWatchedPath,
-  clearWatchedPaths,
-} from '../state';
+import { getWatchedPaths, addWatchedPath, removeWatchedPath, clearWatchedPaths } from '../state';
 
 // ─── TYPES ─────────────────────────────────────────────────────────────────
 
@@ -42,7 +37,7 @@ let liveTabRendered = false;
 export function renderLiveInspector(
   container: HTMLElement,
   cumulativeState: Record<string, unknown>,
-  changedPaths?: Map<string, ChangeType>,
+  changedPaths?: Map<string, ChangeType>
 ): void {
   container.innerHTML = '';
 
@@ -117,7 +112,7 @@ export function renderLiveInspector(
 export function queueHighlights(
   changedPaths: Map<string, ChangeType>,
   prevState: Record<string, unknown>,
-  newState: Record<string, unknown>,
+  newState: Record<string, unknown>
 ): void {
   pendingHighlights = new Map(changedPaths);
 
@@ -141,7 +136,7 @@ export function queueHighlights(
  */
 export function checkWatchPaths(
   prevState: Record<string, unknown>,
-  newState: Record<string, unknown>,
+  newState: Record<string, unknown>
 ): void {
   const watched = getWatchedPaths();
   if (watched.length === 0) return;
@@ -177,7 +172,7 @@ function updateTreeIncremental(
   container: HTMLElement,
   prev: Record<string, unknown>,
   curr: Record<string, unknown>,
-  changedPaths: Map<string, ChangeType>,
+  changedPaths: Map<string, ChangeType>
 ): void {
   const treeContainer = container.querySelector('.dl-tree') as HTMLElement | null;
   if (!treeContainer) return;
@@ -192,9 +187,7 @@ function updateTreeIncremental(
   // Remove keys that no longer exist
   for (const key of Object.keys(prev)) {
     if (!(key in curr)) {
-      const node = treeContainer.querySelector(
-        `.dl-tree-node[data-path="${CSS.escape(key)}"]`,
-      );
+      const node = treeContainer.querySelector(`.dl-tree-node[data-path="${CSS.escape(key)}"]`);
       if (node) node.remove();
     }
   }
@@ -202,7 +195,7 @@ function updateTreeIncremental(
   // Add or update keys
   for (const key of Object.keys(curr).sort()) {
     const existingNode = treeContainer.querySelector(
-      `.dl-tree-node[data-path="${CSS.escape(key)}"]`,
+      `.dl-tree-node[data-path="${CSS.escape(key)}"]`
     ) as HTMLElement | null;
 
     const changeType = changedPaths.get(key);
@@ -216,9 +209,7 @@ function updateTreeIncremental(
         path: key,
         changeType,
         isLeaf: !isExpandable(curr[key]),
-        childCount: isExpandable(curr[key])
-          ? Object.keys(curr[key] as object).length
-          : 0,
+        childCount: isExpandable(curr[key]) ? Object.keys(curr[key] as object).length : 0,
       };
       const newNode = createTreeNode(nodeData, changedPaths);
       insertNodeSorted(treeContainer, newNode, key);
@@ -229,11 +220,7 @@ function updateTreeIncremental(
   }
 }
 
-function insertNodeSorted(
-  container: HTMLElement,
-  newNode: HTMLElement,
-  key: string,
-): void {
+function insertNodeSorted(container: HTMLElement, newNode: HTMLElement, key: string): void {
   const nodes = container.querySelectorAll(':scope > .dl-tree-node');
   let inserted = false;
   for (const node of nodes) {
@@ -251,7 +238,7 @@ function updateExistingNode(
   node: HTMLElement,
   newValue: unknown,
   changeType: ChangeType,
-  changedPaths: Map<string, ChangeType>,
+  changedPaths: Map<string, ChangeType>
 ): void {
   const isLeaf = !isExpandable(newValue);
 
@@ -259,9 +246,8 @@ function updateExistingNode(
     const valEl = node.querySelector(':scope > .dl-tree-row .dl-tree-value') as HTMLElement | null;
     if (valEl) {
       valEl.textContent = formatValue(newValue);
-      valEl.title = typeof newValue === 'object'
-        ? JSON.stringify(newValue, null, 2)
-        : String(newValue);
+      valEl.title =
+        typeof newValue === 'object' ? JSON.stringify(newValue, null, 2) : String(newValue);
     }
     const childrenContainer = node.querySelector(':scope > .dl-tree-children');
     if (childrenContainer) childrenContainer.remove();
@@ -273,7 +259,7 @@ function updateExistingNode(
     }
   } else {
     const bracket = node.querySelector(
-      ':scope > .dl-tree-row .dl-tree-value-bracket',
+      ':scope > .dl-tree-row .dl-tree-value-bracket'
     ) as HTMLElement | null;
     if (bracket) {
       const isArray = Array.isArray(newValue);
@@ -290,9 +276,7 @@ function updateExistingNode(
       : Object.entries(obj).sort(([a], [b]) => a.localeCompare(b));
     const path = (node as HTMLElement).dataset['path'] ?? '';
     for (const [childKey, childVal] of entries) {
-      const childPath = Array.isArray(obj)
-        ? `${path}[${childKey}]`
-        : `${path}.${childKey}`;
+      const childPath = Array.isArray(obj) ? `${path}[${childKey}]` : `${path}.${childKey}`;
       const childNode: TreeNodeData = {
         key: Array.isArray(obj) ? `[${childKey}]` : childKey,
         value: childVal,
@@ -300,9 +284,7 @@ function updateExistingNode(
         path: childPath,
         changeType: changedPaths.get(childPath),
         isLeaf: !isExpandable(childVal),
-        childCount: isExpandable(childVal)
-          ? Object.keys(childVal as object).length
-          : 0,
+        childCount: isExpandable(childVal) ? Object.keys(childVal as object).length : 0,
       };
       childrenContainer.appendChild(createTreeNode(childNode, changedPaths));
     }
@@ -389,10 +371,7 @@ function rerenderWatchBar(): void {
 
 // ─── TREE RENDERING ────────────────────────────────────────────────────────
 
-function createTreeNode(
-  data: TreeNodeData,
-  changedPaths?: Map<string, ChangeType>,
-): HTMLElement {
+function createTreeNode(data: TreeNodeData, changedPaths?: Map<string, ChangeType>): HTMLElement {
   const node = document.createElement('div');
   node.className = 'dl-tree-node';
   node.dataset['path'] = data.path;
@@ -450,24 +429,24 @@ function createTreeNode(
     const valEl = document.createElement('span');
     valEl.className = 'dl-tree-value';
     valEl.textContent = formatValue(data.value);
-    valEl.title = typeof data.value === 'object'
-      ? JSON.stringify(data.value, null, 2)
-      : String(data.value);
+    valEl.title =
+      typeof data.value === 'object' ? JSON.stringify(data.value, null, 2) : String(data.value);
     valEl.style.cursor = 'pointer';
     valEl.addEventListener('click', () => {
-      const text = typeof data.value === 'object'
-        ? JSON.stringify(data.value, null, 2)
-        : String(data.value ?? '');
-      navigator.clipboard.writeText(text).catch(() => { /* ignore */ });
+      const text =
+        typeof data.value === 'object'
+          ? JSON.stringify(data.value, null, 2)
+          : String(data.value ?? '');
+      navigator.clipboard.writeText(text).catch(() => {
+        /* ignore */
+      });
     });
     row.appendChild(valEl);
   } else {
     const bracket = document.createElement('span');
     bracket.className = 'dl-tree-value dl-tree-value-bracket';
     const isArray = Array.isArray(data.value);
-    bracket.textContent = isArray
-      ? `[${data.childCount}]`
-      : `{${data.childCount}}`;
+    bracket.textContent = isArray ? `[${data.childCount}]` : `{${data.childCount}}`;
     row.appendChild(bracket);
   }
 
@@ -494,9 +473,7 @@ function createTreeNode(
         path: childPath,
         changeType: changedPaths?.get(childPath),
         isLeaf: !isExpandable(childVal),
-        childCount: isExpandable(childVal)
-          ? Object.keys(childVal as object).length
-          : 0,
+        childCount: isExpandable(childVal) ? Object.keys(childVal as object).length : 0,
       };
       childrenContainer.appendChild(createTreeNode(childNode, changedPaths));
     }
@@ -509,10 +486,7 @@ function createTreeNode(
 
 // ─── HIGHLIGHTS ────────────────────────────────────────────────────────────
 
-function applyHighlights(
-  container: HTMLElement,
-  changedPaths: Map<string, ChangeType>,
-): void {
+function applyHighlights(container: HTMLElement, changedPaths: Map<string, ChangeType>): void {
   if (highlightTimeoutId) {
     clearTimeout(highlightTimeoutId);
   }
@@ -520,16 +494,12 @@ function applyHighlights(
   for (const [path, type] of changedPaths) {
     // Find the tree row with matching data-path
     const keyEl = container.querySelector(
-      `.dl-tree-node[data-path="${CSS.escape(path)}"] > .dl-tree-row .dl-tree-key`,
+      `.dl-tree-node[data-path="${CSS.escape(path)}"] > .dl-tree-row .dl-tree-key`
     ) as HTMLElement | null;
 
     if (keyEl) {
       // Remove old highlight classes
-      keyEl.classList.remove(
-        'dl-tree-key-changed',
-        'dl-tree-key-added',
-        'dl-tree-key-removed',
-      );
+      keyEl.classList.remove('dl-tree-key-changed', 'dl-tree-key-added', 'dl-tree-key-removed');
       // Force reflow to restart animation
       void keyEl.offsetWidth;
       keyEl.classList.add(`dl-tree-key-${type}`);
@@ -538,7 +508,9 @@ function applyHighlights(
       let parent = keyEl.closest('.dl-tree-node')?.parentElement?.closest('.dl-tree-node');
       while (parent) {
         parent.classList.add('expanded');
-        const toggle = parent.querySelector(':scope > .dl-tree-row .dl-tree-toggle') as HTMLElement | null;
+        const toggle = parent.querySelector(
+          ':scope > .dl-tree-row .dl-tree-toggle'
+        ) as HTMLElement | null;
         if (toggle) toggle.classList.add('expanded');
         parent = parent.parentElement?.closest('.dl-tree-node');
       }
@@ -549,7 +521,7 @@ function applyHighlights(
   highlightTimeoutId = setTimeout(() => {
     for (const [path, type] of changedPaths) {
       const keyEl = container.querySelector(
-        `.dl-tree-node[data-path="${CSS.escape(path)}"] > .dl-tree-row .dl-tree-key`,
+        `.dl-tree-node[data-path="${CSS.escape(path)}"] > .dl-tree-row .dl-tree-key`
       ) as HTMLElement | null;
       if (keyEl) {
         keyEl.classList.remove(`dl-tree-key-${type}`);
@@ -565,7 +537,7 @@ function showWatchToast(
   container: HTMLElement,
   path: string,
   oldVal: unknown,
-  newVal: unknown,
+  newVal: unknown
 ): void {
   const toast = document.createElement('div');
   toast.className = 'dl-watch-toast';
@@ -644,7 +616,9 @@ function formatValueShort(val: unknown): string {
     try {
       const s = JSON.stringify(val);
       return s.length > 40 ? s.slice(0, 37) + '...' : s;
-    } catch { return '[Object]'; }
+    } catch {
+      return '[Object]';
+    }
   }
   return String(val);
 }

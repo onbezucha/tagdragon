@@ -48,7 +48,7 @@ export function formatTimestamp(
   ts: string,
   format: 'absolute' | 'relative' | 'elapsed',
   sessionStartTs?: string,
-  full?: boolean,
+  full?: boolean
 ): string {
   const date = new Date(ts);
 
@@ -74,7 +74,12 @@ export function formatTimestamp(
 
   // absolute
   if (full) return date.toLocaleString('en-US', { hour12: false });
-  return date.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  return date.toLocaleTimeString('en-US', {
+    hour12: false,
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  });
 }
 
 /**
@@ -83,7 +88,9 @@ export function formatTimestamp(
 export function getEventName(data: ParsedRequest): string {
   if (!data.decoded) return getHostname(data.url);
   if (data.provider === 'Google Ads') {
-    return data.decoded['Conversion Label'] || data.decoded['Conversion Type'] || getHostname(data.url);
+    return (
+      data.decoded['Conversion Label'] || data.decoded['Conversion Type'] || getHostname(data.url)
+    );
   }
   return (
     data.decoded['Event type'] ||
@@ -91,9 +98,7 @@ export function getEventName(data: ParsedRequest): string {
     data.decoded['Hit type'] ||
     data.decoded.event ||
     data.decoded.event_name ||
-    Object.values(data.decoded).find(
-      (v) => v && typeof v === 'string' && v.length < 50
-    ) ||
+    Object.values(data.decoded).find((v) => v && typeof v === 'string' && v.length < 50) ||
     getHostname(data.url)
   );
 }

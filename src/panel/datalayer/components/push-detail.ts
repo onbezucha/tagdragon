@@ -6,7 +6,13 @@ import type { ParsedRequest } from '@/types/request';
 import { DOM } from '../../utils/dom';
 import { formatTimestamp } from '../../utils/format';
 import { getConfig, getAllRequests } from '../../state';
-import { getAllDlPushes, computeCumulativeState, getValidationErrors, getCorrelationWindow, setCorrelationWindow } from '../state';
+import {
+  getAllDlPushes,
+  computeCumulativeState,
+  getValidationErrors,
+  getCorrelationWindow,
+  setCorrelationWindow,
+} from '../state';
 import { deepDiff, renderDiff } from '../utils/diff-renderer';
 import { renderEcommerceTable, detectEcommerceType } from '../utils/ecommerce-formatter';
 import { findCorrelatedRequests, renderCorrelation } from '../utils/correlation';
@@ -19,10 +25,10 @@ let activeTab: string = 'push-data';
 
 const TAB_DESCRIPTIONS: Record<string, string> = {
   'push-data': 'Categorized key-value pairs from this push. Click a value to copy.',
-  'diff': 'Changes from the cumulative state before this push.',
+  diff: 'Changes from the cumulative state before this push.',
   'current-state': 'Full merged DataLayer state after applying this push.',
-  'correlation': 'Network requests sent within the time window after this push.',
-  'live': 'Reactive tree view of current DataLayer state. Right-click a key to watch it.',
+  correlation: 'Network requests sent within the time window after this push.',
+  live: 'Reactive tree view of current DataLayer state. Right-click a key to watch it.',
 };
 
 function showTabDescription(tabName: string): void {
@@ -48,7 +54,7 @@ function showTabDescription(tabName: string): void {
 export function selectDlPush(
   push: DataLayerPush,
   row: HTMLElement,
-  onGotoNetwork: (requestId: number) => void,
+  onGotoNetwork: (requestId: number) => void
 ): void {
   const $detail = DOM.dlDetailPane;
   if (!$detail) return;
@@ -102,7 +108,7 @@ export function closeDlDetail(): void {
  */
 export function initDlDetailTabHandlers(
   currentPushGetter: () => DataLayerPush | null,
-  onGotoNetwork: (requestId: number) => void,
+  onGotoNetwork: (requestId: number) => void
 ): void {
   const $tabs = DOM.dlDetailTabs;
   if (!$tabs) return;
@@ -129,10 +135,7 @@ export function initDlDetailTabHandlers(
   });
 }
 
-function renderActiveTab(
-  push: DataLayerPush,
-  onGotoNetwork: (requestId: number) => void,
-): void {
+function renderActiveTab(push: DataLayerPush, onGotoNetwork: (requestId: number) => void): void {
   const $content = DOM.dlDetailContent;
   if (!$content) return;
   $content.innerHTML = '';
@@ -163,19 +166,55 @@ function renderActiveTab(
 const DATA_CATEGORIES: { label: string; keys: string[] }[] = [
   {
     label: 'Event',
-    keys: ['event', 'eventAction', 'eventCategory', 'eventLabel', 'eventValue', 'event_name', '_method', '_type', '_satellite'],
+    keys: [
+      'event',
+      'eventAction',
+      'eventCategory',
+      'eventLabel',
+      'eventValue',
+      'event_name',
+      '_method',
+      '_type',
+      '_satellite',
+    ],
   },
   {
     label: 'User',
-    keys: ['user_id', 'userId', 'user_email', 'userEmail', 'user_type', 'userType', 'client_id', 'session_id'],
+    keys: [
+      'user_id',
+      'userId',
+      'user_email',
+      'userEmail',
+      'user_type',
+      'userType',
+      'client_id',
+      'session_id',
+    ],
   },
   {
     label: 'Page',
-    keys: ['page_title', 'pageTitle', 'page_location', 'pageUrl', 'page_type', 'pageType', 'page_path', 'pagePath'],
+    keys: [
+      'page_title',
+      'pageTitle',
+      'page_location',
+      'pageUrl',
+      'page_type',
+      'pageType',
+      'page_path',
+      'pagePath',
+    ],
   },
   {
     label: 'E-Commerce',
-    keys: ['ecommerce', 'transaction_id', 'transactionId', 'value', 'currency', 'items', 'products'],
+    keys: [
+      'ecommerce',
+      'transaction_id',
+      'transactionId',
+      'value',
+      'currency',
+      'items',
+      'products',
+    ],
   },
 ];
 
@@ -232,15 +271,24 @@ function renderPushDataTab(container: HTMLElement, push: DataLayerPush): void {
   copyBtn.className = 'dl-copy-btn';
   copyBtn.textContent = 'Copy as JSON';
   copyBtn.addEventListener('click', () => {
-    navigator.clipboard.writeText(JSON.stringify(push.data, null, 2)).then(() => {
-      copyBtn.textContent = 'Copied!';
-      setTimeout(() => { copyBtn.textContent = 'Copy as JSON'; }, 1500);
-    }).catch(() => { /* ignore */ });
+    navigator.clipboard
+      .writeText(JSON.stringify(push.data, null, 2))
+      .then(() => {
+        copyBtn.textContent = 'Copied!';
+        setTimeout(() => {
+          copyBtn.textContent = 'Copy as JSON';
+        }, 1500);
+      })
+      .catch(() => {
+        /* ignore */
+      });
   });
   container.appendChild(copyBtn);
 }
 
-function categorizeData(data: Record<string, unknown>): { label: string; entries: [string, unknown][] }[] {
+function categorizeData(
+  data: Record<string, unknown>
+): { label: string; entries: [string, unknown][] }[] {
   const assignedKeys = new Set<string>();
   const result: { label: string; entries: [string, unknown][] }[] = [];
 
@@ -268,7 +316,12 @@ function categorizeData(data: Record<string, unknown>): { label: string; entries
   return result;
 }
 
-function renderKvRow(container: HTMLElement, key: string, value: unknown, errorMap?: Map<string, string>): void {
+function renderKvRow(
+  container: HTMLElement,
+  key: string,
+  value: unknown,
+  errorMap?: Map<string, string>
+): void {
   const row = document.createElement('div');
   row.className = 'dl-kv-row';
 
@@ -297,7 +350,9 @@ function renderKvRow(container: HTMLElement, key: string, value: unknown, errorM
   valEl.style.cursor = 'pointer';
   valEl.addEventListener('click', () => {
     const text = typeof value === 'object' ? JSON.stringify(value, null, 2) : String(value ?? '');
-    navigator.clipboard.writeText(text).catch(() => { /* ignore */ });
+    navigator.clipboard.writeText(text).catch(() => {
+      /* ignore */
+    });
   });
 
   row.appendChild(keyEl);
@@ -312,7 +367,8 @@ function renderDiffTab(container: HTMLElement, push: DataLayerPush): void {
   const pushIndex = allPushes.findIndex((p) => p.id === push.id);
 
   if (pushIndex <= 0) {
-    container.innerHTML = '<div class="dl-diff-empty">This is the first push — no previous state to diff against.</div>';
+    container.innerHTML =
+      '<div class="dl-diff-empty">This is the first push — no previous state to diff against.</div>';
     return;
   }
 
@@ -351,7 +407,7 @@ function renderCurrentStateTab(container: HTMLElement, push: DataLayerPush): voi
 function renderCorrelationTab(
   container: HTMLElement,
   push: DataLayerPush,
-  onGotoNetwork: (requestId: number) => void,
+  onGotoNetwork: (requestId: number) => void
 ): void {
   const allRequests: ParsedRequest[] = getAllRequests();
   const windowMs = getCorrelationWindow();
@@ -379,7 +435,8 @@ function renderCorrelationTab(
 
   const description = document.createElement('div');
   description.style.cssText = 'font-size:10px;color:var(--text-3);margin-top:4px;';
-  description.textContent = 'Network requests sent within this time window after the push. Includes requests already in flight (lookback: 500ms).';
+  description.textContent =
+    'Network requests sent within this time window after the push. Includes requests already in flight (lookback: 500ms).';
   controls.appendChild(description);
 
   container.appendChild(controls);

@@ -34,11 +34,15 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message.type === 'SET_ADOBE_REDIRECT') {
     const { fromUrl, toUrl } = message;
 
-    // Validate redirect target hostname — only allow Adobe CDN domains
+    // Validate redirect target: only allow Adobe CDN domains over HTTPS
     const allowedHostnames = ['assets.adobedtm.com', 'assets.adobedtm.com.ostrk.org'];
     try {
-      const parsed = new URL(toUrl);
-      if (!allowedHostnames.includes(parsed.hostname)) {
+      const parsedTo = new URL(toUrl);
+      if (parsedTo.protocol !== 'https:') {
+        sendResponse({ ok: false, error: 'Only HTTPS redirect targets are allowed' });
+        return true;
+      }
+      if (!allowedHostnames.includes(parsedTo.hostname)) {
         sendResponse({ ok: false, error: 'Invalid redirect target hostname' });
         return true;
       }
@@ -46,29 +50,54 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       sendResponse({ ok: false, error: 'Invalid redirect URL' });
       return true;
     }
+    // Also validate fromUrl is parseable and uses HTTPS
+    try {
+      const parsedFrom = new URL(fromUrl);
+      if (parsedFrom.protocol !== 'https:') {
+        sendResponse({ ok: false, error: 'Only HTTPS source URLs are allowed' });
+        return true;
+      }
+    } catch {
+      sendResponse({ ok: false, error: 'Invalid source URL' });
+      return true;
+    }
 
-    chrome.declarativeNetRequest.updateDynamicRules({
-      removeRuleIds: [ADOBE_REDIRECT_RULE_ID],
-      addRules: [{
-        id: ADOBE_REDIRECT_RULE_ID,
-        priority: 1,
-        action: { type: chrome.declarativeNetRequest.RuleActionType.REDIRECT, redirect: { url: toUrl } },
-        condition: { urlFilter: fromUrl, resourceTypes: [chrome.declarativeNetRequest.ResourceType.SCRIPT] },
-      }],
-    }).then(() => sendResponse({ ok: true })).catch((e: Error) => sendResponse({ ok: false, error: e.message }));
+    chrome.declarativeNetRequest
+      .updateDynamicRules({
+        removeRuleIds: [ADOBE_REDIRECT_RULE_ID],
+        addRules: [
+          {
+            id: ADOBE_REDIRECT_RULE_ID,
+            priority: 1,
+            action: {
+              type: chrome.declarativeNetRequest.RuleActionType.REDIRECT,
+              redirect: { url: toUrl },
+            },
+            condition: {
+              urlFilter: fromUrl,
+              resourceTypes: [chrome.declarativeNetRequest.ResourceType.SCRIPT],
+            },
+          },
+        ],
+      })
+      .then(() => sendResponse({ ok: true }))
+      .catch((e: Error) => sendResponse({ ok: false, error: e.message }));
     return true; // async
   }
 
   if (message.type === 'CLEAR_ADOBE_REDIRECT') {
-    chrome.declarativeNetRequest.updateDynamicRules({
-      removeRuleIds: [ADOBE_REDIRECT_RULE_ID],
-    }).then(() => sendResponse({ ok: true })).catch((e: Error) => sendResponse({ ok: false, error: e.message }));
+    chrome.declarativeNetRequest
+      .updateDynamicRules({
+        removeRuleIds: [ADOBE_REDIRECT_RULE_ID],
+      })
+      .then(() => sendResponse({ ok: true }))
+      .catch((e: Error) => sendResponse({ ok: false, error: e.message }));
     return true;
   }
 
   if (message.type === 'GET_ADOBE_REDIRECT') {
     chrome.declarativeNetRequest.getDynamicRules().then((rules) => {
-      const rule = rules.find(r => r.id === ADOBE_REDIRECT_RULE_ID);
+      const rule = rules.find((r) => r.id === ADOBE_REDIRECT_RULE_ID);
       sendResponse({ rule: rule ?? null });
     });
     return true;
@@ -81,7 +110,11 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     if (tabId != null) {
       const port = devToolsPorts.get(tabId);
       if (port) {
-        try { port.postMessage({ type: 'DATALAYER_PUSH', tabId, ...message }); } catch { /* port may be closed */ }
+        try {
+          port.postMessage({ type: 'DATALAYER_PUSH', tabId, ...message });
+        } catch {
+          /* port may be closed */
+        }
       }
     }
     return;
@@ -92,7 +125,11 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     if (tabId != null) {
       const port = devToolsPorts.get(tabId);
       if (port) {
-        try { port.postMessage({ type: 'DATALAYER_SOURCES', tabId, ...message }); } catch { /* port may be closed */ }
+        try {
+          port.postMessage({ type: 'DATALAYER_SOURCES', tabId, ...message });
+        } catch {
+          /* port may be closed */
+        }
       }
     }
     return;
@@ -103,7 +140,11 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     if (tabId != null) {
       const port = devToolsPorts.get(tabId);
       if (port) {
-        try { port.postMessage({ type: 'DATALAYER_SNAPSHOT_RESPONSE', tabId, ...message }); } catch { /* port may be closed */ }
+        try {
+          port.postMessage({ type: 'DATALAYER_SNAPSHOT_RESPONSE', tabId, ...message });
+        } catch {
+          /* port may be closed */
+        }
       }
     }
     return;
@@ -111,7 +152,9 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
   // DATALAYER_SNAPSHOT_REQUEST comes from DevTools (tabId is in message body)
   if (message.type === 'DATALAYER_SNAPSHOT_REQUEST') {
-    chrome.tabs.sendMessage(message.tabId, { type: 'DATALAYER_SNAPSHOT_REQUEST' }).catch(() => { /* tab may not have content script */ });
+    chrome.tabs.sendMessage(message.tabId, { type: 'DATALAYER_SNAPSHOT_REQUEST' }).catch(() => {
+      /* tab may not have content script */
+    });
     return;
   }
 
@@ -121,38 +164,55 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   // injection from the content script, which CSP can block.
   if (message.type === 'INJECT_DATALAYER') {
     const tabId: number = message.tabId;
+    if (typeof tabId !== 'number' || !Number.isInteger(tabId) || tabId <= 0) return;
     if (tabId != null) {
       // Guards must be cleared BEFORE scripts are injected — run sequentially so the
       // scripts cannot land before their guard flag has been deleted (a race that would
       // cause data-layer-main.js to see __tagdragon_main__ still set and exit early).
       (async () => {
         // 1. Clear the bridge guard (ISOLATED world).
-        await chrome.scripting.executeScript({
-          target: { tabId },
-          func: () => { delete (window as unknown as Record<string, unknown>)['__tagdragon_bridge__']; },
-        }).catch(() => { /* ignore — tab may not be scriptable */ });
+        await chrome.scripting
+          .executeScript({
+            target: { tabId },
+            func: () => {
+              delete (window as unknown as Record<string, unknown>)['__tagdragon_bridge__'];
+            },
+          })
+          .catch(() => {
+            /* ignore — tab may not be scriptable */
+          });
 
         // 2. Clear the MAIN world guard.
-        await chrome.scripting.executeScript({
-          target: { tabId },
-          func: () => { delete (window as unknown as Record<string, unknown>)['__tagdragon_main__']; },
-          world: 'MAIN' as chrome.scripting.ExecutionWorld,
-        }).catch(() => { /* ignore — tab may not be scriptable */ });
+        await chrome.scripting
+          .executeScript({
+            target: { tabId },
+            func: () => {
+              delete (window as unknown as Record<string, unknown>)['__tagdragon_main__'];
+            },
+            world: 'MAIN' as chrome.scripting.ExecutionWorld,
+          })
+          .catch(() => {
+            /* ignore — tab may not be scriptable */
+          });
 
         // 3. ISOLATED world bridge (relays postMessage → runtime.sendMessage)
         //    AWAIT so the bridge's message listener is registered before MAIN world runs.
-        await chrome.scripting.executeScript({
-          target: { tabId },
-          files: ['dist/data-layer-bridge.js'],
-        }).catch((e: Error) => console.warn('[TagDragon] Failed to inject bridge:', e.message));
+        await chrome.scripting
+          .executeScript({
+            target: { tabId },
+            files: ['dist/data-layer-bridge.js'],
+          })
+          .catch((e: Error) => console.warn('[TagDragon] Failed to inject bridge:', e.message));
 
         // 4. MAIN world interceptor — world: 'MAIN' bypasses page CSP
         //    AWAIT so injection is fully complete before we return.
-        await chrome.scripting.executeScript({
-          target: { tabId },
-          files: ['dist/data-layer-main.js'],
-          world: 'MAIN' as chrome.scripting.ExecutionWorld,
-        }).catch((e: Error) => console.warn('[TagDragon] Failed to inject main:', e.message));
+        await chrome.scripting
+          .executeScript({
+            target: { tabId },
+            files: ['dist/data-layer-main.js'],
+            world: 'MAIN' as chrome.scripting.ExecutionWorld,
+          })
+          .catch((e: Error) => console.warn('[TagDragon] Failed to inject main:', e.message));
       })();
     }
     return;
@@ -163,7 +223,12 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     (async () => {
       try {
         let urlObj: URL;
-        try { urlObj = new URL(url); } catch { sendResponse({ deleted: 0 }); return; }
+        try {
+          urlObj = new URL(url);
+        } catch {
+          sendResponse({ deleted: 0 });
+          return;
+        }
 
         const [byCookies, byDomain] = await Promise.all([
           chrome.cookies.getAll({ url }),
@@ -171,7 +236,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         ]);
 
         const seen = new Set<string>();
-        const all = [...byCookies, ...byDomain].filter(c => {
+        const all = [...byCookies, ...byDomain].filter((c) => {
           const key = `${c.name}|${c.domain}|${c.path}|${c.storeId}`;
           if (seen.has(key)) return false;
           seen.add(key);
@@ -183,9 +248,15 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
           const domain = cookie.domain.startsWith('.') ? cookie.domain.slice(1) : cookie.domain;
           const cookieUrl = `${cookie.secure ? 'https' : 'http'}://${domain}${cookie.path}`;
           try {
-            await chrome.cookies.remove({ url: cookieUrl, name: cookie.name, storeId: cookie.storeId });
+            await chrome.cookies.remove({
+              url: cookieUrl,
+              name: cookie.name,
+              storeId: cookie.storeId,
+            });
             deleted++;
-          } catch { /* continue */ }
+          } catch {
+            /* continue */
+          }
         }
         sendResponse({ deleted });
       } catch (e) {
@@ -207,27 +278,29 @@ chrome.webRequest.onBeforeSendHeaders.addListener(
       details.initiator !== `chrome-extension://${chrome.runtime.id}`
     ) {
       // Send message to devtools script (if active)
-      chrome.runtime.sendMessage({
-        type: 'EXT_REQUEST',
-        data: {
-          id: generateId(),
-          url: details.url,
-          method: details.method,
-          timestamp: new Date().toISOString(),
-          duration: 0,
-          status: 0,
-          source: 'extension',
-          initiator: details.initiator,
-          allParams: {},
-          decoded: {},
-          postBody: null,
-          responseBody: '',
-          requestHeaders: headersToObj(details.requestHeaders),
-          responseHeaders: {},
-        },
-      }).catch(() => {
-        // Message delivery failed, ignore (devtools panel may not be open)
-      });
+      chrome.runtime
+        .sendMessage({
+          type: 'EXT_REQUEST',
+          data: {
+            id: generateId(),
+            url: details.url,
+            method: details.method,
+            timestamp: new Date().toISOString(),
+            duration: 0,
+            status: 0,
+            source: 'extension',
+            initiator: details.initiator,
+            allParams: {},
+            decoded: {},
+            postBody: null,
+            responseBody: '',
+            requestHeaders: headersToObj(details.requestHeaders),
+            responseHeaders: {},
+          },
+        })
+        .catch(() => {
+          // Message delivery failed, ignore (devtools panel may not be open)
+        });
     }
   },
   { urls: ['<all_urls>'] },

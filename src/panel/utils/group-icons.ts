@@ -3,7 +3,6 @@
 // Using currentColor so they adapt to dark/light theme via CSS.
 
 export const GROUP_ICONS: Record<string, string> = {
-
   analytics: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor">
     <rect x="1" y="9" width="3" height="6" rx="0.5"/>
     <rect x="6.5" y="5" width="3" height="10" rx="0.5"/>
@@ -49,5 +48,4 @@ export const GROUP_ICONS: Record<string, string> = {
   adobe: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor">
     <path d="M8 1L1 15h4.2l.9-2.5h3.8L10.8 15H15L8 1zm0 4.2l1.4 4.3H6.6L8 5.2z"/>
   </svg>`,
-
 };

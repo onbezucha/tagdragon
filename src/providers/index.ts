@@ -134,19 +134,19 @@ export const PROVIDERS: ProviderRegistry = [
   segment,
   rudderstack,
   mparticle,
-  tealiumEventstream,   // before tealium — collect.tealiumiq.com/event is more specific
+  tealiumEventstream, // before tealium — collect.tealiumiq.com/event is more specific
   tealium,
 
   // Analytics
   amplitude,
   mixpanel,
   matomo,
-  piwikProTm,           // before piwikPro
+  piwikProTm, // before piwikPro
   piwikPro,
   atInternet,
   parsely,
   webtrends,
-  comscore,             // before scorecard — scorecardresearch.com/b before /p
+  comscore, // before scorecard — scorecardresearch.com/b before /p
   scorecard,
 
   // Session Replay / UX
@@ -166,13 +166,13 @@ export const PROVIDERS: ProviderRegistry = [
 
   // Adobe (specific → broad)
   aepWebSDK,
-  adobeHeartbeat,       // heartbeat.omtrdc.net before adobeTarget
-  adobeTarget,          // tt.omtrdc.net before adobeAA
-  adobeECID,            // demdex.net/id before adobeAAM and adobeAA
-  adobeAAM,             // dpm.demdex.net before adobeAA
+  adobeHeartbeat, // heartbeat.omtrdc.net before adobeTarget
+  adobeTarget, // tt.omtrdc.net before adobeAA
+  adobeECID, // demdex.net/id before adobeAAM and adobeAA
+  adobeAAM, // dpm.demdex.net before adobeAA
   adobeDTM,
   adobeLaunchChina,
-  adobeAA,              // broadest Adobe pattern — last
+  adobeAA, // broadest Adobe pattern — last
 
   // Marketing / DSP
   bingAds,
@@ -228,9 +228,7 @@ function buildDomainIndex(): void {
       const fullDomain = domainMatch[0];
       const parts = fullDomain.split('.');
       // Use last 2-3 parts as key (e.g. "google-analytics.com")
-      const key = parts.length >= 3 && parts[0] !== 'www'
-        ? parts.slice(1).join('.')
-        : fullDomain;
+      const key = parts.length >= 3 && parts[0] !== 'www' ? parts.slice(1).join('.') : fullDomain;
 
       if (!domainIndex.has(key)) {
         domainIndex.set(key, []);
@@ -254,7 +252,7 @@ export function matchProvider(url: string): Provider | null {
     const hostname = new URL(url).hostname;
 
     // Find candidates from domain index
-    let candidates: number[] = [];
+    const candidates: number[] = [];
 
     // Check exact hostname first
     const exact = domainIndex.get(hostname);
@@ -289,5 +287,5 @@ export function matchProvider(url: string): Provider | null {
   }
 
   // Fallback: full scan (should rarely be reached)
-  return PROVIDERS.find(p => p.pattern.test(url)) ?? null;
+  return PROVIDERS.find((p) => p.pattern.test(url)) ?? null;
 }

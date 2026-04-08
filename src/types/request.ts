@@ -11,24 +11,25 @@ export interface ParsedRequest {
   readonly allParams: Record<string, string>;
   readonly decoded: Record<string, string | undefined>;
   readonly postBody: unknown;
-  
+
   // Lazy-loaded fields
   responseBody?: string | null;
   requestHeaders?: Record<string, string> | null;
   responseHeaders?: Record<string, string> | null;
-  
+
   // Internal flags
   readonly _hasResponseBody?: boolean;
   readonly _hasRequestHeaders?: boolean;
   readonly _hasResponseHeaders?: boolean;
   _eventName?: string;
-  
+
   // Computed/indexed fields (populated by categorize.indexRequest)
   _searchIndex?: string;
   _ts?: number;
   _hasUserId?: boolean;
   _statusPrefix?: string | null;
-  
+  _categorized?: import('@/panel/utils/categorize').CategorizedParams;
+
   // Optional metadata
   readonly source?: 'extension';
 }

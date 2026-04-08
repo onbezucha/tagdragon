@@ -21,7 +21,7 @@ export interface TriggeringPushResult {
 export function findTriggeringPush(
   request: ParsedRequest,
   pushes: DataLayerPush[],
-  lookbackMs = 2000,
+  lookbackMs = 2000
 ): TriggeringPushResult | null {
   const reqTime = request._ts ?? new Date(request.timestamp).getTime();
   if (isNaN(reqTime) || pushes.length === 0) return null;
@@ -69,7 +69,7 @@ export function findTriggeringPush(
 export function renderTriggeredBy(
   container: HTMLElement,
   result: TriggeringPushResult,
-  onGotoPush: (pushId: number) => void,
+  onGotoPush: (pushId: number) => void
 ): void {
   const colors: Record<string, string> = {
     gtm: '#E8710A',

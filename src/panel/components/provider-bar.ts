@@ -16,12 +16,13 @@ import {
   syncHiddenProviders,
 } from '../state';
 import { getProviderGroup, UNGROUPED_ID, UNGROUPED_LABEL } from '@/shared/provider-groups';
-import { getCachedIcon } from '../utils/provider-icon';
+import { getCachedIcon } from '../utils/icon-builder';
 import { GROUP_ICONS } from '../utils/group-icons';
 
 // ─── ICONS ────────────────────────────────────────────────────────────────────
 
-const CHECK_SVG = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+const CHECK_SVG =
+  '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
 
 const DASH_SVG = '<span style="font-size:11px;line-height:1;font-weight:600;">—</span>';
 
@@ -34,10 +35,17 @@ function getGroupIconSvg(groupId: string): string {
 /**
  * Ensure a provider group element exists in #provider-group-list. Returns the .pgroup-pills container.
  */
-function ensureProviderGroup(groupId: string, groupLabel: string, applyFiltersCallback: () => void, updateActiveFiltersCallback: () => void): HTMLElement | null {
+function ensureProviderGroup(
+  groupId: string,
+  groupLabel: string,
+  applyFiltersCallback: () => void,
+  updateActiveFiltersCallback: () => void
+): HTMLElement | null {
   const groupList = DOM.providerGroupList;
   if (!groupList) return null;
-  const existing = groupList.querySelector(`.pgroup[data-group="${CSS.escape(groupId)}"]`) as HTMLElement | null;
+  const existing = groupList.querySelector(
+    `.pgroup[data-group="${CSS.escape(groupId)}"]`
+  ) as HTMLElement | null;
   if (existing) {
     return existing.querySelector('.pgroup-pills') as HTMLElement;
   }
@@ -78,7 +86,7 @@ function ensureProviderGroup(groupId: string, groupLabel: string, applyFiltersCa
   const hiddenProviders = getHiddenProviders();
 
   $groupAll.addEventListener('click', () => {
-    qsa('.ppill', $pills).forEach(p => {
+    qsa('.ppill', $pills).forEach((p) => {
       const name = (p as HTMLElement).dataset.provider!;
       hiddenProviders.delete(name);
       p.classList.replace('inactive', 'active');
@@ -94,7 +102,7 @@ function ensureProviderGroup(groupId: string, groupLabel: string, applyFiltersCa
   });
 
   $groupNone.addEventListener('click', () => {
-    qsa('.ppill', $pills).forEach(p => {
+    qsa('.ppill', $pills).forEach((p) => {
       const name = (p as HTMLElement).dataset.provider!;
       hiddenProviders.add(name);
       p.classList.replace('active', 'inactive');
@@ -118,7 +126,11 @@ function ensureProviderGroup(groupId: string, groupLabel: string, applyFiltersCa
 /**
  * Ensure provider pill exists, create if not.
  */
-export function ensureProviderPill(data: ParsedRequest, applyFiltersCallback: () => void, updateActiveFiltersCallback: () => void): void {
+export function ensureProviderPill(
+  data: ParsedRequest,
+  applyFiltersCallback: () => void,
+  updateActiveFiltersCallback: () => void
+): void {
   const activeProviders = getActiveProviders();
   if (activeProviders.has(data.provider)) {
     updateProviderCounts();
@@ -130,7 +142,12 @@ export function ensureProviderPill(data: ParsedRequest, applyFiltersCallback: ()
   const groupId = group?.id ?? UNGROUPED_ID;
   const groupLabel = group?.label ?? UNGROUPED_LABEL;
 
-  const $pillsContainer = ensureProviderGroup(groupId, groupLabel, applyFiltersCallback, updateActiveFiltersCallback);
+  const $pillsContainer = ensureProviderGroup(
+    groupId,
+    groupLabel,
+    applyFiltersCallback,
+    updateActiveFiltersCallback
+  );
   if (!$pillsContainer) return;
 
   const hiddenProviders = getHiddenProviders();
@@ -152,10 +169,18 @@ export function ensureProviderPill(data: ParsedRequest, applyFiltersCallback: ()
   if (isHidden) {
     iconEl?.classList.add('icon-hidden');
   }
-  pill.addEventListener('click', () => toggleProvider(data.provider, pill, applyFiltersCallback, updateActiveFiltersCallback));
+  pill.addEventListener('click', () =>
+    toggleProvider(data.provider, pill, applyFiltersCallback, updateActiveFiltersCallback)
+  );
   pill.addEventListener('contextmenu', (e: MouseEvent) => {
     e.preventDefault();
-    showProviderContextMenu(e, data.provider, pill, applyFiltersCallback, updateActiveFiltersCallback);
+    showProviderContextMenu(
+      e,
+      data.provider,
+      pill,
+      applyFiltersCallback,
+      updateActiveFiltersCallback
+    );
   });
   $pillsContainer.appendChild(pill);
 
@@ -173,11 +198,11 @@ export function ensureProviderPill(data: ParsedRequest, applyFiltersCallback: ()
  */
 export function updateProviderCounts(): void {
   const counts: Record<string, number> = {};
-  getAllRequests().forEach(req => {
+  getAllRequests().forEach((req) => {
     counts[req.provider] = (counts[req.provider] || 0) + 1;
   });
 
-  qsa('.ppill').forEach(pill => {
+  qsa('.ppill').forEach((pill) => {
     const provider = (pill as HTMLElement).dataset.provider!;
     const count = counts[provider] || 0;
     const countEl = pill.querySelector('.ppill-count') as HTMLElement;
@@ -187,11 +212,11 @@ export function updateProviderCounts(): void {
   // Update group count badges
   const groupList = DOM.providerGroupList;
   if (!groupList) return;
-  qsa('.pgroup', groupList).forEach(group => {
+  qsa('.pgroup', groupList).forEach((group) => {
     const $badge = group.querySelector('.pgroup-count') as HTMLElement;
     if (!$badge) return;
     let total = 0;
-    qsa('.ppill', group).forEach(pill => {
+    qsa('.ppill', group).forEach((pill) => {
       const provider = (pill as HTMLElement).dataset.provider!;
       total += counts[provider] || 0;
     });
@@ -201,7 +226,12 @@ export function updateProviderCounts(): void {
 
 // ─── TOGGLE ───────────────────────────────────────────────────────────────────
 
-function toggleProvider(name: string, pill: HTMLElement, applyFiltersCallback: () => void, updateActiveFiltersCallback: () => void): void {
+function toggleProvider(
+  name: string,
+  pill: HTMLElement,
+  applyFiltersCallback: () => void,
+  updateActiveFiltersCallback: () => void
+): void {
   const hiddenProviders = getHiddenProviders();
   const isCurrentlyHidden = hiddenProviders.has(name);
 
@@ -240,9 +270,15 @@ export function updateFilterBarVisibility(): void {
   const activeProviders = getActiveProviders();
   const hiddenProviders = getHiddenProviders();
   const hasProviders = activeProviders.size > 0;
-  const hasFilters = !!(getFilterText() || getFilterEventType() || getFilterUserId() ||
-                     getFilterStatus() || getFilterMethod() || getFilterHasParam() ||
-                     hiddenProviders.size > 0);
+  const hasFilters = !!(
+    getFilterText() ||
+    getFilterEventType() ||
+    getFilterUserId() ||
+    getFilterStatus() ||
+    getFilterMethod() ||
+    getFilterHasParam() ||
+    hiddenProviders.size > 0
+  );
 
   // Indicator on the button
   const $btn = DOM.btnProviders;
@@ -272,7 +308,7 @@ function updateGroupStates(): void {
   const groupList = DOM.providerGroupList;
   if (!groupList) return;
 
-  qsa('.pgroup', groupList).forEach(group => {
+  qsa('.pgroup', groupList).forEach((group) => {
     const stateEl = group.querySelector('.pgroup-state') as HTMLElement | null;
     if (!stateEl) return;
 
@@ -280,7 +316,7 @@ function updateGroupStates(): void {
     if (pills.length === 0) return;
 
     let hiddenCount = 0;
-    pills.forEach(p => {
+    pills.forEach((p) => {
       if ((p as HTMLElement).classList.contains('inactive')) hiddenCount++;
     });
 
@@ -382,10 +418,10 @@ function showProviderContextMenu(
     } else if (action === 'show-only') {
       // Hide all, then show only this one
       const activeProviders = getActiveProviders();
-      activeProviders.forEach(name => hiddenProviders.add(name));
+      activeProviders.forEach((name) => hiddenProviders.add(name));
       hiddenProviders.delete(providerName);
 
-      qsa('.ppill').forEach(p => {
+      qsa('.ppill').forEach((p) => {
         const name = (p as HTMLElement).dataset.provider!;
         if (name === providerName) {
           p.classList.replace('inactive', 'active');
@@ -425,7 +461,9 @@ function closeProviderContextMenu(): void {
 
 function initProviderSearch(): void {
   const $input = DOM.providerSearchInput;
-  const $clearBtn = document.getElementById('btn-provider-search-clear') as HTMLButtonElement | null;
+  const $clearBtn = document.getElementById(
+    'btn-provider-search-clear'
+  ) as HTMLButtonElement | null;
   if (!$input) return;
 
   const doSearch = (query: string) => {
@@ -433,15 +471,16 @@ function initProviderSearch(): void {
     const groupList = DOM.providerGroupList;
     if (!groupList) return;
 
-    qsa('.ppill', groupList).forEach(pill => {
+    qsa('.ppill', groupList).forEach((pill) => {
       const name = ((pill as HTMLElement).dataset.provider ?? '').toLowerCase();
       const hidden = q.length > 0 && !name.includes(q);
       pill.classList.toggle('search-hidden', hidden);
     });
 
-    qsa('.pgroup', groupList).forEach(group => {
+    qsa('.pgroup', groupList).forEach((group) => {
       const pills = qsa('.ppill', group);
-      const allHidden = pills.length > 0 && pills.every(p => p.classList.contains('search-hidden'));
+      const allHidden =
+        pills.length > 0 && pills.every((p) => p.classList.contains('search-hidden'));
       group.classList.toggle('search-empty', allHidden);
     });
 
@@ -463,7 +502,10 @@ function initProviderSearch(): void {
 /**
  * Initialize provider bar button handlers (search + All/None).
  */
-export function initProviderBarHandlers(applyFiltersCallback: () => void, updateActiveFiltersCallback: () => void): void {
+export function initProviderBarHandlers(
+  applyFiltersCallback: () => void,
+  updateActiveFiltersCallback: () => void
+): void {
   const $btnAll = document.getElementById('btn-providers-all') as HTMLElement;
   const $btnNone = document.getElementById('btn-providers-none') as HTMLElement;
   const hiddenProviders = getHiddenProviders();
@@ -472,7 +514,7 @@ export function initProviderBarHandlers(applyFiltersCallback: () => void, update
   if ($btnAll) {
     $btnAll.addEventListener('click', () => {
       hiddenProviders.clear();
-      qsa('.ppill.inactive').forEach(p => {
+      qsa('.ppill.inactive').forEach((p) => {
         p.classList.replace('inactive', 'active');
         const iconEl = p.querySelector('.ppill-icon');
         iconEl?.classList.remove('icon-hidden');
@@ -491,7 +533,7 @@ export function initProviderBarHandlers(applyFiltersCallback: () => void, update
       for (const provider of activeProviders) {
         hiddenProviders.add(provider);
       }
-      qsa('.ppill.active').forEach(p => {
+      qsa('.ppill.active').forEach((p) => {
         p.classList.replace('active', 'inactive');
         const iconEl = p.querySelector('.ppill-icon');
         iconEl?.classList.add('icon-hidden');
@@ -509,7 +551,7 @@ export function initProviderBarHandlers(applyFiltersCallback: () => void, update
   const btnShowAll = document.getElementById('btn-show-all-providers');
   btnShowAll?.addEventListener('click', () => {
     hiddenProviders.clear();
-    qsa('.ppill.inactive').forEach(p => {
+    qsa('.ppill.inactive').forEach((p) => {
       p.classList.replace('inactive', 'active');
       const iconEl = p.querySelector('.ppill-icon');
       iconEl?.classList.remove('icon-hidden');

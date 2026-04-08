@@ -95,73 +95,205 @@ interface DOMRefs {
 
 export const DOM: DOMRefs = {
   // ─── TOOLBAR REFS ──────────────────────────────────────────────────────
-  get globalTabBar() { return $('global-tab-bar'); },
-  get tabBadgeNetwork() { return $('tab-badge-network'); },
-  get tabBadgeDatalayer() { return $('tab-badge-datalayer'); },
-  get networkContext() { return $('network-context'); },
-  get datalayerContext() { return $('datalayer-context'); },
+  get globalTabBar() {
+    return $('global-tab-bar');
+  },
+  get tabBadgeNetwork() {
+    return $('tab-badge-network');
+  },
+  get tabBadgeDatalayer() {
+    return $('tab-badge-datalayer');
+  },
+  get networkContext() {
+    return $('network-context');
+  },
+  get datalayerContext() {
+    return $('datalayer-context');
+  },
   // ─── NETWORK REFS ───────────────────────────────────────────────────────
-  get list() { return $('request-list'); },
-  get empty() { return $('empty-state'); },
-  get detail() { return $('detail-pane'); },
-  get summaryProviderIcon() { return $('summary-provider-icon'); },
-  get summaryProviderName() { return $('summary-provider-name'); },
-  get summaryEventName() { return $('summary-event-name'); },
-  get summaryMethod() { return $('summary-method'); },
-  get detailContent() { return $('detail-content'); },
-  get detailTabs() { return $('detail-tabs'); },
-  get triggeredByBanner() { return $('triggered-by-banner'); },
-  get statusStats() { return $('status-stats'); },
-  get sizeBadge() { return $('size-badge'); },
-  get timeBadge() { return $('time-badge'); },
-  get filterInput() { return $<HTMLInputElement>('filter-input'); },
-  get clearFilter() { return $('btn-clear-filter'); },
-  get summaryStatus() { return $('summary-status'); },
-  get summaryDuration() { return $('summary-duration'); },
-  get summaryTime() { return $('summary-time'); },
-  get summaryUrl() { return $('summary-url'); },
-  get providerPills() { return $('provider-pills'); },
-  get providerGroupList() { return $('provider-group-list'); },
-  get providerSearchInput() { return $<HTMLInputElement>('provider-search-input'); },
-  get activeFilters() { return $('active-filters'); },
-  get providerBar() { return $('provider-bar'); },
-  get providerPopover() { return $('provider-popover'); },
-  get btnProviders() { return $('btn-providers'); },
-  get filterBar() { return $('filter-bar'); },
-  get settingsPopover() { return $('settings-popover'); },
-  get filterPopover() { return $('filter-popover'); },
-  get filterSubmenu() { return $('filter-submenu'); },
-  get filterSubmenuContent() { return $('filter-submenu-content'); },
-  get main() { return $('main'); },
-  get splitter() { return $('splitter'); },
-  get envBadge() { return $('adobe-env-badge'); },
-  get envPopover() { return $('env-popover'); },
-  get envSeparator() { return $('env-separator'); },
-  get envDetectedUrl() { return $('env-detected-url'); },
-  get envDetectedType() { return $('env-detected-type'); },
-  get envUrlDev() { return $('env-url-dev'); },
-  get envUrlAcc() { return $('env-url-acc'); },
-  get envUrlProd() { return $('env-url-prod'); },
-  get envApply() { return $('env-apply'); },
-  get envReset() { return $('env-reset'); },
-  get envHostname() { return $('env-hostname'); },
-  get consentPopover() { return $('consent-popover'); },
-  get infoPopover() { return $('info-popover'); },
-  get btnInfo() { return $('btn-info'); },
-  get infoProviderGroups() { return $('info-provider-groups'); },
+  get list() {
+    return $('request-list');
+  },
+  get empty() {
+    return $('empty-state');
+  },
+  get detail() {
+    return $('detail-pane');
+  },
+  get summaryProviderIcon() {
+    return $('summary-provider-icon');
+  },
+  get summaryProviderName() {
+    return $('summary-provider-name');
+  },
+  get summaryEventName() {
+    return $('summary-event-name');
+  },
+  get summaryMethod() {
+    return $('summary-method');
+  },
+  get detailContent() {
+    return $('detail-content');
+  },
+  get detailTabs() {
+    return $('detail-tabs');
+  },
+  get triggeredByBanner() {
+    return $('triggered-by-banner');
+  },
+  get statusStats() {
+    return $('status-stats');
+  },
+  get sizeBadge() {
+    return $('size-badge');
+  },
+  get timeBadge() {
+    return $('time-badge');
+  },
+  get filterInput() {
+    return $<HTMLInputElement>('filter-input');
+  },
+  get clearFilter() {
+    return $('btn-clear-filter');
+  },
+  get summaryStatus() {
+    return $('summary-status');
+  },
+  get summaryDuration() {
+    return $('summary-duration');
+  },
+  get summaryTime() {
+    return $('summary-time');
+  },
+  get summaryUrl() {
+    return $('summary-url');
+  },
+  get providerPills() {
+    return $('provider-pills');
+  },
+  get providerGroupList() {
+    return $('provider-group-list');
+  },
+  get providerSearchInput() {
+    return $<HTMLInputElement>('provider-search-input');
+  },
+  get activeFilters() {
+    return $('active-filters');
+  },
+  get providerBar() {
+    return $('provider-bar');
+  },
+  get providerPopover() {
+    return $('provider-popover');
+  },
+  get btnProviders() {
+    return $('btn-providers');
+  },
+  get filterBar() {
+    return $('filter-bar');
+  },
+  get settingsPopover() {
+    return $('settings-popover');
+  },
+  get filterPopover() {
+    return $('filter-popover');
+  },
+  get filterSubmenu() {
+    return $('filter-submenu');
+  },
+  get filterSubmenuContent() {
+    return $('filter-submenu-content');
+  },
+  get main() {
+    return $('main');
+  },
+  get splitter() {
+    return $('splitter');
+  },
+  get envBadge() {
+    return $('adobe-env-badge');
+  },
+  get envPopover() {
+    return $('env-popover');
+  },
+  get envSeparator() {
+    return $('env-separator');
+  },
+  get envDetectedUrl() {
+    return $('env-detected-url');
+  },
+  get envDetectedType() {
+    return $('env-detected-type');
+  },
+  get envUrlDev() {
+    return $('env-url-dev');
+  },
+  get envUrlAcc() {
+    return $('env-url-acc');
+  },
+  get envUrlProd() {
+    return $('env-url-prod');
+  },
+  get envApply() {
+    return $('env-apply');
+  },
+  get envReset() {
+    return $('env-reset');
+  },
+  get envHostname() {
+    return $('env-hostname');
+  },
+  get consentPopover() {
+    return $('consent-popover');
+  },
+  get infoPopover() {
+    return $('info-popover');
+  },
+  get btnInfo() {
+    return $('btn-info');
+  },
+  get infoProviderGroups() {
+    return $('info-provider-groups');
+  },
   // ─── DATALAYER REFS ─────────────────────────────────────────────────────
-  get dlPushList() { return $('dl-push-list'); },
-  get dlDetailPane() { return $('dl-detail-pane'); },
-  get dlEmptyState() { return $('dl-empty-state'); },
-  get dlSplitter() { return $('dl-splitter'); },
-  get dlFilterInput() { return $<HTMLInputElement>('dl-filter-input'); },
+  get dlPushList() {
+    return $('dl-push-list');
+  },
+  get dlDetailPane() {
+    return $('dl-detail-pane');
+  },
+  get dlEmptyState() {
+    return $('dl-empty-state');
+  },
+  get dlSplitter() {
+    return $('dl-splitter');
+  },
+  get dlFilterInput() {
+    return $<HTMLInputElement>('dl-filter-input');
+  },
 
-  get dlBtnExport() { return $('dl-btn-export'); },
-  get dlView() { return $('datalayer-view'); },
-  get dlFilterBar() { return $('dl-filter-bar'); },
-  get dlMain() { return $('dl-main'); },
-  get dlDetailContent() { return $('dl-detail-content'); },
-  get dlDetailTabs() { return $('dl-detail-tabs'); },
-  get dlDetailBadge() { return $('dl-detail-badge'); },
-  get dlDetailTitle() { return $('dl-detail-title'); },
+  get dlBtnExport() {
+    return $('dl-btn-export');
+  },
+  get dlView() {
+    return $('datalayer-view');
+  },
+  get dlFilterBar() {
+    return $('dl-filter-bar');
+  },
+  get dlMain() {
+    return $('dl-main');
+  },
+  get dlDetailContent() {
+    return $('dl-detail-content');
+  },
+  get dlDetailTabs() {
+    return $('dl-detail-tabs');
+  },
+  get dlDetailBadge() {
+    return $('dl-detail-badge');
+  },
+  get dlDetailTitle() {
+    return $('dl-detail-title');
+  },
 };

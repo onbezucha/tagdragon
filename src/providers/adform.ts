@@ -15,7 +15,7 @@ export const adform: Provider = {
     let colorDepth: string | undefined;
     if (p.Set1) {
       const parts = p.Set1.split('|');
-      language   = parts[0] || undefined;
+      language = parts[0] || undefined;
       resolution = parts[2] || undefined;
       colorDepth = parts[3] ? parts[3] + '-bit' : undefined;
     }
@@ -30,26 +30,26 @@ export const adform: Provider = {
     const modeLabel = mode ? (modeLabels[mode] ?? mode) : undefined;
 
     return {
-      'Tracking ID':    p.pm,
-      'Page Name':      p.ADFPageName ? decodeURIComponent(p.ADFPageName) : undefined,
-      'Tracking Mode':  modeLabel,
-      'Order ID':       p.orderid,
+      'Tracking ID': p.pm,
+      'Page Name': p.ADFPageName ? decodeURIComponent(p.ADFPageName) : undefined,
+      'Tracking Mode': modeLabel,
+      'Order ID': p.orderid,
       'Conversion Value': p.cost ?? p.sales,
-      'Banner ID':      p.bn,
-      'Page URL':       p.loc ? decodeURIComponent(p.loc) : undefined,
-      'Referrer':       p.CPref ? decodeURIComponent(p.CPref) : undefined,
-      'Language':       language,
-      'Resolution':     resolution,
-      'Color Depth':    colorDepth,
-      'Custom Var 1':   p.sv1,
-      'Custom Var 2':   p.sv2,
-      'Custom Var 3':   p.sv3,
-      'Custom Var 4':   p.sv4,
-      'Custom Var 5':   p.sv5,
-      'GDPR':           p.gdpr,
-      'GDPR Consent':   p.gdpr_consent,
-      'Cache Buster':   p.ord,
-      'URL':            url,
+      'Banner ID': p.bn,
+      'Page URL': p.loc ? decodeURIComponent(p.loc) : undefined,
+      Referrer: p.CPref ? decodeURIComponent(p.CPref) : undefined,
+      Language: language,
+      Resolution: resolution,
+      'Color Depth': colorDepth,
+      'Custom Var 1': p.sv1,
+      'Custom Var 2': p.sv2,
+      'Custom Var 3': p.sv3,
+      'Custom Var 4': p.sv4,
+      'Custom Var 5': p.sv5,
+      GDPR: p.gdpr,
+      'GDPR Consent': p.gdpr_consent,
+      'Cache Buster': p.ord,
+      URL: url,
     };
   },
 };

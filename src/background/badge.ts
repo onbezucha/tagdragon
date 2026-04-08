@@ -33,7 +33,8 @@ export async function updateBadgeForTab(tabId: number, count: number): Promise<v
  * Update badge to reflect stats of the given (or currently active) tab.
  */
 export async function updateBadgeForActiveTab(tabId?: number): Promise<void> {
-  const targetTabId = tabId ?? (await chrome.tabs.query({ active: true, currentWindow: true }))[0]?.id;
+  const targetTabId =
+    tabId ?? (await chrome.tabs.query({ active: true, currentWindow: true }))[0]?.id;
   if (!targetTabId) {
     await setBadgeCount(0);
     return;

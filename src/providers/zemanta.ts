@@ -9,7 +9,7 @@ export const zemanta: Provider = {
   parseParams(url: string, postBody: unknown): Record<string, string | undefined> {
     const p = getParams(url, postBody);
     return {
-      'Event': p.event,
+      Event: p.event,
       'Campaign ID': p.campaign_id,
       'Order ID': p.order_id,
     };

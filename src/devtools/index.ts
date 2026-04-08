@@ -26,7 +26,17 @@ const MAX_RECONNECT_ATTEMPTS = 10;
 const BASE_BACKOFF_MS = 1000;
 let _reconnectAttempts = 0;
 
-type PortMsg = { type: string; sources?: unknown[]; labels?: Record<string, string>; data?: Record<string, unknown>; source?: string; pushIndex?: number; timestamp?: string; isReplay?: boolean; [key: string]: unknown };
+type PortMsg = {
+  type: string;
+  sources?: unknown[];
+  labels?: Record<string, string>;
+  data?: Record<string, unknown>;
+  source?: string;
+  pushIndex?: number;
+  timestamp?: string;
+  isReplay?: boolean;
+  [key: string]: unknown;
+};
 
 function attachPortListener(port: chrome.runtime.Port): void {
   port.onMessage.addListener((msg: PortMsg) => {
@@ -42,7 +52,7 @@ function attachPortListener(port: chrome.runtime.Port): void {
     if (msg.type === 'DATALAYER_SOURCES') {
       sendDataLayerSourcesToPanel(
         msg.sources as import('@/types/datalayer').DataLayerSource[],
-        msg.labels as Record<string, string>,
+        msg.labels as Record<string, string>
       );
     }
   });
@@ -58,6 +68,7 @@ function attachPortListener(port: chrome.runtime.Port): void {
     setTimeout(() => {
       try {
         const newPort = chrome.runtime.connect({ name: `devtools_${tabId}` });
+        _reconnectAttempts = 0; // Reset on successful connect so future disconnects get full retry budget
         attachPortListener(newPort);
       } catch {
         // Extension context invalidated (reload/update/disable) — stop reconnecting
@@ -71,46 +82,43 @@ attachPortListener(devToolsPort);
 
 // ─── PANEL CREATION ──────────────────────────────────────────────────────────
 
-chrome.devtools.panels.create(
-  'TagDragon',
-  '',
-  'public/panel.html',
-  (panel) => {
-    // When panel becomes visible, establish the bridge and flush buffered requests
-    panel.onShown.addListener((win: Window) => {
-      setPanelWindow(win);
-      // Wire pause sync: popup → background → network-capture → panel UI
-      (win as Record<string, unknown>)['_setPaused'] = (paused: boolean) => {
-        const fn = (win as Record<string, unknown>)['setPanelPaused'];
-        if (typeof fn === 'function') fn(paused);
-      };
-      // Expose re-inject helper so panel.js can trigger injection on demand
-      (win as Record<string, unknown>)['triggerReinject'] = () => {
-        chrome.runtime.sendMessage({ type: 'INJECT_DATALAYER', tabId }).catch(() => {});
-      };
-      // Flush any DataLayer pushes that arrived before the panel was visible
-      flushDataLayerBuffer();
-      // Inject DataLayer content scripts into inspected tab (idempotent).
-      // Bridge is injected and awaited BEFORE main, so bridge's message listener
-      // is ready when main runs and sends TAGDRAGON_DL_PUSH via postMessage.
-      // The TAGDRAGON_BRIDGE_READY mechanism inside the scripts handles replay
-      // of existing data — no separate DATALAYER_SNAPSHOT_REQUEST needed.
-      chrome.runtime.sendMessage({ type: 'INJECT_DATALAYER', tabId }).catch(() => { /* ignore */ });
-    });
-
-    // Re-inject on navigation — panel.onShown does not fire on page navigation,
-    // so without this listener the MAIN world script would never run on the new page.
-    chrome.devtools.network.onNavigated.addListener(() => {
-      const win = getPanelWindow();
-      if (win && !win.closed && typeof win.clearDataLayer === 'function') {
-        win.clearDataLayer();
-      }
+chrome.devtools.panels.create('TagDragon', '', 'public/panel.html', (panel) => {
+  // When panel becomes visible, establish the bridge and flush buffered requests
+  panel.onShown.addListener((win: Window) => {
+    setPanelWindow(win);
+    // Wire pause sync: popup → background → network-capture → panel UI
+    (win as Record<string, unknown>)['_setPaused'] = (paused: boolean) => {
+      const fn = (win as Record<string, unknown>)['setPanelPaused'];
+      if (typeof fn === 'function') fn(paused);
+    };
+    // Expose re-inject helper so panel.js can trigger injection on demand
+    (win as Record<string, unknown>)['triggerReinject'] = () => {
       chrome.runtime.sendMessage({ type: 'INJECT_DATALAYER', tabId }).catch(() => {});
+    };
+    // Flush any DataLayer pushes that arrived before the panel was visible
+    flushDataLayerBuffer();
+    // Inject DataLayer content scripts into inspected tab (idempotent).
+    // Bridge is injected and awaited BEFORE main, so bridge's message listener
+    // is ready when main runs and sends TAGDRAGON_DL_PUSH via postMessage.
+    // The TAGDRAGON_BRIDGE_READY mechanism inside the scripts handles replay
+    // of existing data — no separate DATALAYER_SNAPSHOT_REQUEST needed.
+    chrome.runtime.sendMessage({ type: 'INJECT_DATALAYER', tabId }).catch(() => {
+      /* ignore */
     });
+  });
 
-    // When panel is hidden, we keep the panel window reference for buffering
-  }
-);
+  // Re-inject on navigation — panel.onShown does not fire on page navigation,
+  // so without this listener the MAIN world script would never run on the new page.
+  chrome.devtools.network.onNavigated.addListener(() => {
+    const win = getPanelWindow();
+    if (win && !win.closed && typeof win.clearDataLayer === 'function') {
+      win.clearDataLayer();
+    }
+    chrome.runtime.sendMessage({ type: 'INJECT_DATALAYER', tabId }).catch(() => {});
+  });
+
+  // When panel is hidden, we keep the panel window reference for buffering
+});
 
 // Start listening for network requests
 initNetworkCapture();

@@ -61,9 +61,10 @@ rowTemplate.innerHTML = `
 export function createDlPushRow(
   push: DataLayerPush,
   isVisible: boolean,
-  onSelect: DlSelectCallback,
+  onSelect: DlSelectCallback
 ): HTMLElement {
-  const row = (rowTemplate.content.firstElementChild?.cloneNode(true) ?? document.createElement('div')) as HTMLElement;
+  const row = (rowTemplate.content.firstElementChild?.cloneNode(true) ??
+    document.createElement('div')) as HTMLElement;
   row.dataset['id'] = String(push.id);
 
   if (!isVisible) {
@@ -112,7 +113,7 @@ export function createDlPushRow(
   if (valErrors.length > 0) {
     const dot = document.createElement('span');
     dot.className = 'dl-validation-dot has-errors';
-    const lines = valErrors.map(e => `• ${e.ruleName}: ${e.checkMessage}`);
+    const lines = valErrors.map((e) => `• ${e.ruleName}: ${e.checkMessage}`);
     dot.title = `${valErrors.length} validation error(s):\n${lines.join('\n')}`;
     const badge = document.createElement('span');
     badge.className = 'dl-validation-badge';
@@ -130,13 +131,23 @@ export function createDlPushRow(
 }
 
 function buildPreview(data: Record<string, unknown>): string {
-  const skip = new Set(['event', 'gtm.uniqueEventId', 'gtm.start', 'gtm.scrollThreshold', 'gtm.scrollUnits', 'gtm.scrollDirection']);
+  const skip = new Set([
+    'event',
+    'gtm.uniqueEventId',
+    'gtm.start',
+    'gtm.scrollThreshold',
+    'gtm.scrollUnits',
+    'gtm.scrollDirection',
+  ]);
   const parts: string[] = [];
   for (const [k, v] of Object.entries(data)) {
     if (skip.has(k)) continue;
-    const valStr = typeof v === 'object' && v !== null
-      ? (Array.isArray(v) ? `[…]` : '{…}')
-      : String(v).slice(0, 35);
+    const valStr =
+      typeof v === 'object' && v !== null
+        ? Array.isArray(v)
+          ? `[…]`
+          : '{…}'
+        : String(v).slice(0, 35);
     parts.push(`${k}: ${valStr}`);
     if (parts.length >= 3) break;
   }
@@ -176,7 +187,7 @@ export function updateDlStatusText(visible: number, total: number): void {
   const $time = DOM.timeBadge;
   if ($size) $size.style.display = 'none';
   if ($time) $time.style.display = 'none';
-  document.querySelectorAll('#status-bar .status-separator').forEach(el => {
+  document.querySelectorAll('#status-bar .status-separator').forEach((el) => {
     el.style.display = 'none';
   });
 }
@@ -199,14 +210,13 @@ export function setActiveDlRow(row: HTMLElement): void {
 /**
  * Navigate to the next/previous push in the list.
  */
-export function navigateDlList(
-  direction: 1 | -1,
-  onSelect: DlSelectCallback,
-): void {
+export function navigateDlList(direction: 1 | -1, onSelect: DlSelectCallback): void {
   const $list = DOM.dlPushList;
   if (!$list) return;
 
-  const rows = Array.from($list.querySelectorAll('.dl-push-row:not([style*="display: none"])')) as HTMLElement[];
+  const rows = Array.from(
+    $list.querySelectorAll('.dl-push-row:not([style*="display: none"])')
+  ) as HTMLElement[];
   if (rows.length === 0) return;
 
   const selectedId = getDlSelectedId();
@@ -263,7 +273,13 @@ export function exportDlCsv(pushes: DataLayerPush[]): void {
   const headers = [...metaCols, ...dataKeys];
 
   const rows = pushes.map((p) => {
-    const meta = [String(p.id), String(p.timestamp), p.source, String(p.pushIndex), p._eventName ?? ''];
+    const meta = [
+      String(p.id),
+      String(p.timestamp),
+      p.source,
+      String(p.pushIndex),
+      p._eventName ?? '',
+    ];
     const data = dataKeys.map((k) => {
       const v = p.data[k];
       return typeof v === 'object' ? JSON.stringify(v) : String(v ?? '');
@@ -325,7 +341,7 @@ export function dlMatchesFilter(
   source: string,
   eventName: string,
   hasKey: string,
-  ecommerceOnly: boolean,
+  ecommerceOnly: boolean
 ): boolean {
   if (source && push.source !== source) return false;
   if (eventName && push._eventName !== eventName) return false;
@@ -350,10 +366,10 @@ export function dlMatchesFilter(
           matches = (push._eventName ?? '').toLowerCase().includes(term.text);
           break;
         case 'key':
-          matches = Object.keys(push.data).some(k => k.toLowerCase().includes(term.text));
+          matches = Object.keys(push.data).some((k) => k.toLowerCase().includes(term.text));
           break;
         case 'value':
-          matches = Object.values(push.data).some(v =>
+          matches = Object.values(push.data).some((v) =>
             String(v).toLowerCase().includes(term.text)
           );
           break;
@@ -380,9 +396,7 @@ export function getSortedDlPushIds(): number[] {
   const order = getDlSortOrder();
 
   if (field === 'time') {
-    return order === 'asc'
-      ? all.map(p => p.id)
-      : [...all].reverse().map(p => p.id);
+    return order === 'asc' ? all.map((p) => p.id) : [...all].reverse().map((p) => p.id);
   }
 
   if (field === 'keycount') {
@@ -391,7 +405,7 @@ export function getSortedDlPushIds(): number[] {
         const diff = Object.keys(b.data).length - Object.keys(a.data).length;
         return order === 'desc' ? diff : -diff;
       })
-      .map(p => p.id);
+      .map((p) => p.id);
   }
 
   if (field === 'source') {
@@ -400,10 +414,10 @@ export function getSortedDlPushIds(): number[] {
         const diff = a.source.localeCompare(b.source);
         return order === 'asc' ? diff : -diff;
       })
-      .map(p => p.id);
+      .map((p) => p.id);
   }
 
-  return all.map(p => p.id);
+  return all.map((p) => p.id);
 }
 
 /**
@@ -412,7 +426,7 @@ export function getSortedDlPushIds(): number[] {
 export function renderGroupedPushList(
   $list: HTMLElement,
   filteredIds: Set<number>,
-  onSelect: DlSelectCallback,
+  onSelect: DlSelectCallback
 ): void {
   const all = getAllDlPushes();
   const groups = new Map<DataLayerSource, DataLayerPush[]>();
@@ -422,8 +436,7 @@ export function renderGroupedPushList(
     groups.get(p.source)!.push(p);
   }
 
-  const sortedGroups = [...groups.entries()]
-    .sort((a, b) => b[1].length - a[1].length);
+  const sortedGroups = [...groups.entries()].sort((a, b) => b[1].length - a[1].length);
 
   for (const [source, pushes] of sortedGroups) {
     const color = getSourceColor(source);
@@ -469,7 +482,7 @@ export function updateDlRowValidation(): void {
     if (errors.length > 0 && !existing) {
       const dot = document.createElement('span');
       dot.className = 'dl-validation-dot has-errors';
-      const lines = errors.map(e => `• ${e.ruleName}: ${e.checkMessage}`);
+      const lines = errors.map((e) => `• ${e.ruleName}: ${e.checkMessage}`);
       dot.title = `${errors.length} validation error(s):\n${lines.join('\n')}`;
       const badge = document.createElement('span');
       badge.className = 'dl-validation-badge';
@@ -479,4 +492,3 @@ export function updateDlRowValidation(): void {
     }
   });
 }
-

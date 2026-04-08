@@ -29,8 +29,8 @@ const MAX_DL_PUSHES = 1000;
 interface DlFilterState {
   text: string;
   source: DataLayerSource | '';
-  eventName: string;    // Filtered via DL filter popover → Event Name submenu
-  hasKey: string;       // Filtered via DL filter popover → Has Key submenu
+  eventName: string; // Filtered via DL filter popover → Event Name submenu
+  hasKey: string; // Filtered via DL filter popover → Has Key submenu
   ecommerceOnly: boolean;
 }
 
@@ -54,7 +54,7 @@ export function addDlPush(push: DataLayerPush): void {
   if (dlState.all.length > MAX_DL_PUSHES) {
     const pruneTo = Math.floor(MAX_DL_PUSHES * 0.75);
     const removed = dlState.all.splice(0, dlState.all.length - pruneTo);
-    removed.forEach(p => dlState.map.delete(p.id));
+    removed.forEach((p) => dlState.map.delete(p.id));
     dlState.filteredIds.clear();
   }
 }
@@ -66,7 +66,6 @@ export function clearDlPushes(): void {
   dlState.sources.clear();
   dlState.sourceLabels.clear();
   dlState.selectedId = null;
-  dlGroupBySource = false;
 }
 
 export function getAllDlPushes(): DataLayerPush[] {
@@ -82,7 +81,6 @@ export function getDlPushById(id: number): DataLayerPush | undefined {
 export function getDlFilteredIds(): Set<number> {
   return dlState.filteredIds;
 }
-
 
 export function clearDlFilteredIds(): void {
   dlState.filteredIds.clear();
@@ -208,7 +206,7 @@ export function addWatchedPath(path: string): boolean {
 }
 
 export function removeWatchedPath(path: string): void {
-  watchedPaths = watchedPaths.filter(p => p !== path);
+  watchedPaths = watchedPaths.filter((p) => p !== path);
 }
 
 export function clearWatchedPaths(): void {
@@ -217,7 +215,7 @@ export function clearWatchedPaths(): void {
 
 // ─── VALIDATION STATE ─────────────────────────────────────────────────────
 
-let validationErrors: Map<number, ValidationResult[]> = new Map();
+const validationErrors: Map<number, ValidationResult[]> = new Map();
 let validationRules: ValidationRule[] = [];
 let validationLoaded = false;
 
@@ -252,7 +250,7 @@ export function setValidationLoaded(loaded: boolean): void {
 // ─── CORRELATION CONFIG ────────────────────────────────────────────────────
 
 let correlationWindowMs: number = 2000;
-let correlationLookbackMs: number = 500;
+const correlationLookbackMs: number = 500;
 
 export function getCorrelationWindow(): number {
   return correlationWindowMs;
@@ -282,14 +280,19 @@ export function initDlSortState(): void {
   const cfg = getAppConfig();
   dlSortField = cfg.dlSortField;
   dlSortOrder = cfg.dlSortOrder;
+  dlGroupBySource = cfg.dlGroupBySource;
 }
 
-export function getDlSortField(): DlSortField { return dlSortField; }
+export function getDlSortField(): DlSortField {
+  return dlSortField;
+}
 export function setDlSortField(field: DlSortField): void {
   dlSortField = field;
   updateConfigImmediate('dlSortField', field);
 }
-export function getDlSortOrder(): DlSortOrder { return dlSortOrder; }
+export function getDlSortOrder(): DlSortOrder {
+  return dlSortOrder;
+}
 export function setDlSortOrder(order: DlSortOrder): void {
   dlSortOrder = order;
   updateConfigImmediate('dlSortOrder', order);
@@ -304,8 +307,13 @@ export function toggleDlSortOrder(): DlSortOrder {
 
 let dlGroupBySource: boolean = false;
 
-export function getDlGroupBySource(): boolean { return dlGroupBySource; }
-export function setDlGroupBySource(group: boolean): void { dlGroupBySource = group; }
+export function getDlGroupBySource(): boolean {
+  return dlGroupBySource;
+}
+export function setDlGroupBySource(group: boolean): void {
+  dlGroupBySource = group;
+  updateConfigImmediate('dlGroupBySource', group);
+}
 
 // ─── DATALAYER BATCHING STATE ─────────────────────────────────────────────
 

@@ -20,7 +20,7 @@ export interface CorrelatedRequest {
 export function findCorrelatedRequests(
   push: DataLayerPush,
   requests: ParsedRequest[],
-  windowMs?: number,
+  windowMs?: number
 ): CorrelatedRequest[] {
   const window = windowMs ?? getCorrelationWindow();
   const lookback = getCorrelationLookback();
@@ -52,7 +52,7 @@ export function renderCorrelation(
   container: HTMLElement,
   correlated: CorrelatedRequest[],
   onGotoRequest: (requestId: number) => void,
-  windowMs?: number,
+  windowMs?: number
 ): void {
   container.innerHTML = '';
 
@@ -96,7 +96,9 @@ export function renderCorrelation(
     const url = document.createElement('span');
     url.className = 'dl-correlation-url';
     const urlObj = tryParseUrl(request.url);
-    url.textContent = urlObj ? urlObj.hostname + urlObj.pathname.slice(0, 30) : request.url.slice(0, 50);
+    url.textContent = urlObj
+      ? urlObj.hostname + urlObj.pathname.slice(0, 30)
+      : request.url.slice(0, 50);
     url.title = request.url;
 
     const gotoBtn = document.createElement('button');
@@ -120,5 +122,9 @@ export function renderCorrelation(
 }
 
 function tryParseUrl(url: string): URL | null {
-  try { return new URL(url); } catch { return null; }
+  try {
+    return new URL(url);
+  } catch {
+    return null;
+  }
 }

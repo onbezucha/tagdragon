@@ -11,12 +11,12 @@ export const matomo: Provider = {
     const p = getParams(url, postRaw);
     return {
       'Site ID': p['idsite'],
-      'Action': p['action_name'],
-      'URL': p['url'],
+      Action: p['action_name'],
+      URL: p['url'],
       'Event Category': p['e_c'],
       'Event Action': p['e_a'],
       'Event Name': p['e_n'],
-      'Revenue': p['revenue'],
+      Revenue: p['revenue'],
       'User ID': p['uid'],
     };
   },

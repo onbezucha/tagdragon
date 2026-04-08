@@ -222,9 +222,7 @@ export interface AdobeProduct {
  * Parse Adobe Analytics products string.
  * @example parseAdobeProducts("category;sku;qty;price;events,...")
  */
-export function parseAdobeProducts(
-  productsString: unknown
-): AdobeProduct[] | null {
+export function parseAdobeProducts(productsString: unknown): AdobeProduct[] | null {
   if (!productsString || typeof productsString !== 'string') return null;
 
   const products = productsString

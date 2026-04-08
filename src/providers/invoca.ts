@@ -9,7 +9,7 @@ export const invoca: Provider = {
   parseParams(url: string, postBody: unknown): Record<string, string | undefined> {
     const p = getParams(url, postBody);
     return {
-      'Event': p.event,
+      Event: p.event,
       'Transaction ID': p.transaction_id,
       'Campaign ID': p.campaign_id,
     };

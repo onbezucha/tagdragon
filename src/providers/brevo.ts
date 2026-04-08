@@ -9,9 +9,9 @@ export const brevo: Provider = {
   parseParams(url: string, postBody: unknown): Record<string, string | undefined> {
     const p = getParams(url, postBody);
     return {
-      'Event': p.event,
+      Event: p.event,
       'Contact ID': p.id,
-      'Email': p.m,
+      Email: p.m,
     };
   },
 } as const;

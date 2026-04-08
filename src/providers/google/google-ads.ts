@@ -6,7 +6,8 @@ export const googleAds: Provider = {
   color: '#4285F4',
   // Matches same endpoints as Omnibug — /pagead/conversion and /pagead/viewthroughconversion
   // Must be before DoubleClick provider (more specific pattern)
-  pattern: /(googleads\.g\.doubleclick\.net|www\.googleadservices\.com)\/pagead\/(viewthroughconversion|conversion)/,
+  pattern:
+    /(googleads\.g\.doubleclick\.net|www\.googleadservices\.com)\/pagead\/(viewthroughconversion|conversion)/,
 
   parseParams(url: string, postBody: unknown): Record<string, string | undefined> {
     const p = getParams(url, postBody);
@@ -49,30 +50,30 @@ export const googleAds: Provider = {
     }
 
     return {
-      'Conversion ID':    conversionId,
+      'Conversion ID': conversionId,
       'Conversion Label': p.label,
-      'Conversion Type':  conversionType,
-      'Event':            eventName,
+      'Conversion Type': conversionType,
+      Event: eventName,
       'Conversion Value': p.value ?? ecommTotalvalue,
-      'Currency':         p.currency_code ?? p.currency,
-      'Transaction ID':   p.order_id ?? p.transaction_id,
-      'Page Title':       p.tiba ? decodeURIComponent(p.tiba) : undefined,
-      'Page URL':         p.url ? decodeURIComponent(p.url) : undefined,
-      'Referrer':         p.ref ? decodeURIComponent(p.ref) : undefined,
-      'Google Click ID':  p.gclid,
-      'wbraid':           p.wbraid,
-      'gbraid':           p.gbraid,
-      'GTM Container':    p.gtm,
+      Currency: p.currency_code ?? p.currency,
+      'Transaction ID': p.order_id ?? p.transaction_id,
+      'Page Title': p.tiba ? decodeURIComponent(p.tiba) : undefined,
+      'Page URL': p.url ? decodeURIComponent(p.url) : undefined,
+      Referrer: p.ref ? decodeURIComponent(p.ref) : undefined,
+      'Google Click ID': p.gclid,
+      wbraid: p.wbraid,
+      gbraid: p.gbraid,
+      'GTM Container': p.gtm,
       'Advertiser User ID': p.auid,
-      'Consent State':    p.gcs,
-      'Consent Details':  p.gcd,
+      'Consent State': p.gcs,
+      'Consent Details': p.gcd,
       'Non-Personalized': p.npa,
-      'DMA Compliance':   p.dma,
-      'DMA Consent':      p.dma_cps,
-      'Cookie Present':   p.ct_cookie_present,
+      'DMA Compliance': p.dma,
+      'DMA Consent': p.dma_cps,
+      'Cookie Present': p.ct_cookie_present,
       'E-Commerce Value': ecommTotalvalue,
-      'Product IDs':      ecommProdid,
-      'E-Commerce Type':  ecommPagetype,
+      'Product IDs': ecommProdid,
+      'E-Commerce Type': ecommPagetype,
     };
   },
 };

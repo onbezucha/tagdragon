@@ -13,7 +13,8 @@ export const aepWebSDK: Provider = {
   // Modern implementations use Web SDK (Alloy)
   // POST JSON to *.adobedc.net/ee/v2/interact or /collect
   // eVars and props are nested in: events[0].data.__adobe.analytics.eVarN / propN
-  pattern: /\/ee\/[^/]+\/v\d+\/interact|\/ee\/[^/]+\/v\d+\/collect|\/ee\/v\d+\/interact|\/ee\/v\d+\/collect|\/ee\/collect|\.adobedc\.net/,
+  pattern:
+    /\/ee\/[^/]+\/v\d+\/interact|\/ee\/[^/]+\/v\d+\/collect|\/ee\/v\d+\/interact|\/ee\/v\d+\/collect|\/ee\/collect|\.adobedc\.net/,
 
   parseParams(url: string, postRaw: unknown): Record<string, string | undefined> {
     const urlParams = getParams(url, null);
@@ -22,14 +23,14 @@ export const aepWebSDK: Provider = {
     let payload: Record<string, unknown> = {};
     try {
       const har = postRaw as HARPostBody | undefined;
-      const bodyStr = har?.text ||
-        (har?.raw?.[0]?.bytes ? atob(har.raw[0].bytes) : '');
+      const bodyStr = har?.text || (har?.raw?.[0]?.bytes ? atob(har.raw[0].bytes) : '');
       if (bodyStr) payload = JSON.parse(bodyStr) as Record<string, unknown>;
     } catch {
       // Parsing failed, continue with empty payload
     }
 
-    const event0 = ((payload.events as unknown[]) || [])[0] as Record<string, unknown> | undefined || {};
+    const event0 =
+      (((payload.events as unknown[]) || [])[0] as Record<string, unknown> | undefined) || {};
     const xdm = (event0.xdm as Record<string, unknown>) || {};
     const data = (event0.data as Record<string, unknown>) || {};
     const adobe = (data.__adobe as Record<string, unknown>) || {};
@@ -76,9 +77,10 @@ export const aepWebSDK: Provider = {
     const ecidObj = (ecidArray[0] as Record<string, unknown>) || {};
 
     // Extract screen dimensions
-    const screenDimensions = device.screenWidth && device.screenHeight
-      ? `${device.screenWidth}x${device.screenHeight}`
-      : undefined;
+    const screenDimensions =
+      device.screenWidth && device.screenHeight
+        ? `${device.screenWidth}x${device.screenHeight}`
+        : undefined;
 
     // Get datastream ID from configId or from meta config overrides
     let datastreamId = urlParams.configId as string | undefined;
@@ -93,7 +95,11 @@ export const aepWebSDK: Provider = {
     }
 
     // Determine request type from URL path (more reliable than POST body)
-    const requestType = url.includes('/interact') ? 'interact' : url.includes('/collect') ? 'collect' : undefined;
+    const requestType = url.includes('/interact')
+      ? 'interact'
+      : url.includes('/collect')
+        ? 'collect'
+        : undefined;
 
     const str = (v: unknown): string | undefined => {
       if (v === undefined || v === null || v === '') return undefined;
@@ -109,13 +115,13 @@ export const aepWebSDK: Provider = {
       // Adobe Analytics specifics (from __adobe.analytics)
       'Page name': str(aa.pageName),
       'Page URL': str(aa.pageURL || pageDetails?.URL),
-      'Channel': str(aa.channel),
-      'Server': str(aa.server),
-      'Events': str(aa.events),
+      Channel: str(aa.channel),
+      Server: str(aa.server),
+      Events: str(aa.events),
       'Link name': str(aa.linkName),
       'Link type': str(aa.linkType),
-      'Campaign': str(aa.campaign),
-      'Referrer': str(aa.referrer || referrer?.URL),
+      Campaign: str(aa.campaign),
+      Referrer: str(aa.referrer || referrer?.URL),
 
       // eVars and props
       ...eVars,
@@ -123,10 +129,10 @@ export const aepWebSDK: Provider = {
       ...lists,
 
       // XDM identity
-      'ECID': str(ecidObj.id),
+      ECID: str(ecidObj.id),
 
       // Device
-      'Screen': screenDimensions,
+      Screen: screenDimensions,
       'Screen orient': str(device.screenOrientation),
     };
   },

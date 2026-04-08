@@ -7,7 +7,7 @@ export const piwikProTm: Provider = {
 
   parseParams(url: string): Record<string, string | undefined> {
     return {
-      'URL': url,
+      URL: url,
     };
   },
 } as const;

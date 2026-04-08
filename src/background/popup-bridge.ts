@@ -27,7 +27,9 @@ function scheduleFlush(): void {
     if (_statsCache) {
       try {
         await chrome.storage.session.set({ popup_stats: _statsCache });
-      } catch { /* storage write failed, data is still in memory cache */ }
+      } catch {
+        /* storage write failed, data is still in memory cache */
+      }
     }
   }, 100);
 }
@@ -35,7 +37,6 @@ function scheduleFlush(): void {
 // ─── MESSAGE HANDLERS ─────────────────────────────────────────────────────────
 
 export function initPopupBridge(): void {
-
   chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     if (message.type === 'UPDATE_POPUP_STATS') {
       handleUpdateStats(message as UpdatePopupStatsMessage)
@@ -46,7 +47,7 @@ export function initPopupBridge(): void {
 
     if (message.type === 'GET_POPUP_STATS') {
       handleGetStats(message.tabId)
-        .then(data => sendResponse({ ok: true, data }))
+        .then((data) => sendResponse({ ok: true, data }))
         .catch((e: Error) => sendResponse({ ok: false, error: e.message }));
       return true;
     }
@@ -116,7 +117,7 @@ async function handleUpdateStats(message: UpdatePopupStatsMessage): Promise<void
   stats.lastRequest = now;
   if (!stats.firstRequest) stats.firstRequest = now;
 
-  const existing = stats.providers.find(p => p.name === message.provider);
+  const existing = stats.providers.find((p) => p.name === message.provider);
   if (existing) {
     existing.count++;
   } else {
@@ -130,7 +131,7 @@ async function handleUpdateStats(message: UpdatePopupStatsMessage): Promise<void
 }
 
 async function handleGetStats(tabId?: number): Promise<PopupStatsResponse> {
-  const targetTabId = tabId ?? await getActiveTabId();
+  const targetTabId = tabId ?? (await getActiveTabId());
   const allStats = await loadStatsCache();
   const stats = allStats[targetTabId] ?? createEmptyStats(targetTabId);
   return buildPopupResponse(stats, targetTabId);
@@ -144,12 +145,10 @@ function buildPopupResponse(stats: TabPopupStats, tabId: number): PopupStatsResp
   return {
     ...stats,
     isDevToolsOpen: devToolsPorts.has(tabId),
-    avgDuration: stats.totalRequests > 0
-      ? Math.round(stats.totalDuration / stats.totalRequests)
-      : 0,
-    successRate: stats.totalRequests > 0
-      ? Math.round((stats.successCount / stats.totalRequests) * 100)
-      : 100,
+    avgDuration:
+      stats.totalRequests > 0 ? Math.round(stats.totalDuration / stats.totalRequests) : 0,
+    successRate:
+      stats.totalRequests > 0 ? Math.round((stats.successCount / stats.totalRequests) * 100) : 100,
     topProviders,
     otherProvidersCount: others.length,
     otherProvidersTotal: others.reduce((sum, p) => sum + p.count, 0),
@@ -157,7 +156,7 @@ function buildPopupResponse(stats: TabPopupStats, tabId: number): PopupStatsResp
 }
 
 async function handleSetPaused(tabId: number | undefined, paused: boolean): Promise<void> {
-  const targetTabId = tabId ?? await getActiveTabId();
+  const targetTabId = tabId ?? (await getActiveTabId());
   const allStats = await loadStatsCache();
   const stats = allStats[targetTabId] ?? createEmptyStats(targetTabId);
   stats.isPaused = paused;
@@ -165,16 +164,18 @@ async function handleSetPaused(tabId: number | undefined, paused: boolean): Prom
   scheduleFlush();
 
   // Notify devtools script so it can stop/resume processing requests
-  chrome.runtime.sendMessage({
-    type: paused ? 'RECORDING_PAUSED' : 'RECORDING_RESUMED',
-    tabId: targetTabId,
-  }).catch(() => {
-    // DevTools may be closed, that's fine
-  });
+  chrome.runtime
+    .sendMessage({
+      type: paused ? 'RECORDING_PAUSED' : 'RECORDING_RESUMED',
+      tabId: targetTabId,
+    })
+    .catch(() => {
+      // DevTools may be closed, that's fine
+    });
 }
 
 async function handleClear(tabId?: number): Promise<void> {
-  const targetTabId = tabId ?? await getActiveTabId();
+  const targetTabId = tabId ?? (await getActiveTabId());
   const allStats = await loadStatsCache();
   delete allStats[targetTabId];
   scheduleFlush();

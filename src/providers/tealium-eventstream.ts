@@ -9,10 +9,10 @@ export const tealiumEventstream: Provider = {
   parseParams(url: string, postBody: unknown): Record<string, string | undefined> {
     const p = getParams(url, postBody);
     return {
-      'Event': p.tealium_event,
+      Event: p.tealium_event,
       'Visitor ID': p.tealium_visitor_id,
-      'Account': p.tealium_account,
-      'Profile': p.tealium_profile,
+      Account: p.tealium_account,
+      Profile: p.tealium_profile,
     };
   },
 } as const;

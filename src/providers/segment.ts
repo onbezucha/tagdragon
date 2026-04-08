@@ -10,11 +10,11 @@ export const segment: Provider = {
   parseParams(url: string, postRaw: unknown): Record<string, string | undefined> {
     const p = getParams(url, postRaw);
     return {
-      'Type': p['type'],
-      'Event': p['event'],
+      Type: p['type'],
+      Event: p['event'],
       'Anonymous ID': p['anonymousId'],
       'User ID': p['userId'],
-      'URL': url,
+      URL: url,
     };
   },
 } as const;

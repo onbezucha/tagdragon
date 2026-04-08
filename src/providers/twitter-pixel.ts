@@ -18,16 +18,16 @@ export const twitterPixel: Provider = {
     } catch {}
 
     return {
-      'Event': eventType || p['events'],
+      Event: eventType || p['events'],
       'Event ID': p['event_id'],
       'Pixel ID': p['p_id'],
       'Page URL': p['tw_document_href'],
-      'Partner': p['pt'],
+      Partner: p['pt'],
       'User ID (twpid)': p['twpid'],
       'Sale Amount': p['tw_sale_amount'],
       'Order Quantity': p['tw_order_quantity'],
-      'Version': p['version'],
-      'Type': p['type'],
+      Version: p['version'],
+      Type: p['type'],
       'Transaction ID': p['txn_id'],
     };
   },

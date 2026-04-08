@@ -53,7 +53,11 @@ function updateMemoryIndicator($bar: HTMLElement | null): void {
  * Update the network status bar display.
  * Writes to #status-stats, #size-badge .value, #time-badge .value separately.
  */
-export function updateStatusBar(visibleCount: number, totalSize: number, totalDuration: number): void {
+export function updateStatusBar(
+  visibleCount: number,
+  totalSize: number,
+  totalDuration: number
+): void {
   const $stats = DOM.statusStats;
   const $size = DOM.sizeBadge;
   const $time = DOM.timeBadge;
@@ -96,7 +100,7 @@ export function updateDlStatusBar(): void {
     const total = getDlTotalCount();
     const pushes = getAllDlPushes();
     const parts = [`${visible} / ${total} pushes`];
-    const ecCount = pushes.filter(p => p._ecommerceType).length;
+    const ecCount = pushes.filter((p) => p._ecommerceType).length;
     if (ecCount > 0) parts.push(`${ecCount} e-commerce`);
     $stats.textContent = parts.join(' · ');
   }
@@ -106,7 +110,7 @@ export function updateDlStatusBar(): void {
   if ($time) $time.style.display = 'none';
 
   // Reset separators visibility
-  document.querySelectorAll('#status-bar .status-separator').forEach(el => {
+  document.querySelectorAll('#status-bar .status-separator').forEach((el) => {
     el.style.display = 'none';
   });
 
@@ -125,7 +129,7 @@ export function updateNetworkStatusBar(): void {
   if ($time) $time.style.display = '';
 
   // Restore separators
-  document.querySelectorAll('#status-bar .status-separator').forEach(el => {
+  document.querySelectorAll('#status-bar .status-separator').forEach((el) => {
     el.style.display = '';
   });
 }
@@ -206,7 +210,7 @@ export function resetStatusBar(): void {
     if ($timeVal) $timeVal.textContent = '—';
     $time.style.display = '';
   }
-  document.querySelectorAll('#status-bar .status-separator').forEach(el => {
+  document.querySelectorAll('#status-bar .status-separator').forEach((el) => {
     el.style.display = '';
   });
   if ($bar) $bar.style.color = '';

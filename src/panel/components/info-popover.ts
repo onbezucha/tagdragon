@@ -6,7 +6,7 @@ import { DATA_LAYER_SOURCES } from '@/shared/datalayer-constants';
 import { DOM } from '../utils/dom';
 import { isMac, modLabel } from '../utils/platform';
 import { esc } from '../utils/format';
-import { buildGroupIcon } from '../utils/provider-icon';
+import { buildGroupIcon } from '../utils/icon-builder';
 import { GROUP_ICONS } from '../utils/group-icons';
 import {
   createIcons,
@@ -53,7 +53,10 @@ export function initInfoPopover(): void {
       DOM.consentPopover?.classList.remove('visible');
       DOM.envPopover?.classList.remove('visible');
       // Focus search on open
-      setTimeout(() => (document.getElementById('info-search') as HTMLInputElement | null)?.focus(), 50);
+      setTimeout(
+        () => (document.getElementById('info-search') as HTMLInputElement | null)?.focus(),
+        50
+      );
     }
   });
 
@@ -96,16 +99,20 @@ function renderProviderGroups(): void {
     colorMap.set(p.name, p.color);
   }
 
-  $container.innerHTML = PROVIDER_GROUPS.map(group => {
-    const pills = group.providers.map(name => {
-      const color = colorMap.get(name) ?? '#888';
-      const icon = buildGroupIcon(name);
-      const visual = icon
-        ? `<span class="info-pill-icon">${icon}</span>`
-        : `<span class="info-pill-dot" style="background:${color}"></span>`;
-      return `<span class="info-provider-pill" data-name="${esc(name)}">` +
-        `${visual}${esc(name)}</span>`;
-    }).join('');
+  $container.innerHTML = PROVIDER_GROUPS.map((group) => {
+    const pills = group.providers
+      .map((name) => {
+        const color = colorMap.get(name) ?? '#888';
+        const icon = buildGroupIcon(name);
+        const visual = icon
+          ? `<span class="info-pill-icon">${icon}</span>`
+          : `<span class="info-pill-dot" style="background:${color}"></span>`;
+        return (
+          `<span class="info-provider-pill" data-name="${esc(name)}">` +
+          `${visual}${esc(name)}</span>`
+        );
+      })
+      .join('');
 
     const groupIcon = GROUP_ICONS[group.id] ?? '';
 
@@ -155,7 +162,7 @@ function renderShortcuts(): void {
   ];
 
   $container.innerHTML = shortcuts
-    .map(s => `<div class="info-shortcut"><span>${s.label}</span><kbd>${s.keys}</kbd></div>`)
+    .map((s) => `<div class="info-shortcut"><span>${s.label}</span><kbd>${s.keys}</kbd></div>`)
     .join('');
 }
 
@@ -187,7 +194,11 @@ function renderToolbarIcons(): void {
     {
       label: 'Network bar',
       items: [
-        { icon: 'search', name: 'Search', desc: `Filter by URL, parameter, or provider (${mod}+F)` },
+        {
+          icon: 'search',
+          name: 'Search',
+          desc: `Filter by URL, parameter, or provider (${mod}+F)`,
+        },
         { icon: 'arrow-up-down', name: 'Sort', desc: 'Toggle between newest/oldest first' },
         { icon: 'wrap-text', name: 'Wrap', desc: 'Toggle long parameter value wrapping' },
         { icon: 'maximize-2', name: 'Auto-expand', desc: 'Auto-expand detail sections on select' },
@@ -208,11 +219,14 @@ function renderToolbarIcons(): void {
   ];
 
   $container.innerHTML = groups
-    .map(group => `
+    .map(
+      (group) => `
       <div class="info-icons-group">
         <div class="info-icons-group-label">${group.label}</div>
         <div class="info-icons-grid">
-          ${group.items.map(item => `
+          ${group.items
+            .map(
+              (item) => `
             <div class="info-icons-item">
               <i data-lucide="${item.icon}" class="info-icons-lucide"></i>
               <div class="info-icons-text">
@@ -220,10 +234,13 @@ function renderToolbarIcons(): void {
                 <span class="info-icons-desc">${item.desc}</span>
               </div>
             </div>
-          `).join('')}
+          `
+            )
+            .join('')}
         </div>
       </div>
-    `)
+    `
+    )
     .join('');
 
   // Re-render Lucide icons for the new elements
@@ -262,7 +279,8 @@ function renderDataLayerSources(): void {
   const $container = document.getElementById('info-dl-sources');
   if (!$container) return;
 
-  $container.innerHTML = DATA_LAYER_SOURCES.map(src => `
+  $container.innerHTML = DATA_LAYER_SOURCES.map(
+    (src) => `
     <div class="info-dl-source">
       <div class="info-dl-source-header">
         <span class="info-dl-source-label">${src.label}</span>
@@ -270,7 +288,8 @@ function renderDataLayerSources(): void {
       </div>
       <div class="info-dl-source-desc">${src.description}</div>
     </div>
-  `).join('');
+  `
+  ).join('');
 }
 
 // ─── SEARCH ───────────────────────────────────────────────────────────────────
@@ -299,11 +318,11 @@ function initSearch(): void {
     const $groups = document.querySelectorAll<HTMLElement>('.info-provider-group');
     let totalVisible = 0;
 
-    $groups.forEach($group => {
+    $groups.forEach(($group) => {
       const pills = $group.querySelectorAll<HTMLElement>('.info-provider-pill');
       let groupVisible = 0;
 
-      pills.forEach(pill => {
+      pills.forEach((pill) => {
         const name = (pill.dataset.name ?? '').toLowerCase();
         const match = q.length === 0 || name.includes(q);
         pill.classList.toggle('hidden', !match);
@@ -321,7 +340,7 @@ function initSearch(): void {
 // ─── ACCORDION ────────────────────────────────────────────────────────────────
 
 function initAccordion($popover: HTMLElement): void {
-  $popover.querySelectorAll('.info-section-header').forEach(header => {
+  $popover.querySelectorAll('.info-section-header').forEach((header) => {
     header.addEventListener('click', () => {
       const expanded = header.getAttribute('aria-expanded') === 'true';
       header.setAttribute('aria-expanded', expanded ? 'false' : 'true');

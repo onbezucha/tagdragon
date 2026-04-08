@@ -26,27 +26,31 @@ import { SOURCE_DESCRIPTIONS } from '@/shared/datalayer-constants';
     if (event.data.type === 'TAGDRAGON_DL_PUSH') {
       const { source, pushIndex, timestamp, data, isReplay } = event.data;
       // Send to background — DO NOT include tabId (background reads from sender.tab.id)
-      chrome.runtime.sendMessage({
-        type: 'DATALAYER_PUSH',
-        source,
-        pushIndex,
-        timestamp,
-        data,
-        isReplay: isReplay === true,
-      }).catch(() => {
-        // Background may not be listening yet; ignore
-      });
+      chrome.runtime
+        .sendMessage({
+          type: 'DATALAYER_PUSH',
+          source,
+          pushIndex,
+          timestamp,
+          data,
+          isReplay: isReplay === true,
+        })
+        .catch(() => {
+          // Background may not be listening yet; ignore
+        });
       return;
     }
 
     if (event.data.type === 'TAGDRAGON_DL_SOURCES') {
       // MAIN world detected sources — forward to background (ISOLATED world cannot
       // see MAIN world variables like window.digitalData, so MAIN world is authoritative)
-      chrome.runtime.sendMessage({
-        type: 'DATALAYER_SOURCES',
-        sources: event.data.sources,
-        labels: event.data.labels,
-      }).catch(() => {});
+      chrome.runtime
+        .sendMessage({
+          type: 'DATALAYER_SOURCES',
+          sources: event.data.sources,
+          labels: event.data.labels,
+        })
+        .catch(() => {});
       return;
     }
   });
@@ -55,11 +59,15 @@ import { SOURCE_DESCRIPTIONS } from '@/shared/datalayer-constants';
   // Report detected sources to background after short delay to allow main world
   // script to complete its initial detection
   setTimeout(() => {
-    void chrome.runtime.sendMessage({
-      type: 'DATALAYER_SOURCES',
-      sources: detectSources(),
-      labels: buildSourceLabels(),
-    }).catch(() => { /* ignore */ });
+    void chrome.runtime
+      .sendMessage({
+        type: 'DATALAYER_SOURCES',
+        sources: detectSources(),
+        labels: buildSourceLabels(),
+      })
+      .catch(() => {
+        /* ignore */
+      });
   }, 800);
 
   function detectSources(): string[] {
@@ -69,7 +77,11 @@ import { SOURCE_DESCRIPTIONS } from '@/shared/datalayer-constants';
     if (Array.isArray(win['dataLayer'])) sources.push('gtm');
     if (win['utag'] && typeof win['utag'] === 'object') sources.push('tealium');
     if (win['_satellite'] || win['adobeDataLayer']) sources.push('adobe');
-    if (win['analytics'] && typeof (win['analytics'] as Record<string, unknown>)['track'] === 'function') sources.push('segment');
+    if (
+      win['analytics'] &&
+      typeof (win['analytics'] as Record<string, unknown>)['track'] === 'function'
+    )
+      sources.push('segment');
     if (win['digitalData'] && typeof win['digitalData'] === 'object') sources.push('digitalData');
 
     return sources;
@@ -87,7 +99,7 @@ import { SOURCE_DESCRIPTIONS } from '@/shared/datalayer-constants';
           const gtmId = (item as Record<string, unknown>)['gtm.uniqueEventId'];
           if (!gtmId) {
             const keys = Object.keys(item as Record<string, unknown>);
-            const gtmKey = keys.find(k => k.startsWith('GTM-'));
+            const gtmKey = keys.find((k) => k.startsWith('GTM-'));
             if (gtmKey) {
               labels['gtm'] = gtmKey;
               break;

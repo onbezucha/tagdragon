@@ -5,6 +5,28 @@ All notable changes to TagDragon will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.0] - 2026-04-08
+
+### Added
+- ESLint + Prettier — code style enforcement with TypeScript rules; `npm run lint`, `npm run format`, `npm run format:check`
+- Pre-commit hooks — Husky + lint-staged automatically lints and formats staged `.ts` files before each commit
+- Bundle analysis — `npm run analyze` builds with rollup-plugin-visualizer and opens `dist/stats.html`
+- `CONTRIBUTING.md` — setup guide, available scripts, step-by-step provider contribution instructions, PR guidelines
+- `SECURITY.md` — vulnerability reporting policy and extension security scope
+- CI pipeline improvements — lint and format checks added before build step
+
+### Fixed
+- DataLayer sort order — batched pushes (e.g. on DevTools open) now render in correct order for `desc` sort; previously the batch was prepended as oldest-first, making newest appear at the bottom
+- DataLayer sort — `keycount` and `source` sort fields now trigger a full list re-render on new pushes instead of appending in arrival order
+- DataLayer group by source — "Group by source" setting is now persisted across DevTools sessions via `AppConfig`; previously the setting reset to `false` on every open
+- `clearDlPushes()` no longer resets `dlGroupBySource` — sort/view preferences are independent of captured data
+- Removed unused `getValidationErrors` and `setValidationErrors` imports from `panel/index.ts` (TypeScript warnings)
+
+### Changed
+- `panel/index.ts` — `initKeyboardHandlers` extracted to `src/panel/keyboard-shortcuts.ts`; `initSplitter` extracted to `src/panel/splitter.ts`
+- Replaced all `any` type assertions with precise types: `_categorized` field added to `ParsedRequest`, `Window._getHeavyData` declared via `declare global`, Chrome API callbacks typed with `unknown` + type guards
+- `dlGroupBySource` added to `AppConfig` (default `false`)
+
 ## [1.5.6] - 2025-07-17
 
 ### Added

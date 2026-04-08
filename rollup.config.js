@@ -2,9 +2,11 @@ import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
 import typescript from '@rollup/plugin-typescript';
 import alias from '@rollup/plugin-alias';
+import { visualizer } from 'rollup-plugin-visualizer';
 import path from 'path';
 
 const isProduction = process.env.NODE_ENV === 'production';
+const isAnalyze = process.env.ANALYZE === 'true';
 
 const aliases = alias({
   entries: [{ find: '@', replacement: path.resolve('src') }]
@@ -26,7 +28,10 @@ export default [
   {
     input: 'src/panel/index.ts',
     output: { file: 'dist/panel.js', format: 'iife', name: 'RequestTrackerPanel', sourcemap: !isProduction },
-    plugins,
+    plugins: [
+      ...plugins,
+      isAnalyze && visualizer({ filename: 'dist/stats.html', open: true, gzipSize: true }),
+    ].filter(Boolean),
   },
   {
     input: 'src/popup/index.ts',

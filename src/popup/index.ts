@@ -66,9 +66,7 @@ function renderStats(stats: PopupStatsResponse): void {
   $btnPause.title = paused ? 'Resume recording' : 'Pause recording';
 
   // Providers
-  const providers: ProviderStats[] = showAllProviders
-    ? stats.providers
-    : stats.topProviders;
+  const providers: ProviderStats[] = showAllProviders ? stats.providers : stats.topProviders;
 
   if (providers.length === 0) {
     $providersEmpty.classList.remove('hidden');
@@ -78,7 +76,7 @@ function renderStats(stats: PopupStatsResponse): void {
     $providersEmpty.classList.add('hidden');
     $providersList.classList.remove('hidden');
     $providersList.innerHTML = '';
-    providers.forEach(p => $providersList.appendChild(renderProviderPill(p)));
+    providers.forEach((p) => $providersList.appendChild(renderProviderPill(p)));
 
     if (!showAllProviders && stats.otherProvidersCount > 0) {
       $othersCount.textContent = String(stats.otherProvidersCount);
@@ -164,7 +162,6 @@ $btnClear.addEventListener('click', async () => {
     // ignore
   }
 });
-
 
 $btnShowAll.addEventListener('click', () => {
   showAllProviders = true;

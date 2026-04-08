@@ -19,9 +19,11 @@ export const indicative: Provider = {
         uniqueId = body.uniqueId as string | undefined;
         apiKey = body.apiKey as string | undefined;
       }
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
     return {
-      'Event': eventName,
+      Event: eventName,
       'User ID': uniqueId,
       'API Key': apiKey || p.apiKey,
     };

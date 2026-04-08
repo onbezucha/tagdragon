@@ -9,11 +9,11 @@ export const parsely: Provider = {
   parseParams(url: string, postBody: unknown): Record<string, string | undefined> {
     const p = getParams(url, postBody);
     return {
-      'URL': p.url,
-      'Referrer': p.urlref,
-      'Action': p.action,
+      URL: p.url,
+      Referrer: p.urlref,
+      Action: p.action,
       'Site ID': p.id,
-      'Timestamp': p.ts,
+      Timestamp: p.ts,
     };
   },
 } as const;

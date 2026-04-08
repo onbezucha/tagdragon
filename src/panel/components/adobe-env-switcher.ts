@@ -47,13 +47,18 @@ function parseAdobeLibraryUrl(url: string): Omit<AdobeDetected, 'url' | 'hostnam
 
 function detectAdobeLibrary(): Promise<AdobeDetected | null> {
   return new Promise((resolve) => {
-    chrome.devtools.inspectedWindow.eval(DETECT_ADOBE_SCRIPT, (result?: any) => {
-      if (!result) { resolve(null); return; }
+    chrome.devtools.inspectedWindow.eval(DETECT_ADOBE_SCRIPT, (result: unknown) => {
+      if (!result) {
+        resolve(null);
+        return;
+      }
       try {
-        const data = JSON.parse(result);
+        const data = JSON.parse(result as string);
         const parsed = parseAdobeLibraryUrl(data.url);
         resolve({ ...data, ...parsed });
-      } catch { resolve(null); }
+      } catch {
+        resolve(null);
+      }
     });
   });
 }
@@ -64,7 +69,9 @@ async function loadEnvConfig(hostname: string): Promise<AdobeEnvConfig | null> {
   try {
     const stored = await chrome.storage.local.get('rt_adobe_env');
     return (stored.rt_adobe_env as AdobeEnvStorage)?.[hostname] || null;
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
 async function saveEnvConfig(hostname: string, envConfig: AdobeEnvConfig): Promise<void> {
@@ -93,7 +100,7 @@ function updateEnvBadge(env: string, isWarning: boolean): void {
   const $envBadge = DOM.envBadge!;
   const $envSeparator = DOM.envSeparator;
   if (!$envBadge) return;
-  
+
   $envBadge.classList.remove('hidden');
   if ($envSeparator) $envSeparator.style.display = '';
 
@@ -127,7 +134,7 @@ function updateApplyButton(): void {
   const $envUrlDev = DOM.envUrlDev as HTMLInputElement;
   const $envUrlAcc = DOM.envUrlAcc as HTMLInputElement;
   if (!$envApply) return;
-  
+
   const sel = adobeEnvState.selectedEnv;
 
   if (sel === 'prod') {
@@ -152,9 +159,7 @@ function renderEnvPopover(): void {
   const $envUrlProd = DOM.envUrlProd as HTMLInputElement;
 
   if ($envDetectedUrl) {
-    $envDetectedUrl.textContent = det.url.length > 60
-      ? '\u2026' + det.url.slice(-55)
-      : det.url;
+    $envDetectedUrl.textContent = det.url.length > 60 ? '\u2026' + det.url.slice(-55) : det.url;
     ($envDetectedUrl as HTMLElement).title = det.url;
   }
   if ($envDetectedType) $envDetectedType.textContent = det.type;
@@ -171,7 +176,7 @@ function renderEnvPopover(): void {
 
   const activeEnv = cfg?.active || 'prod';
   adobeEnvState.selectedEnv = activeEnv;
-  qsa('.env-select-btn').forEach(btn => {
+  qsa('.env-select-btn').forEach((btn) => {
     btn.classList.toggle('active', (btn as HTMLElement).dataset.env === activeEnv);
   });
 
@@ -196,9 +201,12 @@ function clearAdobeRedirect(): Promise<void> {
 
 function getAdobeRedirect(): Promise<{ id: number } | null> {
   return new Promise((resolve) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    chrome.runtime.sendMessage({ type: 'GET_ADOBE_REDIRECT' }, (resp: any) => {
-      resolve(resp?.rule ?? null);
+    chrome.runtime.sendMessage({ type: 'GET_ADOBE_REDIRECT' }, (resp: unknown) => {
+      const rule =
+        resp && typeof resp === 'object' && 'rule' in resp
+          ? (resp as { rule: { id: number } | null }).rule
+          : null;
+      resolve(rule);
     });
   });
 }
@@ -267,16 +275,16 @@ function setupEnvEventListeners(): void {
   }
 
   // Environment select buttons
-  qsa('.env-select-btn').forEach(btn => {
+  qsa('.env-select-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
       adobeEnvState.selectedEnv = (btn as HTMLElement).dataset.env!;
-      qsa('.env-select-btn').forEach(b => b.classList.toggle('active', b === btn));
+      qsa('.env-select-btn').forEach((b) => b.classList.toggle('active', b === btn));
       updateApplyButton();
     });
   });
 
   // Input change → validate
-  [$envUrlDev, $envUrlAcc].forEach(input => {
+  [$envUrlDev, $envUrlAcc].forEach((input) => {
     if (input) input.addEventListener('input', () => updateApplyButton());
   });
 
@@ -326,7 +334,9 @@ function setupEnvEventListeners(): void {
 
       if ($envUrlDev) $envUrlDev.value = '';
       if ($envUrlAcc) $envUrlAcc.value = '';
-      qsa('.env-select-btn').forEach(b => b.classList.toggle('active', (b as HTMLElement).dataset.env === 'prod'));
+      qsa('.env-select-btn').forEach((b) =>
+        b.classList.toggle('active', (b as HTMLElement).dataset.env === 'prod')
+      );
       updateEnvBadge('prod', false);
 
       void switchAdobeEnv(originalUrl, null);
@@ -336,7 +346,11 @@ function setupEnvEventListeners(): void {
 
   // Close popover on outside click
   document.addEventListener('click', (e: MouseEvent) => {
-    if ($envPopover && !$envPopover.contains(e.target as Node) && !(e.target as HTMLElement).closest('#adobe-env-badge')) {
+    if (
+      $envPopover &&
+      !$envPopover.contains(e.target as Node) &&
+      !(e.target as HTMLElement).closest('#adobe-env-badge')
+    ) {
       $envPopover.classList.remove('visible');
     }
   });

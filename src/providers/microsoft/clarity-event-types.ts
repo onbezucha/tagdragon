@@ -70,7 +70,7 @@ export const CLARITY_EVENT_PRIORITY: number[] = [
   24, // Custom — most important for marketers
   39, // Submit (form submit)
   27, // Input change
-  9,  // Click
+  9, // Click
   16, // DoubleClick
   23, // Page
   29, // Navigation

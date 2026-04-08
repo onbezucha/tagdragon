@@ -16,12 +16,15 @@ const tabId = chrome.devtools.inspectedWindow.tabId;
 let isPaused = false;
 
 // Load initial pause state from session storage (in case popup was paused before DevTools opened)
-chrome.storage.session.get('popup_stats').then((result) => {
-  const allStats = result['popup_stats'] ?? {};
-  if (allStats[tabId]?.isPaused === true) {
-    isPaused = true;
-  }
-}).catch(() => {});
+chrome.storage.session
+  .get('popup_stats')
+  .then((result) => {
+    const allStats = result['popup_stats'] ?? {};
+    if (allStats[tabId]?.isPaused === true) {
+      isPaused = true;
+    }
+  })
+  .catch(() => {});
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
 
@@ -83,9 +86,7 @@ function processRequest(req: chrome.devtools.network.Request): void {
     });
 
     const size =
-      req.response.bodySize > 0
-        ? req.response.bodySize
-        : req.response.content?.size || 0;
+      req.response.bodySize > 0 ? req.response.bodySize : req.response.content?.size || 0;
 
     const parsedRequest: ParsedRequest = {
       id,
@@ -115,17 +116,19 @@ function processRequest(req: chrome.devtools.network.Request): void {
     // Notify background to update popup stats and badge.
     // Fix: stats aggregation and badge update happen in background context
     // (only background can call chrome.action.setBadgeText).
-    chrome.runtime.sendMessage({
-      type: 'UPDATE_POPUP_STATS',
-      tabId,
-      provider: provider.name,
-      color: provider.color,
-      size,
-      status: req.response.status,
-      duration: Math.round(req.time),
-    }).catch(() => {
-      // Background may not be ready, ignore
-    });
+    chrome.runtime
+      .sendMessage({
+        type: 'UPDATE_POPUP_STATS',
+        tabId,
+        provider: provider.name,
+        color: provider.color,
+        size,
+        status: req.response.status,
+        duration: Math.round(req.time),
+      })
+      .catch(() => {
+        // Background may not be ready, ignore
+      });
   });
 }
 

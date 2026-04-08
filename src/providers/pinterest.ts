@@ -18,7 +18,9 @@ export const pinterestPixel: Provider = {
         const ed = JSON.parse(p['ed']) as Record<string, unknown>;
         edValue = ed['value'] != null ? String(ed['value']) : undefined;
         edCurrency = ed['currency'] != null ? String(ed['currency']) : undefined;
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     }
 
     // 'pd' — page/pixel data JSON (np, gtm_version)
@@ -29,7 +31,9 @@ export const pinterestPixel: Provider = {
         const pd = JSON.parse(p['pd']) as Record<string, unknown>;
         np = pd['np'] != null ? String(pd['np']) : undefined;
         gtmVersion = pd['gtm_version'] != null ? String(pd['gtm_version']) : undefined;
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     }
 
     // 'ad' — additional data JSON (page URL, device info)
@@ -48,7 +52,9 @@ export const pinterestPixel: Provider = {
         if (sw && sh) screenRes = `${sw}x${sh}`;
         platform = ad['platform'] != null ? String(ad['platform']) : undefined;
         isEu = ad['is_eu'] != null ? String(ad['is_eu']) : undefined;
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     }
 
     // 'dep' — dedup info: "2,PAGE_LOAD" → extract label
@@ -56,24 +62,24 @@ export const pinterestPixel: Provider = {
 
     return {
       // Event
-      'Event': p['event'],
+      Event: p['event'],
       'Event Type': depType,
       // Pixel Info
       'Tag ID': p['tid'],
       'Network Provider': np,
       'GTM Version': gtmVersion,
       // Page
-      'URL': loc,
-      'Referrer': ref,
+      URL: loc,
+      Referrer: ref,
       // Ecommerce
-      'Value': edValue,
-      'Currency': edCurrency,
+      Value: edValue,
+      Currency: edCurrency,
       // Device
       'Screen Resolution': screenRes,
-      'Platform': platform,
+      Platform: platform,
       'Is EU': isEu,
       // Technical
-      'Timestamp': p['cb'],
+      Timestamp: p['cb'],
     };
   },
 } as const;

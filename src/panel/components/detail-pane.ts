@@ -18,9 +18,13 @@ import {
   getConfig,
   getAllRequests,
 } from '../state';
-import { findTriggeringPush, renderTriggeredBy, hideTriggeredByBanner } from '../datalayer/utils/reverse-correlation';
+import {
+  findTriggeringPush,
+  renderTriggeredBy,
+  hideTriggeredByBanner,
+} from '../datalayer/utils/reverse-correlation';
 import { getAllDlPushes } from '../datalayer/state';
-import { buildGroupIcon } from '../utils/provider-icon';
+import { buildGroupIcon } from '../utils/icon-builder';
 
 // ─── TAB CONTENT CACHE ───────────────────────────────────────────────────────
 // LRU-like cache: requestId → tabName → rendered HTML (max 10 entries)
@@ -51,13 +55,13 @@ export function clearTabCache(): void {
  * @param row The clicked row element
  */
 export function selectRequest(data: ParsedRequest, row: HTMLElement): void {
-  qsa('.req-row.active').forEach(r => r.classList.remove('active'));
+  qsa('.req-row.active').forEach((r) => r.classList.remove('active'));
   row.classList.add('active');
   setSelectedId(String(data.id));
 
   // Lazy categorization – compute only when user actually views the request
-  if (!('categorized' in data)) {
-    (data as any).categorized = categorizeParams(data.decoded, data.provider);
+  if (!data._categorized) {
+    data._categorized = categorizeParams(data.decoded, data.provider);
   }
 
   const $detail = DOM.detail;
@@ -122,7 +126,12 @@ export function selectRequest(data: ParsedRequest, row: HTMLElement): void {
 
   // Time
   if (DOM.summaryTime) {
-    DOM.summaryTime.textContent = formatTimestamp(data.timestamp, cfg.timestampFormat, sessionStart, true);
+    DOM.summaryTime.textContent = formatTimestamp(
+      data.timestamp,
+      cfg.timestampFormat,
+      sessionStart,
+      true
+    );
   }
 
   // URL
@@ -173,13 +182,17 @@ export function selectRequest(data: ParsedRequest, row: HTMLElement): void {
  */
 export function getAvailableTabs(data: ParsedRequest): TabName[] {
   const tabs: TabName[] = [];
-  if (Object.keys((data as any).categorized || {}).length > 0) tabs.push('decoded');
+  if (Object.keys(data._categorized || {}).length > 0) tabs.push('decoded');
   if (Object.keys(data.allParams || {}).length > 0) tabs.push('query');
   if (data.postBody) tabs.push('post');
   // Use flags for lazy-loaded data
-  if (data._hasRequestHeaders || data._hasResponseHeaders || 
-      Object.keys(data.requestHeaders || {}).length > 0 || 
-      Object.keys(data.responseHeaders || {}).length > 0) tabs.push('headers');
+  if (
+    data._hasRequestHeaders ||
+    data._hasResponseHeaders ||
+    Object.keys(data.requestHeaders || {}).length > 0 ||
+    Object.keys(data.responseHeaders || {}).length > 0
+  )
+    tabs.push('headers');
   if (data._hasResponseBody || data.responseBody) tabs.push('response');
   return tabs;
 }
@@ -190,7 +203,7 @@ export function getAvailableTabs(data: ParsedRequest): TabName[] {
  */
 export function updateTabStates(availableTabs: TabName[]): void {
   const currentTab = getActiveTab();
-  qsa('.dtab').forEach(tab => {
+  qsa('.dtab').forEach((tab) => {
     const tabName = (tab as HTMLElement).dataset.tab as TabName;
     const isAvailable = availableTabs.includes(tabName);
     tab.classList.toggle('disabled', !isAvailable);
@@ -208,18 +221,24 @@ export function renderTab(tab: TabName, data: ParsedRequest): void {
   if (!$detailContent) return;
   const id = String(data.id);
 
-  switch(tab) {
+  switch (tab) {
     case 'decoded': {
       const cached = getCached(id, 'decoded');
-      if (cached !== undefined) { $detailContent.innerHTML = cached; break; }
-      const html = renderCategorizedParams((data as any).categorized, data);
+      if (cached !== undefined) {
+        $detailContent.innerHTML = cached;
+        break;
+      }
+      const html = renderCategorizedParams(data._categorized ?? {}, data);
       $detailContent.innerHTML = html;
       setCache(id, 'decoded', html);
       break;
     }
     case 'query': {
       const cached = getCached(id, 'query');
-      if (cached !== undefined) { $detailContent.innerHTML = cached; break; }
+      if (cached !== undefined) {
+        $detailContent.innerHTML = cached;
+        break;
+      }
       const html = renderParamTable(data.allParams);
       $detailContent.innerHTML = html;
       setCache(id, 'query', html);
@@ -227,16 +246,26 @@ export function renderTab(tab: TabName, data: ParsedRequest): void {
     }
     case 'post': {
       const cached = getCached(id, 'post');
-      if (cached !== undefined) { $detailContent.innerHTML = cached; break; }
+      if (cached !== undefined) {
+        $detailContent.innerHTML = cached;
+        break;
+      }
       renderPostTab(data, $detailContent);
       setCache(id, 'post', $detailContent.innerHTML);
       break;
     }
     case 'headers': {
       const cached = getCached(id, 'headers');
-      if (cached !== undefined) { $detailContent.innerHTML = cached; break; }
+      if (cached !== undefined) {
+        $detailContent.innerHTML = cached;
+        break;
+      }
       // Lazy load headers if not yet loaded
-      if (!data.requestHeaders && !data.responseHeaders && (data._hasRequestHeaders || data._hasResponseHeaders)) {
+      if (
+        !data.requestHeaders &&
+        !data.responseHeaders &&
+        (data._hasRequestHeaders || data._hasResponseHeaders)
+      ) {
         loadHeavyData(data);
       }
       const html = renderHeadersTab(data);
@@ -260,16 +289,16 @@ export function renderTab(tab: TabName, data: ParsedRequest): void {
 export function initTabHandlers(): void {
   const $detailTabs = DOM.detailTabs;
   if (!$detailTabs) return;
-  
+
   $detailTabs.addEventListener('click', (e: MouseEvent) => {
     const btn = (e.target as HTMLElement).closest('.dtab') as HTMLElement;
     if (!btn || btn.classList.contains('disabled')) return;
-    
-    qsa('.dtab').forEach(t => t.classList.remove('active'));
+
+    qsa('.dtab').forEach((t) => t.classList.remove('active'));
     btn.classList.add('active');
     const tabName = btn.dataset.tab as TabName;
     setActiveTab(tabName);
-    
+
     const selectedId = getSelectedId();
     const req = selectedId ? getRequestMap().get(selectedId) : null;
     if (req) renderTab(tabName, req);
@@ -297,7 +326,7 @@ function autoExpandSections(): void {
  */
 export function closeDetailPane(): void {
   DOM.detail?.classList.add('hidden');
-  qsa('.req-row.active').forEach(r => r.classList.remove('active'));
+  qsa('.req-row.active').forEach((r) => r.classList.remove('active'));
   setSelectedId(null);
   if (DOM.triggeredByBanner) hideTriggeredByBanner(DOM.triggeredByBanner);
 }

@@ -4,7 +4,7 @@ Instructions for AI coding agents working in this repository.
 
 ## Project Overview
 
-**TagDragon v1.5.6** — Chrome DevTools extension (Manifest V3) for capturing and decoding marketing/analytics tracking requests. Built with TypeScript, Rollup (JS bundler) and Tailwind CSS.
+**TagDragon v1.6.0** — Chrome DevTools extension (Manifest V3) for capturing and decoding marketing/analytics tracking requests. Built with TypeScript, Rollup (JS bundler) and Tailwind CSS.
 
 ## Build Commands
 
@@ -24,9 +24,16 @@ npm run build:css        # Tailwind CSS minified build
 npm run build:js         # Rollup minified build
 ```
 
-### Testing
+### Code Quality
 
-**No test framework configured.** This project has no lint or test commands.
+```bash
+npm run lint         # ESLint — TypeScript rules, no explicit any, prefer-const
+npm run format       # Prettier — auto-format all src/ files
+npm run format:check # Prettier — check only (used in CI)
+npm run analyze      # Build with bundle visualizer → dist/stats.html
+```
+
+No test framework is configured. All testing is manual.
 
 ### After Code Changes
 
@@ -193,7 +200,7 @@ Providers are defined as objects with `name`, `color`, `pattern` (RegExp), and `
 - `validationErrors` / `validationRules` — rule-based push validation state
 - `correlationWindowMs` / `correlationLookbackMs` — configurable correlation time windows
 - `dlSortField` / `dlSortOrder` — sort state (persisted via AppConfig)
-- `dlGroupBySource` — group push list by source flag
+- `dlGroupBySource` — group push list by source flag (persisted via AppConfig)
 - `sharedCumulativeState` — single mutable cumulative state with `structuredClone` snapshots
 - `MAX_DL_PUSHES = 1000` — auto-prune threshold (prunes to 75%)
 
@@ -216,6 +223,7 @@ const DEFAULT_CONFIG: AppConfig = {
   exportFormat: 'json',        // 'json' | 'csv'
   dlSortField: 'time',         // DataLayer sort field: 'time' | 'keycount' | 'source'
   dlSortOrder: 'asc',          // DataLayer sort order: 'asc' | 'desc'
+  dlGroupBySource: false,      // Group DataLayer push list by source
 };
 ```
 
@@ -255,7 +263,7 @@ Hidden providers are persisted in `AppConfig.hiddenProviders` (restored on load 
 - Template cloning for row rendering
 - Pre-computed search indexes (`_searchIndex`)
 - Lazy loading for heavy data (response bodies, headers)
-- Cached SVG icon fragments (`getCachedIcon()` in `src/panel/utils/provider-icon.ts`)
+- Cached SVG icon fragments (`getCachedIcon()` in `src/panel/utils/icon-builder.ts`)
 
 ### Keyboard Shortcuts
 
@@ -283,7 +291,9 @@ Hidden providers are persisted in `AppConfig.hiddenProviders` (restored on load 
 
 | File | Purpose |
 |------|---------|
-| `src/panel/index.ts` | Panel controller — toolbar handlers, request rendering, popover logic |
+| `src/panel/index.ts` | Panel controller — toolbar handlers, request rendering, popover logic, DataLayer handlers |
+| `src/panel/keyboard-shortcuts.ts` | Keyboard shortcut handlers — extracted from panel/index.ts; accepts `KeyboardContext` |
+| `src/panel/splitter.ts` | Resizable list/detail splitter drag logic — extracted from panel/index.ts |
 | `src/panel/theme.ts` | Dark/light theme management with CSS custom properties |
 | `src/panel/state.ts` | Single source of truth — request state, filter state, AppConfig persistence |
 | `src/panel/components/provider-bar.ts` | Provider filter popover — pills, groups, toggle, counts, filter bar visibility |
@@ -307,8 +317,8 @@ Hidden providers are persisted in `AppConfig.hiddenProviders` (restored on load 
 | `src/panel/utils/persistence.ts` | Panel setting persistence (chrome.storage.local + localStorage fallback) |
 | `src/panel/utils/platform.ts` | Platform detection — `isMac` constant for Mac keyboard shortcuts |
 | `src/panel/utils/group-icons.ts` | Inline SVG icons for provider groups (analytics, tagmanager, marketing, etc.) |
-| `src/panel/utils/provider-icons.ts` | Brand SVG icons for individual providers (GA4, GTM, Meta Pixel, etc.) |
-| `src/panel/utils/provider-icon.ts` | Provider icon cache — `buildGroupIcon()` and `getCachedIcon()` for fast SVG rendering |
+| `src/panel/utils/icon-registry.ts` | Brand SVG icons for individual providers (GA4, GTM, Meta Pixel, etc.) |
+| `src/panel/utils/icon-builder.ts` | Provider icon cache — `buildGroupIcon()` and `getCachedIcon()` for fast SVG rendering |
 | `src/panel/utils/tooltip.ts` | Shared tooltip system — event delegation, data-tooltip attributes |
 | `src/devtools/index.ts` | DevTools page — registers panel, sets up network capture |
 | `src/devtools/network-capture.ts` | HAR network request capture — provider matching, POST body parsing, request building |

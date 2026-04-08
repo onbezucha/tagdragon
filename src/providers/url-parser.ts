@@ -15,7 +15,7 @@ type ParamRecord = Record<string, ParamValue>;
 function postBodyToString(postBody: unknown): string {
   if (!postBody) return '';
   if (typeof postBody === 'string') return postBody;
-  
+
   // Came as an object from parsePostBody — convert back to URLencoded string
   // so getParams can read parameters correctly
   if (typeof postBody === 'object' && !('text' in postBody) && !('raw' in postBody)) {
@@ -23,11 +23,11 @@ function postBodyToString(postBody: unknown): string {
       .map(([k, v]) => encodeURIComponent(k) + '=' + encodeURIComponent(String(v)))
       .join('&');
   }
-  
+
   // HAR format: {text: "...", mimeType: "..."}
   const har = postBody as HARPostBody;
   if (har.text) return har.text;
-  
+
   // HAR raw bytes
   if (har.raw && har.raw[0]?.bytes) {
     try {
@@ -36,7 +36,7 @@ function postBodyToString(postBody: unknown): string {
       return '';
     }
   }
-  
+
   return '';
 }
 
@@ -70,7 +70,7 @@ export function getParams(url: string, postBody?: unknown): ParamRecord {
     } catch {
       // Not JSON, continue
     }
-    
+
     // URLencoded (AppMeasurement, classic AA implementations)
     // v1=value&v2=other&pageName=Home&events=purchase
     try {

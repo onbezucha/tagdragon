@@ -19,7 +19,7 @@ export const adobeAA: Provider = {
 
     // Hit type: pe=lnk_o (custom link), pe=lnk_d (download), pe=lnk_e (exit), otherwise pageview
     const hitType = p.pe
-      ? ({ lnk_o: 'Custom link', lnk_d: 'Download link', lnk_e: 'Exit link' }[p.pe] || p.pe)
+      ? { lnk_o: 'Custom link', lnk_d: 'Download link', lnk_e: 'Exit link' }[p.pe] || p.pe
       : 'Page view';
 
     // Context data: keys starting with "c." in query string
@@ -44,19 +44,19 @@ export const adobeAA: Provider = {
       'Report suite': rsid,
       'Page name': p.pageName || p.gn,
       'Page URL': p.g,
-      'Referrer': p.r,
+      Referrer: p.r,
       'Visitor ID': p.mid || p.aid || p.fid,
-      'Events': p.events || p.ev,
-      'Products': p.products || p.pl,
-      'Campaign': p.v0, // campaign variable = eVar0 internally
-      'Channel': p.ch,
-      'Server': p.server,
+      Events: p.events || p.ev,
+      Products: p.products || p.pl,
+      Campaign: p.v0, // campaign variable = eVar0 internally
+      Channel: p.ch,
+      Server: p.server,
       'Link name': p.pev2,
       'Link URL': p.pev1,
-      'Resolution': p.s,
+      Resolution: p.s,
       'Color depth': p.c,
       'JavaScript ver': p.j,
-      'AppMeasurement': p.ndh === '1' ? 'Yes' : undefined,
+      AppMeasurement: p.ndh === '1' ? 'Yes' : undefined,
       ...eVars,
       ...props,
       ...(Object.keys(contextData).length ? { 'Context data': JSON.stringify(contextData) } : {}),

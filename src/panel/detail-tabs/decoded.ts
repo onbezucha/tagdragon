@@ -19,7 +19,7 @@ export function renderCategorizedParams(
 
   // Sort by order
   const sortedEntries = Object.entries(categorized).sort(
-    ([, a], [, b]) => ((a._meta?.order) ?? 999) - ((b._meta?.order) ?? 999)
+    ([, a], [, b]) => (a._meta?.order ?? 999) - (b._meta?.order ?? 999)
   );
 
   let html = '';
@@ -167,11 +167,7 @@ function renderCategoryParams(
 /**
  * Render a normal parameter row.
  */
-function renderNormalParam(
-  key: string,
-  value: unknown,
-  categoryMeta?: CategoryMeta
-): string {
+function renderNormalParam(key: string, value: unknown, categoryMeta?: CategoryMeta): string {
   const validation = validateValue(key, value, categoryMeta);
   const valueStr = String(value ?? '');
 

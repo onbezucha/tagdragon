@@ -2,7 +2,7 @@
 // Shared utilities for building and caching provider/group SVG icons.
 // Avoids re-parsing the same SVG string for every row in the request list.
 
-import { PROVIDER_ICONS } from './provider-icons';
+import { PROVIDER_ICONS } from './icon-registry';
 import { GROUP_ICONS } from './group-icons';
 import { getProviderGroup } from '@/shared/provider-groups';
 

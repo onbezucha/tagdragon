@@ -9,12 +9,12 @@ export const snapchatPixel: Provider = {
   parseParams(url: string, postBody: unknown): Record<string, string | undefined> {
     const p = getParams(url, postBody);
     return {
-      'Event': p.event_type,
+      Event: p.event_type,
       'Pixel ID': p.pixel_id,
       'Page URL': p.page_url,
-      'Price': p.price,
-      'Currency': p.currency,
-      'Email': p.user_email,
+      Price: p.price,
+      Currency: p.currency,
+      Email: p.user_email,
     };
   },
 } as const;

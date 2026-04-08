@@ -9,10 +9,10 @@ export const amazonAds: Provider = {
   parseParams(url: string, postBody: unknown): Record<string, string | undefined> {
     const p = getParams(url, postBody);
     return {
-      'Event': p.o,
+      Event: p.o,
       'Page Type': p.pt,
-      'Slot': p.slot,
-      'Ref': p.ref_,
+      Slot: p.slot,
+      Ref: p.ref_,
       'Ad ID': p.adId,
     };
   },

@@ -14,8 +14,8 @@ export const optimizely: Provider = {
       'Project ID': p.projectId,
       'Experiment ID': p.experimentId,
       'Variation ID': p.variationId,
-      'Event': p.eventName,
-      'Revenue': p.revenue,
+      Event: p.eventName,
+      Revenue: p.revenue,
     };
   },
 } as const;

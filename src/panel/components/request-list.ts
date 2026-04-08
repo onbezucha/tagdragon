@@ -11,7 +11,7 @@ import {
   getConfig,
   getAllRequests,
 } from '../state';
-import { getCachedIcon } from '../utils/provider-icon';
+import { getCachedIcon } from '../utils/icon-builder';
 
 export type SelectCallback = (data: ParsedRequest, row: HTMLElement) => void;
 
@@ -45,7 +45,7 @@ export function createRequestRow(
   data: ParsedRequest,
   isVisible: boolean,
   cfg?: Readonly<AppConfig>,
-  sessionStart?: string,
+  sessionStart?: string
 ): HTMLElement {
   const row = rowTemplate.content.firstElementChild?.cloneNode(true) as HTMLElement;
   row.dataset.id = String(data.id);
@@ -129,15 +129,16 @@ export function updateRowVisibility(): void {
   const filteredIds = getFilteredIds();
   const hiddenProviders = getHiddenProviders();
   const requestMap = getRequestMap();
-  
+
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i] as HTMLElement;
     if (row === $empty || !row.dataset?.id) continue;
-    
+
     const id = row.dataset.id!;
     const shouldBeVisible = filteredIds.has(id);
-    const isCurrentlyHidden = row.classList.contains('filtered-out') || row.classList.contains('provider-hidden');
-    
+    const isCurrentlyHidden =
+      row.classList.contains('filtered-out') || row.classList.contains('provider-hidden');
+
     if (shouldBeVisible && isCurrentlyHidden) {
       row.classList.remove('filtered-out', 'provider-hidden');
     } else if (!shouldBeVisible) {
@@ -164,12 +165,14 @@ export function updateRowVisibility(): void {
  * @param selectCallback Callback to select request
  */
 export function navigateList(direction: 1 | -1, selectCallback: SelectCallback): void {
-  const rows = Array.from(document.querySelectorAll('.req-row:not(.filtered-out):not(.provider-hidden)'));
+  const rows = Array.from(
+    document.querySelectorAll('.req-row:not(.filtered-out):not(.provider-hidden)')
+  );
   if (rows.length === 0) return;
-  
-  const currentIdx = rows.findIndex(r => r.classList.contains('active'));
+
+  const currentIdx = rows.findIndex((r) => r.classList.contains('active'));
   let nextIdx: number;
-  
+
   if (currentIdx === -1) {
     nextIdx = direction > 0 ? 0 : rows.length - 1;
   } else {
@@ -177,7 +180,7 @@ export function navigateList(direction: 1 | -1, selectCallback: SelectCallback):
     if (nextIdx < 0) nextIdx = 0;
     if (nextIdx >= rows.length) nextIdx = rows.length - 1;
   }
-  
+
   const nextRow = rows[nextIdx] as HTMLElement;
   const data = getRequestMap().get(nextRow.dataset.id!);
   if (data) selectCallback(data, nextRow);
@@ -189,7 +192,9 @@ export function navigateList(direction: 1 | -1, selectCallback: SelectCallback):
  * @param selectCallback Callback to select request
  */
 export function navigateToEdge(edge: 'first' | 'last', selectCallback: SelectCallback): void {
-  const rows = Array.from(document.querySelectorAll('.req-row:not(.filtered-out):not(.provider-hidden)'));
+  const rows = Array.from(
+    document.querySelectorAll('.req-row:not(.filtered-out):not(.provider-hidden)')
+  );
   if (rows.length === 0) return;
   const row = edge === 'first' ? rows[0] : rows[rows.length - 1];
   const data = getRequestMap().get((row as HTMLElement).dataset.id!);
