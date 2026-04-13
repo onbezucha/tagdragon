@@ -189,19 +189,26 @@ function renderEnvPopover(): void {
 
 function setAdobeRedirect(fromUrl: string, toUrl: string): Promise<void> {
   return new Promise((resolve) => {
-    chrome.runtime.sendMessage({ type: 'SET_ADOBE_REDIRECT', fromUrl, toUrl }, () => resolve());
+    chrome.runtime.sendMessage({ type: 'SET_ADOBE_REDIRECT', fromUrl, toUrl }, () => {
+      void chrome.runtime.lastError; // consume error to prevent unchecked error warning
+      resolve();
+    });
   });
 }
 
 function clearAdobeRedirect(): Promise<void> {
   return new Promise((resolve) => {
-    chrome.runtime.sendMessage({ type: 'CLEAR_ADOBE_REDIRECT' }, () => resolve());
+    chrome.runtime.sendMessage({ type: 'CLEAR_ADOBE_REDIRECT' }, () => {
+      void chrome.runtime.lastError;
+      resolve();
+    });
   });
 }
 
 function getAdobeRedirect(): Promise<{ id: number } | null> {
   return new Promise((resolve) => {
     chrome.runtime.sendMessage({ type: 'GET_ADOBE_REDIRECT' }, (resp: unknown) => {
+      void chrome.runtime.lastError;
       const rule =
         resp && typeof resp === 'object' && 'rule' in resp
           ? (resp as { rule: { id: number } | null }).rule

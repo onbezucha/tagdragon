@@ -67,8 +67,8 @@ function collectDiff(
     return;
   }
 
-  // Leaf value changed
-  const key = path.split('.').pop() ?? path;
+  // Leaf value changed — normalize bracket notation (e.g. "items[0]" → "items.0") before extracting key
+  const key = path.replace(/\[(\d+)\]/g, '.$1').split('.').pop() ?? path;
   entries.push({ key, path, type: 'changed', oldValue: prev, newValue: curr });
 }
 

@@ -7,7 +7,6 @@ import type { ParsedRequest } from '@/types/request';
  */
 export function formatBytes(bytes: number): string {
   if (!bytes || bytes <= 0) return '0B';
-  if (bytes < 1) return '0B';
   const k = 1024;
   const sizes = ['B', 'KB', 'MB'];
   const i = Math.min(Math.floor(Math.log(bytes) / Math.log(k)), sizes.length - 1);

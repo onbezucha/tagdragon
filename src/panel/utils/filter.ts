@@ -4,6 +4,10 @@ import type { ParsedRequest } from '@/types/request';
 import { getEventName, getHostname } from './format';
 import * as state from '@/panel/state';
 
+// Cache compiled regex objects to avoid recompilation on every matchesFilter call.
+// null = previously compiled but invalid (parse error)
+const _regexCache = new Map<string, RegExp | null>();
+
 /**
  * Check if a request matches current filters.
  */
@@ -15,16 +19,44 @@ export function matchesFilter(data: ParsedRequest): boolean {
   const filterMethod = state.getFilterMethod();
   const filterHasParam = state.getFilterHasParam();
 
-  // Text search – uses pre-built _searchIndex (no JSON.stringify!)
+  // Text search – supports /regex/flags syntax, falls back to plain text
   if (filterText) {
-    const q = filterText.toLowerCase();
-    if (data._searchIndex) {
-      if (!data._searchIndex.includes(q)) return false;
+    const isRegex =
+      filterText.length > 2 && filterText[0] === '/' && filterText.lastIndexOf('/') > 0;
+
+    if (isRegex) {
+      const lastSlash = filterText.lastIndexOf('/');
+      const pattern = filterText.slice(1, lastSlash);
+      const flags = filterText.slice(lastSlash + 1) || 'i';
+      let regex: RegExp | null;
+      if (_regexCache.has(filterText)) {
+        regex = _regexCache.get(filterText) ?? null;
+      } else {
+        try {
+          regex = new RegExp(pattern, flags);
+        } catch {
+          regex = null; // Invalid regex — plain text fallback below
+        }
+        _regexCache.set(filterText, regex);
+      }
+
+      if (regex) {
+        const haystack = data._searchIndex ?? `${data.url}\0${data.provider}`;
+        if (!regex.test(haystack)) return false;
+      } else {
+        const q = filterText.toLowerCase();
+        const haystack = data._searchIndex ?? `${data.url.toLowerCase()}\0${data.provider.toLowerCase()}`;
+        if (!haystack.includes(q)) return false;
+      }
     } else {
-      // Fallback for requests that weren't indexed (shouldn't happen, but safe)
-      const matchesText =
-        data.url.toLowerCase().includes(q) || data.provider.toLowerCase().includes(q);
-      if (!matchesText) return false;
+      const q = filterText.toLowerCase();
+      if (data._searchIndex) {
+        if (!data._searchIndex.includes(q)) return false;
+      } else {
+        const matchesText =
+          data.url.toLowerCase().includes(q) || data.provider.toLowerCase().includes(q);
+        if (!matchesText) return false;
+      }
     }
   }
 

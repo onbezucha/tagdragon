@@ -40,6 +40,7 @@
       "matches": ["<all_urls>"]
     }
   ],
+  "minimum_chrome_version": "102",
   "host_permissions": [
     "<all_urls>"
   ],

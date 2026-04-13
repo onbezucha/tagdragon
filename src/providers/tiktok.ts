@@ -1,10 +1,6 @@
 import type { Provider } from '@/types/provider';
+import type { HARPostBody } from '@/types/har';
 import { getParams } from './url-parser';
-
-interface HARPostBody {
-  text?: string;
-  raw?: Array<{ bytes?: string }>;
-}
 
 function parseHARJson(postRaw: unknown): Record<string, unknown> {
   try {

@@ -47,11 +47,9 @@ interface DOMRefs {
   readonly summaryDuration: HTMLElement | null;
   readonly summaryTime: HTMLElement | null;
   readonly summaryUrl: HTMLElement | null;
-  readonly providerPills: HTMLElement | null;
   readonly providerGroupList: HTMLElement | null;
   readonly providerSearchInput: HTMLInputElement | null;
   readonly activeFilters: HTMLElement | null;
-  readonly providerBar: HTMLElement | null;
   readonly providerPopover: HTMLElement | null;
   readonly btnProviders: HTMLElement | null;
   readonly filterBar: HTMLElement | null;
@@ -168,9 +166,6 @@ export const DOM: DOMRefs = {
   get summaryUrl() {
     return $('summary-url');
   },
-  get providerPills() {
-    return $('provider-pills');
-  },
   get providerGroupList() {
     return $('provider-group-list');
   },
@@ -179,9 +174,6 @@ export const DOM: DOMRefs = {
   },
   get activeFilters() {
     return $('active-filters');
-  },
-  get providerBar() {
-    return $('provider-bar');
   },
   get providerPopover() {
     return $('provider-popover');

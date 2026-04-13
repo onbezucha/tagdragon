@@ -20,6 +20,16 @@ export interface AppConfig {
   dlSortField: 'time' | 'keycount' | 'source';
   dlSortOrder: 'asc' | 'desc';
   dlGroupBySource: boolean;
+  savedFilters: Array<{
+    id: string;
+    name: string;
+    text: string;
+    eventType: string;
+    userId: string;
+    status: string;
+    method: string;
+    hasParam: string;
+  }>;
 }
 
 export const DEFAULT_CONFIG: AppConfig = {
@@ -38,4 +48,5 @@ export const DEFAULT_CONFIG: AppConfig = {
   dlSortField: 'time',
   dlSortOrder: 'asc',
   dlGroupBySource: false,
+  savedFilters: [],
 };

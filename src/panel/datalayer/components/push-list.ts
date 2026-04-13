@@ -77,28 +77,32 @@ export function createDlPushRow(
   const sessionStart = getAllDlPushes()[0]?.timestamp;
   const time = formatTimestamp(push.timestamp, cfg.timestampFormat, sessionStart);
 
-  const indexEl = row.querySelector('.dl-push-index') as HTMLElement;
-  indexEl.textContent = `#${push.pushIndex}`;
+  const indexEl = row.querySelector<HTMLElement>('.dl-push-index');
+  if (indexEl) indexEl.textContent = `#${push.pushIndex}`;
 
-  const badgeEl = row.querySelector('.dl-push-badge') as HTMLElement;
-  badgeEl.textContent = badge;
-  badgeEl.style.background = color + '22';
-  badgeEl.style.color = color;
-  badgeEl.style.border = `1px solid ${color}55`;
+  const badgeEl = row.querySelector<HTMLElement>('.dl-push-badge');
+  if (badgeEl) {
+    badgeEl.textContent = badge;
+    badgeEl.style.background = color + '22';
+    badgeEl.style.color = color;
+    badgeEl.style.border = `1px solid ${color}55`;
+  }
 
-  const eventEl = row.querySelector('.dl-push-event') as HTMLElement;
-  eventEl.textContent = push._eventName ?? '';
-  if (!push._eventName) eventEl.style.display = 'none';
+  const eventEl = row.querySelector<HTMLElement>('.dl-push-event');
+  if (eventEl) {
+    eventEl.textContent = push._eventName ?? '';
+    if (!push._eventName) eventEl.style.display = 'none';
+  }
 
   const keycount = Object.keys(push.data).length;
-  const keycountEl = row.querySelector('.dl-push-keycount') as HTMLElement;
-  keycountEl.textContent = `${keycount} key${keycount !== 1 ? 's' : ''}`;
+  const keycountEl = row.querySelector<HTMLElement>('.dl-push-keycount');
+  if (keycountEl) keycountEl.textContent = `${keycount} key${keycount !== 1 ? 's' : ''}`;
 
-  const timeEl = row.querySelector('.dl-push-time') as HTMLElement;
-  timeEl.textContent = time;
+  const timeEl = row.querySelector<HTMLElement>('.dl-push-time');
+  if (timeEl) timeEl.textContent = time;
 
-  const previewEl = row.querySelector('.dl-push-preview') as HTMLElement;
-  previewEl.textContent = buildPreview(push.data);
+  const previewEl = row.querySelector<HTMLElement>('.dl-push-preview');
+  if (previewEl) previewEl.textContent = buildPreview(push.data);
 
   // Ecommerce indicator
   if (push._ecommerceType) {

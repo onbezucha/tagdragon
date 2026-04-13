@@ -26,6 +26,9 @@ import {
 import { getAllDlPushes } from '../datalayer/state';
 import { buildGroupIcon } from '../utils/icon-builder';
 
+// Currently displayed request — used by copy action buttons
+let _currentRequest: ParsedRequest | null = null;
+
 // ─── TAB CONTENT CACHE ───────────────────────────────────────────────────────
 // LRU-like cache: requestId → tabName → rendered HTML (max 10 entries)
 const tabCache = new Map<string, Map<string, string>>();
@@ -55,6 +58,7 @@ export function clearTabCache(): void {
  * @param row The clicked row element
  */
 export function selectRequest(data: ParsedRequest, row: HTMLElement): void {
+  _currentRequest = data;
   qsa('.req-row.active').forEach((r) => r.classList.remove('active'));
   row.classList.add('active');
   setSelectedId(String(data.id));
@@ -329,4 +333,50 @@ export function closeDetailPane(): void {
   qsa('.req-row.active').forEach((r) => r.classList.remove('active'));
   setSelectedId(null);
   if (DOM.triggeredByBanner) hideTriggeredByBanner(DOM.triggeredByBanner);
+}
+
+/**
+ * Initialize copy action button handlers for the detail pane.
+ * Handles Copy URL, Copy as cURL, and Copy decoded params.
+ */
+export function initDetailCopyHandlers(): void {
+  document.getElementById('btn-copy-url')?.addEventListener('click', () => {
+    if (!_currentRequest) return;
+    navigator.clipboard.writeText(_currentRequest.url).catch(() => {});
+    flashCopyBtn('btn-copy-url');
+  });
+
+  document.getElementById('btn-copy-curl')?.addEventListener('click', () => {
+    if (!_currentRequest) return;
+    navigator.clipboard.writeText(buildCurl(_currentRequest)).catch(() => {});
+    flashCopyBtn('btn-copy-curl');
+  });
+
+  document.getElementById('btn-copy-params')?.addEventListener('click', () => {
+    if (!_currentRequest) return;
+    const params = { ...(_currentRequest.decoded || {}) };
+    navigator.clipboard.writeText(JSON.stringify(params, null, 2)).catch(() => {});
+    flashCopyBtn('btn-copy-params');
+  });
+}
+
+function buildCurl(data: ParsedRequest): string {
+  const escapedUrl = data.url.replace(/'/g, "'\\''");
+  let curl = `curl '${escapedUrl}'`;
+  if (data.method !== 'GET') {
+    curl += ` \\\n  -X ${data.method}`;
+  }
+  if (data.postBody && typeof data.postBody === 'string') {
+    curl += ` \\\n  --data-raw '${data.postBody.replace(/'/g, "'\\''")}'`;
+  } else if (data.postBody && typeof data.postBody === 'object') {
+    curl += ` \\\n  --data-raw '${JSON.stringify(data.postBody).replace(/'/g, "'\\''")}'`;
+  }
+  return curl;
+}
+
+function flashCopyBtn(id: string): void {
+  const btn = document.getElementById(id);
+  if (!btn) return;
+  btn.classList.add('copied');
+  setTimeout(() => btn?.classList.remove('copied'), 800);
 }

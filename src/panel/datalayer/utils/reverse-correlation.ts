@@ -134,17 +134,11 @@ export function renderTriggeredBy(
     delay.style.color = confColor;
   }
 
-  // Goto button
-  const gotoBtn = container.querySelector('.trigger-goto-btn') as HTMLElement;
-  if (gotoBtn) {
-    gotoBtn.onclick = (e: MouseEvent) => {
-      e.stopPropagation();
-      onGotoPush(result.push.id);
-    };
-  }
-
-  // Entire banner is clickable
-  container.onclick = () => {
+  // Entire banner is clickable; assign via onclick so re-renders replace rather than stack handlers.
+  container.onclick = (e: MouseEvent) => {
+    // Prevent double-fire when the goto button inside the banner is clicked
+    const btn = (e.target as HTMLElement).closest('.trigger-goto-btn');
+    if (btn) e.stopPropagation();
     onGotoPush(result.push.id);
   };
 }

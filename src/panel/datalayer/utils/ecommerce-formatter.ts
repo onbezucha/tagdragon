@@ -75,17 +75,18 @@ export function renderEcommerceTable(container: HTMLElement, ec: Record<string, 
   if (products.length === 0) return;
 
   const currency = extractCurrency(ec);
-  const currencyDisplay = currency ? ` ${currency}` : '';
+  const currencyDisplay = currency ? ` ${esc(currency)}` : '';
 
-  // Calculate total from ecommerce.value or sum of products
+  // Calculate total from ecommerce.value or sum of products.
+  // Both the value and currencyDisplay are pre-escaped — do NOT wrap in esc() again.
   let total = '';
   if (typeof ec['value'] === 'number' || typeof ec['value'] === 'string') {
-    total = `${ec['value']}${currencyDisplay}`;
+    total = `${esc(String(ec['value']))}${currencyDisplay}`;
   } else {
     const purchase = ec['purchase'] as Record<string, unknown> | undefined;
     const af = purchase?.['actionField'] as Record<string, unknown> | undefined;
     if (af && (typeof af['revenue'] === 'number' || typeof af['revenue'] === 'string')) {
-      total = `${af['revenue']}${currencyDisplay}`;
+      total = `${esc(String(af['revenue']))}${currencyDisplay}`;
     }
   }
 
@@ -116,7 +117,7 @@ export function renderEcommerceTable(container: HTMLElement, ec: Record<string, 
       <td>${esc(p.name)}</td>
       <td>${esc(p.category)}</td>
       <td>${esc(p.variant)}</td>
-      <td>${p.quantity}</td>
+      <td>${esc(String(p.quantity))}</td>
       <td class="mono">${esc(p.price)}${currencyDisplay}</td>
     `;
     tbody.appendChild(tr);
@@ -125,7 +126,7 @@ export function renderEcommerceTable(container: HTMLElement, ec: Record<string, 
 
   if (total) {
     const tfoot = document.createElement('tfoot');
-    tfoot.innerHTML = `<tr class="dl-total-row"><td colspan="6">Total</td><td class="mono">${esc(total)}</td></tr>`;
+    tfoot.innerHTML = `<tr class="dl-total-row"><td colspan="6">Total</td><td class="mono">${total}</td></tr>`;
     table.appendChild(tfoot);
   }
 

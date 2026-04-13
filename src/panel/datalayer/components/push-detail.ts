@@ -445,9 +445,11 @@ function renderCorrelationTab(
   const correlated = findCorrelatedRequests(push, allRequests, windowMs);
   renderCorrelation(container, correlated, onGotoNetwork, windowMs);
 
-  // Slider interaction
-  slider.addEventListener('input', () => {
-    const ms = Number(slider.value);
+  // Slider interaction — clone to reset any previously stacked listeners before attaching
+  const freshSlider = slider.cloneNode(true) as HTMLInputElement;
+  slider.replaceWith(freshSlider);
+  freshSlider.addEventListener('input', () => {
+    const ms = Number(freshSlider.value);
     valueDisplay.textContent = `${(ms / 1000).toFixed(1)}s`;
     setCorrelationWindow(ms);
 

@@ -353,20 +353,12 @@ function renderWatchBar(container: HTMLElement): void {
 
 function rerenderWatchBar(): void {
   const bar = document.querySelector('.dl-watch-bar');
-  if (bar) {
-    const container = bar.parentElement;
-    if (container) {
-      bar.remove();
-      const newBar = document.createElement('div');
-      // Re-render watch bar into container (first child)
-      const tempDiv = document.createElement('div');
-      renderWatchBar(tempDiv);
-      const newBarEl = tempDiv.querySelector('.dl-watch-bar');
-      if (newBarEl && container.firstChild) {
-        container.insertBefore(newBarEl, container.firstChild);
-      }
-    }
-  }
+  if (!bar) return;
+  const container = bar.parentElement;
+  if (!container) return;
+  // Remove old bar (and its listeners) then render a fresh one into the same container
+  bar.remove();
+  renderWatchBar(container);
 }
 
 // ─── TREE RENDERING ────────────────────────────────────────────────────────

@@ -1,11 +1,6 @@
 import type { Provider } from '../../types/provider';
+import type { HARPostBody } from '../../types/har';
 import { getParams } from '../url-parser';
-
-interface HARPostBody {
-  text?: string;
-  raw?: Array<{ bytes?: string }>;
-  mimeType?: string;
-}
 
 export const aepWebSDK: Provider = {
   name: 'Adobe Server-Side',

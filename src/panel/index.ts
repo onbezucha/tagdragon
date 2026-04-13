@@ -92,6 +92,12 @@ import { savePanelSetting, loadPanelSetting } from './utils/persistence';
 import { init as initTooltip } from './utils/tooltip';
 import { initSplitter } from './splitter';
 import { initKeyboardHandlers } from './keyboard-shortcuts';
+import {
+  scheduleSaveRequests,
+  loadPersistedRequests,
+  clearPersistedRequests,
+} from './utils/session-persist';
+import { initDetailCopyHandlers } from './components/detail-pane';
 import { SOURCE_DESCRIPTIONS } from '@/shared/datalayer-constants';
 import {
   createIcons,
@@ -251,6 +257,7 @@ function pruneIfNeeded(): void {
   }
   state.updateStats(visibleCount, totalSize, totalDuration);
   showPruneNotification(removeCount);
+  scheduleSaveRequests(state.getAllRequests());
 }
 
 // ─── BATCHED RENDERING ───────────────────────────────────────────────────────
@@ -361,6 +368,9 @@ function switchView(view: 'network' | 'datalayer'): void {
   if ($dlSubmenu) $dlSubmenu.classList.remove('visible');
   const $dlValPopover = document.getElementById('dl-validation-popover');
   if ($dlValPopover) $dlValPopover.classList.remove('visible');
+
+  // Close save-filter dialog (closeSaveFilterDialog() is not in scope here)
+  document.getElementById('save-filter-dialog')?.classList.remove('visible');
 }
 
 // ─── NETWORK CLEAR ───────────────────────────────────────────────────────────
@@ -402,6 +412,55 @@ function clearNetworkData(): void {
   clearTabCache();
   if (window._clearHeavyData) window._clearHeavyData();
   resetStatusBar();
+  clearPersistedRequests();
+}
+
+// ─── RESTORE PERSISTED REQUESTS ──────────────────────────────────────────────
+
+/**
+ * Restore requests persisted from a previous panel session (before reload).
+ * Re-indexes each request and renders it to the list.
+ */
+function restorePersistedRequests(): void {
+  const persisted = loadPersistedRequests();
+  if (persisted.length === 0) return;
+
+  const cfg = state.getConfig();
+  const empty = DOM.empty;
+  if (empty) empty.style.display = 'none';
+
+  const fragment = document.createDocumentFragment();
+  const sessionStart = persisted[0]?.timestamp;
+
+  // Index and build rows; for desc order, iterate in reverse so newest ends up at top
+  const iterOrder =
+    cfg.sortOrder === 'desc' ? [...persisted].reverse() : persisted;
+
+  for (const data of iterOrder) {
+    indexRequest(data, getEventName);
+    state.addRequest(data);
+
+    const isVisible = !state.isProviderHidden(data.provider) && matchesFilter(data);
+    if (isVisible) {
+      state.addFilteredId(String(data.id));
+      state.incrementStats(data.size, data.duration);
+    }
+
+    ensureProviderPill(data, doApplyFilters, doUpdateActiveFilters);
+    const row = createRequestRow(data, isVisible, cfg, sessionStart);
+    fragment.appendChild(row);
+  }
+
+  const list = DOM.list;
+  if (list) {
+    list.appendChild(fragment);
+  }
+
+  const stats = state.getStats();
+  updateStatusBar(stats.visibleCount, stats.totalSize, stats.totalDuration);
+
+  const $networkBadge = DOM.tabBadgeNetwork;
+  if ($networkBadge) $networkBadge.textContent = String(state.getAllRequests().length);
 }
 
 // ─── DATALAYER CLEAR ──────────────────────────────────────────────────────────
@@ -475,7 +534,7 @@ function createDlFilterChip(label: string, value: string, onRemove: () => void):
   const chip = document.createElement('span');
   chip.className = 'filter-chip';
   chip.innerHTML = `
-    <span class="chip-label">${label}:</span>
+    <span class="chip-label">${esc(label)}:</span>
     <span class="chip-value">${esc(value)}</span>
   `;
 
@@ -789,6 +848,7 @@ window.receiveRequest = function (data: ParsedRequest): void {
     // Index and store
     indexRequest(data, getEventName);
     state.addRequest(data);
+    scheduleSaveRequests(state.getAllRequests());
 
     // Memory budget check
     pruneIfNeeded();
@@ -810,10 +870,22 @@ window.receiveRequest = function (data: ParsedRequest): void {
   }
 };
 
+// ─── EXPORT HELPERS ──────────────────────────────────────────────────────────
+
+/**
+ * Get requests to export: filtered subset when filters are active, otherwise all.
+ */
+function getExportRequests(): ParsedRequest[] {
+  const all = state.getAllRequests();
+  const filteredIds = state.getFilteredIds();
+  if (filteredIds.size === 0 || filteredIds.size === all.length) return all;
+  return all.filter((r) => filteredIds.has(String(r.id)));
+}
+
 // ─── CSV EXPORT ──────────────────────────────────────────────────────────────
 
 function exportCsv(): void {
-  const requests = state.getAllRequests();
+  const requests = getExportRequests();
   if (requests.length === 0) return;
 
   const allKeys = new Set<string>();
@@ -937,7 +1009,7 @@ function initToolbarHandlers(): void {
     if (state.getConfig().exportFormat === 'csv') {
       exportCsv();
     } else {
-      downloadJson(state.getAllRequests(), `requests-${Date.now()}.json`);
+      downloadJson(getExportRequests(), `requests-${Date.now()}.json`);
     }
   });
 
@@ -963,6 +1035,63 @@ function initToolbarHandlers(): void {
     }
   });
 
+  // Save filter inline dialog
+  const btnSaveFilter = document.getElementById('btn-save-filter');
+  const saveFilterDialog = document.getElementById('save-filter-dialog');
+  const saveFilterNameInput = document.getElementById('save-filter-name') as HTMLInputElement | null;
+  const btnSaveFilterConfirm = document.getElementById('btn-save-filter-confirm');
+  const btnSaveFilterCancel = document.getElementById('btn-save-filter-cancel');
+
+  function closeSaveFilterDialog(): void {
+    saveFilterDialog?.classList.remove('visible');
+    if (saveFilterNameInput) saveFilterNameInput.value = '';
+  }
+
+  function commitSaveFilter(): void {
+    const name = saveFilterNameInput?.value.trim();
+    if (!name || name.length > 80) return;
+    const cfg = state.getConfig();
+    const savedFilters = [...(cfg.savedFilters ?? [])];
+    savedFilters.push({
+      id: Date.now().toString(),
+      name,
+      text: state.getFilterText(),
+      eventType: state.getFilterEventType(),
+      userId: state.getFilterUserId(),
+      status: state.getFilterStatus(),
+      method: state.getFilterMethod(),
+      hasParam: state.getFilterHasParam(),
+    });
+    state.updateConfigImmediate('savedFilters', savedFilters);
+    renderSavedFilterChips();
+    closeSaveFilterDialog();
+  }
+
+  btnSaveFilter?.addEventListener('click', (e: Event) => {
+    e.stopPropagation();
+    const hasActiveFilter =
+      state.getFilterText() ||
+      state.getFilterEventType() ||
+      state.getFilterUserId() ||
+      state.getFilterStatus() ||
+      state.getFilterMethod() ||
+      state.getFilterHasParam();
+    if (!hasActiveFilter) return;
+    saveFilterDialog?.classList.toggle('visible');
+    if (saveFilterDialog?.classList.contains('visible')) {
+      saveFilterNameInput?.focus();
+    }
+  });
+
+  btnSaveFilterConfirm?.addEventListener('click', commitSaveFilter);
+
+  btnSaveFilterCancel?.addEventListener('click', closeSaveFilterDialog);
+
+  saveFilterNameInput?.addEventListener('keydown', (e: KeyboardEvent) => {
+    if (e.key === 'Enter') commitSaveFilter();
+    if (e.key === 'Escape') closeSaveFilterDialog();
+  });
+
   // Settings popover
   btnSettings?.addEventListener('click', (e: Event) => {
     e.stopPropagation();
@@ -982,6 +1111,9 @@ function initToolbarHandlers(): void {
     }
     if (!DOM.infoPopover?.contains(target) && !target.closest('#btn-info')) {
       closeInfoPopover();
+    }
+    if (!saveFilterDialog?.contains(target) && !target.closest('#btn-save-filter')) {
+      closeSaveFilterDialog();
     }
   });
 
@@ -1005,6 +1137,66 @@ function initToolbarHandlers(): void {
     doApplyFilters();
     doUpdateActiveFilters();
     DOM.settingsPopover?.classList.remove('visible');
+  });
+}
+
+// ─── SAVED FILTER CHIPS ──────────────────────────────────────────────────────
+
+function renderSavedFilterChips(): void {
+  const $container = document.getElementById('saved-filters-chips');
+  if (!$container) return;
+
+  const savedFilters = state.getConfig().savedFilters ?? [];
+  $container.innerHTML = '';
+
+  if (savedFilters.length === 0) {
+    $container.style.display = 'none';
+    return;
+  }
+  $container.style.display = '';
+
+  savedFilters.forEach((sf) => {
+    const chip = document.createElement('button');
+    chip.className = 'saved-filter-chip';
+    chip.title = `Apply: ${sf.name}`;
+
+    const label = document.createElement('span');
+    label.textContent = sf.name;
+
+    const removeBtn = document.createElement('span');
+    removeBtn.className = 'saved-filter-chip-remove';
+    removeBtn.textContent = '×';
+    removeBtn.title = 'Remove saved filter';
+
+    chip.appendChild(label);
+    chip.appendChild(removeBtn);
+
+    // Apply filter on click
+    chip.addEventListener('click', (e: Event) => {
+      if ((e.target as HTMLElement).classList.contains('saved-filter-chip-remove')) return;
+      state.setFilterText(sf.text);
+      state.setFilterEventType(sf.eventType);
+      state.setFilterUserId(sf.userId);
+      state.setFilterStatus(sf.status);
+      state.setFilterMethod(sf.method as '' | 'GET' | 'POST');
+      state.setFilterHasParam(sf.hasParam);
+      if (DOM.filterInput) DOM.filterInput.value = sf.text;
+      const clearFilter = DOM.clearFilter;
+      if (clearFilter) clearFilter.style.display = sf.text ? 'flex' : 'none';
+      doApplyFilters();
+      doUpdateActiveFilters();
+    });
+
+    // Remove saved filter on × click
+    removeBtn.addEventListener('click', (e: Event) => {
+      e.stopPropagation();
+      const cfg = state.getConfig();
+      const updated = (cfg.savedFilters ?? []).filter((f) => f.id !== sf.id);
+      state.updateConfigImmediate('savedFilters', updated);
+      renderSavedFilterChips();
+    });
+
+    $container.appendChild(chip);
   });
 }
 
@@ -1477,7 +1669,19 @@ async function initDatalayerHandlers(): Promise<void> {
 
     $content.querySelectorAll('.filter-submenu-item').forEach((item) => {
       item.addEventListener('click', () => {
-        const src = (item as HTMLElement).dataset['source'] as DataLayerSource | '';
+        const rawSrc = (item as HTMLElement).dataset['source'] ?? '';
+        const validSources: (DataLayerSource | '')[] = [
+          '',
+          'gtm',
+          'digitalData',
+          'tealium',
+          'adobe',
+          'segment',
+          'custom',
+        ];
+        const src: DataLayerSource | '' = validSources.includes(rawSrc as DataLayerSource | '')
+          ? (rawSrc as DataLayerSource | '')
+          : '';
         dlState.setDlFilterSource(src);
         dlApplyFilter();
         updateDlFilterChips();
@@ -2016,6 +2220,9 @@ async function init(): Promise<void> {
   await state.loadConfig();
   await initTheme();
 
+  // Restore requests from previous panel session (survives DevTools panel reload)
+  restorePersistedRequests();
+
   // Initialize DataLayer sort state from persisted config
   initDlSortState();
 
@@ -2029,6 +2236,7 @@ async function init(): Promise<void> {
   initProviderBar();
   initFilterPopoverHandlers(doApplyFilters, doUpdateActiveFilters);
   initToolbarHandlers();
+  renderSavedFilterChips();
   initKeyboardHandlers({
     getActiveView: () => activeView,
     doApplyFilters,
@@ -2042,6 +2250,7 @@ async function init(): Promise<void> {
   applyWrapValuesClass();
   initCategoryToggle();
   initCopyHandler();
+  initDetailCopyHandlers();
   initRequestListHandler();
   applyCompactRowsClass();
 

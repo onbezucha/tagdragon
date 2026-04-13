@@ -96,10 +96,13 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   }
 
   if (message.type === 'GET_ADOBE_REDIRECT') {
-    chrome.declarativeNetRequest.getDynamicRules().then((rules) => {
-      const rule = rules.find((r) => r.id === ADOBE_REDIRECT_RULE_ID);
-      sendResponse({ rule: rule ?? null });
-    });
+    chrome.declarativeNetRequest
+      .getDynamicRules()
+      .then((rules) => {
+        const rule = rules.find((r) => r.id === ADOBE_REDIRECT_RULE_ID);
+        sendResponse({ rule: rule ?? null });
+      })
+      .catch(() => sendResponse({ rule: null }));
     return true;
   }
 
@@ -152,7 +155,9 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
   // DATALAYER_SNAPSHOT_REQUEST comes from DevTools (tabId is in message body)
   if (message.type === 'DATALAYER_SNAPSHOT_REQUEST') {
-    chrome.tabs.sendMessage(message.tabId, { type: 'DATALAYER_SNAPSHOT_REQUEST' }).catch(() => {
+    const tabId: number = message.tabId;
+    if (typeof tabId !== 'number' || !Number.isInteger(tabId) || tabId <= 0) return;
+    chrome.tabs.sendMessage(tabId, { type: 'DATALAYER_SNAPSHOT_REQUEST' }).catch(() => {
       /* tab may not have content script */
     });
     return;
@@ -168,7 +173,8 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     // Guards must be cleared BEFORE scripts are injected — run sequentially so the
     // scripts cannot land before their guard flag has been deleted (a race that would
     // cause data-layer-main.js to see __tagdragon_main__ still set and exit early).
-    (async () => {
+    // Return the Promise so the service worker stays alive until all injections complete.
+    return (async () => {
       // 1. Clear the bridge guard (ISOLATED world).
       await chrome.scripting
         .executeScript({
@@ -213,7 +219,6 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         })
         .catch((e: Error) => console.warn('[TagDragon] Failed to inject main:', e.message));
     })();
-    return;
   }
 
   if (message.type === 'CLEAR_COOKIES') {

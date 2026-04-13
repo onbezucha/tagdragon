@@ -76,7 +76,7 @@ import { SOURCE_DESCRIPTIONS } from '@/shared/datalayer-constants';
           data: sanitized,
           isReplay: isReplay === true,
         },
-        window.location.origin || '*'
+        window.location.origin
       );
     } catch {
       window.postMessage(
@@ -88,7 +88,7 @@ import { SOURCE_DESCRIPTIONS } from '@/shared/datalayer-constants';
           data: { _error: 'Data could not be serialized' },
           isReplay: isReplay === true,
         },
-        window.location.origin || '*'
+        window.location.origin
       );
     }
   }
@@ -141,7 +141,7 @@ import { SOURCE_DESCRIPTIONS } from '@/shared/datalayer-constants';
         sources,
         labels: SOURCE_DESCRIPTIONS,
       },
-      window.location.origin || '*'
+      window.location.origin
     );
   }
 

@@ -128,11 +128,6 @@ export async function initConsentPanel(): Promise<void> {
     refreshConsentData();
   });
 
-  document.getElementById('consent-override-clear')?.addEventListener('click', () => {
-    void saveOverride(null);
-    renderOverrideBadge();
-  });
-
   const $clearCookiesBtn = document.getElementById(
     'consent-clear-cookies'
   ) as HTMLButtonElement | null;
@@ -256,18 +251,28 @@ function renderOverrideBadge(): void {
   const cls = consentOverride === 'accept_all' ? 'override-accept' : 'override-reject';
   $badge.className = `consent-override-badge ${cls}`;
   $badge.style.display = 'flex';
-  $badge.innerHTML = `
-    <span class="consent-override-icon">🔒</span>
-    <span class="consent-override-label">Auto: ${label}</span>
-    <button id="consent-override-clear" class="consent-override-clear" title="Cancel auto-apply">✕</button>
-  `;
 
-  // Re-attach listener (innerHTML replaced the element)
-  document.getElementById('consent-override-clear')?.addEventListener('click', (e) => {
+  // Build badge content with createElement to avoid listener stacking from innerHTML replacement.
+  $badge.textContent = '';
+  const icon = document.createElement('span');
+  icon.className = 'consent-override-icon';
+  icon.textContent = '🔒';
+  const labelEl = document.createElement('span');
+  labelEl.className = 'consent-override-label';
+  labelEl.textContent = `Auto: ${label}`;
+  const clearBtn = document.createElement('button');
+  clearBtn.id = 'consent-override-clear';
+  clearBtn.className = 'consent-override-clear';
+  clearBtn.title = 'Cancel auto-apply';
+  clearBtn.textContent = '✕';
+  clearBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     void saveOverride(null);
     renderOverrideBadge();
   });
+  $badge.appendChild(icon);
+  $badge.appendChild(labelEl);
+  $badge.appendChild(clearBtn);
 }
 
 // ─── DATA REFRESH ─────────────────────────────────────────────────────────

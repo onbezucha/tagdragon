@@ -119,7 +119,7 @@ import { SOURCE_DESCRIPTIONS } from '@/shared/datalayer-constants';
   chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     if (message.type === 'DATALAYER_SNAPSHOT_REQUEST') {
       // Ask MAIN world to replay existing dataLayer items
-      window.postMessage({ type: 'TAGDRAGON_DL_REPLAY_REQUEST' }, '*');
+      window.postMessage({ type: 'TAGDRAGON_DL_REPLAY_REQUEST' }, window.location.origin);
       sendResponse({ ok: true });
     }
   });
@@ -129,5 +129,5 @@ import { SOURCE_DESCRIPTIONS } from '@/shared/datalayer-constants';
   // MAIN world handles this by re-detecting sources and replaying all data.
   // This eliminates the race condition where DATALAYER_SNAPSHOT_REQUEST arrives
   // at the old orphaned bridge before the new bridge is ready.
-  window.postMessage({ type: 'TAGDRAGON_BRIDGE_READY' }, '*');
+  window.postMessage({ type: 'TAGDRAGON_BRIDGE_READY' }, window.location.origin);
 })();

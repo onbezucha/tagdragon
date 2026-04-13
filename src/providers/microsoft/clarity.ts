@@ -42,7 +42,7 @@ function parseClarityPayload(postRaw: unknown): ClarityPayload | null {
     // Already parsed as JSON object by network-capture.ts parsePostBody()
     const obj = postRaw as Record<string, unknown>;
     if (obj.e && obj.a) {
-      return obj as unknown as ClarityPayload;
+      return obj as ClarityPayload;
     }
     // HAR format: { text: "...", mimeType: "..." }
     if ('text' in obj && typeof obj.text === 'string') {

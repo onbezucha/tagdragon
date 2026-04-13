@@ -231,7 +231,7 @@ export function updateActiveFilters(applyFiltersCallback: () => void): void {
       `;
     }
 
-    el.querySelector('.filter-pill-remove')!.addEventListener('click', p.onRemove);
+    el.querySelector('.filter-pill-remove')?.addEventListener('click', p.onRemove);
     $activeFilters.appendChild(el);
   });
 
@@ -645,7 +645,7 @@ function attachSubmenuListeners(
 
       qsa('.filter-submenu-quickpick', $content).forEach((pick) => {
         pick.addEventListener('click', () => {
-          setFilterHasParam((pick as HTMLElement).dataset.param!);
+          setFilterHasParam((pick as HTMLElement).dataset.param ?? '');
           applyAndClose();
         });
       });
