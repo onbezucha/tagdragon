@@ -36,14 +36,3 @@ export interface UpdatePopupStatsMessage {
   status: number;
   duration: number;
 }
-
-export interface PopupMessage {
-  type: 'GET_POPUP_STATS' | 'PAUSE_RECORDING' | 'RESUME_RECORDING' | 'CLEAR_REQUESTS';
-  tabId?: number;
-}
-
-export interface PopupMessageResponse {
-  ok: boolean;
-  data?: PopupStatsResponse;
-  error?: string;
-}

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "TagDragon",
-  "version": "1.6.0",
+  "version": "1.6.1",
   "description": "The dragon that sees every tag. Captures and decodes network requests from analytics, tracking, and marketing tags.",
 
   "action": {
@@ -25,7 +25,6 @@
     "storage",
     "declarativeNetRequest",
     "cookies",
-    "tabs",
     "scripting"
   ],
   "content_scripts": [
@@ -44,6 +43,9 @@
   "host_permissions": [
     "<all_urls>"
   ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'none';"
+  },
   "icons": {
     "16": "public/icons/icon16.png",
     "32": "public/icons/icon32.png",

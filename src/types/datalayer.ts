@@ -41,8 +41,6 @@ export interface DataLayerState {
   sourceLabels: Map<DataLayerSource, string>; // GTM-GTMXXXXX, etc.
 }
 
-export type DlTabName = 'push-data' | 'diff' | 'current-state' | 'correlation' | 'live';
-
 // ─── VALIDATION TYPES ──────────────────────────────────────────────────────
 
 export type ValidationCheckType = 'required_key' | 'key_type' | 'forbidden_key' | 'custom';

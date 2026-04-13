@@ -4,7 +4,7 @@ Instructions for AI coding agents working in this repository.
 
 ## Project Overview
 
-**TagDragon v1.6.0** — Chrome DevTools extension (Manifest V3) for capturing and decoding marketing/analytics tracking requests. Built with TypeScript, Rollup (JS bundler) and Tailwind CSS.
+**TagDragon v1.6.1** — Chrome DevTools extension (Manifest V3) for capturing and decoding marketing/analytics tracking requests. Built with TypeScript, Rollup (JS bundler) and Tailwind CSS.
 
 ## Build Commands
 
@@ -380,7 +380,7 @@ Hidden providers are persisted in `AppConfig.hiddenProviders` (restored on load 
 
 ## Chrome Extension Notes
 
-- Manifest V3 with permissions: `webRequest`, `storage`, `declarativeNetRequest`, `cookies`, `tabs`, `scripting`
+- Manifest V3 with permissions: `webRequest`, `storage`, `declarativeNetRequest`, `cookies`, `scripting`
 - Content scripts: `dist/data-layer-bridge.js` injected on all URLs at `document_idle`
 - Web accessible resources: `dist/data-layer-main.js` (injected dynamically via `chrome.scripting.executeScript`)
 - Host permissions: `<all_urls>`

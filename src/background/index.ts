@@ -165,56 +165,54 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message.type === 'INJECT_DATALAYER') {
     const tabId: number = message.tabId;
     if (typeof tabId !== 'number' || !Number.isInteger(tabId) || tabId <= 0) return;
-    if (tabId != null) {
-      // Guards must be cleared BEFORE scripts are injected — run sequentially so the
-      // scripts cannot land before their guard flag has been deleted (a race that would
-      // cause data-layer-main.js to see __tagdragon_main__ still set and exit early).
-      (async () => {
-        // 1. Clear the bridge guard (ISOLATED world).
-        await chrome.scripting
-          .executeScript({
-            target: { tabId },
-            func: () => {
-              delete (window as unknown as Record<string, unknown>)['__tagdragon_bridge__'];
-            },
-          })
-          .catch(() => {
-            /* ignore — tab may not be scriptable */
-          });
+    // Guards must be cleared BEFORE scripts are injected — run sequentially so the
+    // scripts cannot land before their guard flag has been deleted (a race that would
+    // cause data-layer-main.js to see __tagdragon_main__ still set and exit early).
+    (async () => {
+      // 1. Clear the bridge guard (ISOLATED world).
+      await chrome.scripting
+        .executeScript({
+          target: { tabId },
+          func: () => {
+            delete (window as unknown as Record<string, unknown>)['__tagdragon_bridge__'];
+          },
+        })
+        .catch(() => {
+          /* ignore — tab may not be scriptable */
+        });
 
-        // 2. Clear the MAIN world guard.
-        await chrome.scripting
-          .executeScript({
-            target: { tabId },
-            func: () => {
-              delete (window as unknown as Record<string, unknown>)['__tagdragon_main__'];
-            },
-            world: 'MAIN' as chrome.scripting.ExecutionWorld,
-          })
-          .catch(() => {
-            /* ignore — tab may not be scriptable */
-          });
+      // 2. Clear the MAIN world guard.
+      await chrome.scripting
+        .executeScript({
+          target: { tabId },
+          func: () => {
+            delete (window as unknown as Record<string, unknown>)['__tagdragon_main__'];
+          },
+          world: 'MAIN' as chrome.scripting.ExecutionWorld,
+        })
+        .catch(() => {
+          /* ignore — tab may not be scriptable */
+        });
 
-        // 3. ISOLATED world bridge (relays postMessage → runtime.sendMessage)
-        //    AWAIT so the bridge's message listener is registered before MAIN world runs.
-        await chrome.scripting
-          .executeScript({
-            target: { tabId },
-            files: ['dist/data-layer-bridge.js'],
-          })
-          .catch((e: Error) => console.warn('[TagDragon] Failed to inject bridge:', e.message));
+      // 3. ISOLATED world bridge (relays postMessage → runtime.sendMessage)
+      //    AWAIT so the bridge's message listener is registered before MAIN world runs.
+      await chrome.scripting
+        .executeScript({
+          target: { tabId },
+          files: ['dist/data-layer-bridge.js'],
+        })
+        .catch((e: Error) => console.warn('[TagDragon] Failed to inject bridge:', e.message));
 
-        // 4. MAIN world interceptor — world: 'MAIN' bypasses page CSP
-        //    AWAIT so injection is fully complete before we return.
-        await chrome.scripting
-          .executeScript({
-            target: { tabId },
-            files: ['dist/data-layer-main.js'],
-            world: 'MAIN' as chrome.scripting.ExecutionWorld,
-          })
-          .catch((e: Error) => console.warn('[TagDragon] Failed to inject main:', e.message));
-      })();
-    }
+      // 4. MAIN world interceptor — world: 'MAIN' bypasses page CSP
+      //    AWAIT so injection is fully complete before we return.
+      await chrome.scripting
+        .executeScript({
+          target: { tabId },
+          files: ['dist/data-layer-main.js'],
+          world: 'MAIN' as chrome.scripting.ExecutionWorld,
+        })
+        .catch((e: Error) => console.warn('[TagDragon] Failed to inject main:', e.message));
+    })();
     return;
   }
 
