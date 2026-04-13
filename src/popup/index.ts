@@ -2,6 +2,7 @@
 // Quick-view popup showing request statistics for the active tab.
 
 import type { PopupStatsResponse, ProviderStats } from '@/types/popup';
+import { formatBytes } from '@/panel/utils/format';
 
 // ─── DOM REFS ─────────────────────────────────────────────────────────────────
 
@@ -29,13 +30,6 @@ let currentStats: PopupStatsResponse | null = null;
 let showAllProviders = false;
 
 // ─── FORMAT HELPERS ───────────────────────────────────────────────────────────
-
-function formatBytes(bytes: number): string {
-  if (bytes === 0) return '0 B';
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
 
 function formatDuration(ms: number): string {
   if (ms < 1000) return `${ms} ms`;

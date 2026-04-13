@@ -29,7 +29,7 @@ export interface CategorizedParams {
 /**
  * Validation result for a parameter
  */
-export interface ValidationResult {
+export interface ParameterValidationResult {
   isValid: boolean;
   warning: string | null;
   icon: string | null;
@@ -132,8 +132,8 @@ export function validateValue(
   param: string,
   value: unknown,
   categoryMeta?: CategoryMeta
-): ValidationResult {
-  const validation: ValidationResult = {
+): ParameterValidationResult {
+  const validation: ParameterValidationResult = {
     isValid: true,
     warning: null,
     icon: null,
