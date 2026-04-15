@@ -20,9 +20,9 @@ const dlState: DataLayerState = {
   isPaused: false,
   sources: new Set(),
   sourceLabels: new Map(),
+  // Cached source counts for O(1) getDlSourceCount lookups
+  _sourceCountMap: new Map(),
 };
-
-const MAX_DL_PUSHES = 1000;
 
 // ─── FILTER STATE ────────────────────────────────────────────────────────────
 
@@ -46,17 +46,34 @@ let watchedPaths: string[] = [];
 
 // ─── PUSH OPERATIONS ─────────────────────────────────────────────────────────
 
-export function addDlPush(push: DataLayerPush): void {
+export function addDlPush(push: DataLayerPush): boolean {
   dlState.all.push(push);
   dlState.map.set(push.id, push);
 
+  // Increment source count
+  const sourceCountMap = dlState._sourceCountMap ?? new Map();
+  sourceCountMap.set(push.source, (sourceCountMap.get(push.source) ?? 0) + 1);
+  dlState._sourceCountMap = sourceCountMap;
+
   // Auto-prune if limit exceeded (mirrors network request pruning)
-  if (dlState.all.length > MAX_DL_PUSHES) {
-    const pruneTo = Math.floor(MAX_DL_PUSHES * 0.75);
+  const maxPushes = getAppConfig().maxDlPushes || 1000;
+  if (dlState.all.length > maxPushes) {
+    const pruneTo = Math.floor(maxPushes * 0.75);
     const removed = dlState.all.splice(0, dlState.all.length - pruneTo);
     removed.forEach((p) => dlState.map.delete(p.id));
-    dlState.filteredIds.clear();
+    // Rebuild source count map after prune
+    _rebuildSourceCountMap();
+    return true; // signal prune
   }
+  return false;
+}
+
+function _rebuildSourceCountMap(): void {
+  const counts = new Map<DataLayerSource, number>();
+  for (const push of dlState.all) {
+    counts.set(push.source, (counts.get(push.source) ?? 0) + 1);
+  }
+  dlState._sourceCountMap = counts;
 }
 
 export function clearDlPushes(): void {
@@ -66,6 +83,7 @@ export function clearDlPushes(): void {
   dlState.sources.clear();
   dlState.sourceLabels.clear();
   dlState.selectedId = null;
+  dlState._sourceCountMap = new Map();
 }
 
 export function getAllDlPushes(): DataLayerPush[] {
@@ -114,6 +132,25 @@ export function setDlIsPaused(paused: boolean): void {
 
 export function addDlSource(source: DataLayerSource): void {
   dlState.sources.add(source);
+}
+
+export function getDlSources(): Set<DataLayerSource> {
+  return dlState.sources;
+}
+
+export function getDlSourceCount(source: DataLayerSource): number {
+  return dlState._sourceCountMap?.get(source) ?? 0;
+}
+
+export function getDlEventNames(): Array<[string, number]> {
+  const counts: Record<string, number> = {};
+  for (const push of dlState.all) {
+    const eventName = push.data?.event;
+    if (typeof eventName === 'string' && eventName) {
+      counts[eventName] = (counts[eventName] || 0) + 1;
+    }
+  }
+  return Object.entries(counts).sort((a, b) => b[1] - a[1]);
 }
 
 // ─── FILTER STATE ────────────────────────────────────────────────────────────
@@ -249,15 +286,14 @@ export function setValidationLoaded(loaded: boolean): void {
 
 // ─── CORRELATION CONFIG ────────────────────────────────────────────────────
 
-let correlationWindowMs: number = 2000;
 const correlationLookbackMs: number = 500;
 
 export function getCorrelationWindow(): number {
-  return correlationWindowMs;
+  return getAppConfig().correlationWindowMs ?? 2000;
 }
 
 export function setCorrelationWindow(ms: number): void {
-  correlationWindowMs = ms;
+  updateConfigImmediate('correlationWindowMs', ms);
 }
 
 export function getCorrelationLookback(): number {
@@ -367,7 +403,7 @@ export function snapshotCumulativeState(): Record<string, unknown> {
   try {
     return structuredClone(sharedCumulativeState);
   } catch {
-    return { ...sharedCumulativeState };
+    return JSON.parse(JSON.stringify(sharedCumulativeState));
   }
 }
 
@@ -376,4 +412,23 @@ export function snapshotCumulativeState(): Record<string, unknown> {
  */
 export function resetCumulativeState(): void {
   sharedCumulativeState = {};
+}
+
+/**
+ * Trim cumulative state to only contain keys present in the remaining pushes.
+ * Called after a prune to prevent unbounded memory growth.
+ */
+export function trimCumulativeState(): void {
+  const keys = new Set<string>();
+  for (const push of dlState.all) {
+    for (const k of Object.keys(push.data)) {
+      keys.add(k);
+    }
+  }
+  // Remove keys not present in any remaining push
+  for (const k of Object.keys(sharedCumulativeState)) {
+    if (!keys.has(k)) {
+      delete sharedCumulativeState[k];
+    }
+  }
 }

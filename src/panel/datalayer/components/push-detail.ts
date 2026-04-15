@@ -393,12 +393,13 @@ function renderCurrentStateTab(container: HTMLElement, push: DataLayerPush): voi
   container.appendChild(header);
 
   const keys = Object.keys(state).sort();
-  for (const key of keys) {
-    renderKvRow(container, key, state[key]);
-  }
-
   if (keys.length === 0) {
     container.innerHTML = '<div class="dl-state-empty">No state accumulated yet</div>';
+    return;
+  }
+
+  for (const key of keys) {
+    renderKvRow(container, key, state[key]);
   }
 }
 

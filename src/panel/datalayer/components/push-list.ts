@@ -6,32 +6,24 @@ import { DOM } from '../../utils/dom';
 import { formatTimestamp } from '../../utils/format';
 import { getConfig } from '../../state';
 import { downloadCsv, downloadJson } from '../../utils/export';
-import { SOURCE_LABELS } from '@/shared/datalayer-constants';
+import { SOURCE_LABELS, SOURCE_TOOLTIPS, getSourceColor } from '@/shared/datalayer-constants';
+
+// Re-export for consumers that import from push-list
+export { getSourceColor } from '@/shared/datalayer-constants';
 import {
   getAllDlPushes,
   getDlFilteredIds,
   getDlSelectedId,
+  getDlPushById,
   getValidationErrors,
   getDlSortField,
   getDlSortOrder,
 } from '../state';
+import { updateDlStatusBar } from '../../components/status-bar';
 
 export type DlSelectCallback = (push: DataLayerPush, row: HTMLElement) => void;
 
-// ─── SOURCE COLORS ───────────────────────────────────────────────────────────
-
-const SOURCE_COLORS: Record<DataLayerSource, string> = {
-  gtm: '#E8710A',
-  tealium: '#2C7A7B',
-  adobe: '#E53E3E',
-  segment: '#3182CE',
-  digitalData: '#38A169',
-  custom: '#718096',
-};
-
-export function getSourceColor(source: DataLayerSource): string {
-  return SOURCE_COLORS[source] ?? '#718096';
-}
+// ─── SOURCE BADGE ────────────────────────────────────────────────────────────
 
 export function getSourceBadge(source: DataLayerSource): string {
   return SOURCE_LABELS[source] ?? source.toUpperCase();
@@ -86,6 +78,7 @@ export function createDlPushRow(
     badgeEl.style.background = color + '22';
     badgeEl.style.color = color;
     badgeEl.style.border = `1px solid ${color}55`;
+    badgeEl.dataset.tooltip = SOURCE_TOOLTIPS[push.source] ?? '';
   }
 
   const eventEl = row.querySelector<HTMLElement>('.dl-push-event');
@@ -146,12 +139,8 @@ function buildPreview(data: Record<string, unknown>): string {
   const parts: string[] = [];
   for (const [k, v] of Object.entries(data)) {
     if (skip.has(k)) continue;
-    const valStr =
-      typeof v === 'object' && v !== null
-        ? Array.isArray(v)
-          ? `[…]`
-          : '{…}'
-        : String(v).slice(0, 35);
+    const isObj = typeof v === 'object' && v !== null;
+    const valStr = isObj ? (Array.isArray(v) ? `[…]` : '{…}') : String(v).slice(0, 35);
     parts.push(`${k}: ${valStr}`);
     if (parts.length >= 3) break;
   }
@@ -168,32 +157,12 @@ export function updateDlRowVisibility(): void {
   if (!$list) return;
   const filteredIds = getDlFilteredIds();
   const rows = $list.querySelectorAll('.dl-push-row');
-  let visibleCount = 0;
   rows.forEach((row) => {
     const id = Number((row as HTMLElement).dataset['id']);
     const visible = filteredIds.has(id);
     (row as HTMLElement).style.display = visible ? '' : 'none';
-    if (visible) visibleCount++;
   });
-  updateDlStatusText(visibleCount, getAllDlPushes().length);
-}
-
-// ─── STATUS TEXT ─────────────────────────────────────────────────────────────
-
-export function updateDlStatusText(visible: number, total: number): void {
-  const $stats = DOM.statusStats;
-  if ($stats) {
-    $stats.textContent = `${visible} / ${total} pushes`;
-  }
-
-  // Hide size/time badges when in DataLayer context
-  const $size = DOM.sizeBadge;
-  const $time = DOM.timeBadge;
-  if ($size) $size.style.display = 'none';
-  if ($time) $time.style.display = 'none';
-  document.querySelectorAll('#status-bar .status-separator').forEach((el) => {
-    el.style.display = 'none';
-  });
+  updateDlStatusBar();
 }
 
 // ─── SELECTION ───────────────────────────────────────────────────────────────
@@ -214,7 +183,7 @@ export function setActiveDlRow(row: HTMLElement): void {
 /**
  * Navigate to the next/previous push in the list.
  */
-export function navigateDlList(direction: 1 | -1, onSelect: DlSelectCallback): void {
+export function navigateDlList(direction: number, onSelect: DlSelectCallback): void {
   const $list = DOM.dlPushList;
   if (!$list) return;
 
@@ -233,11 +202,33 @@ export function navigateDlList(direction: 1 | -1, onSelect: DlSelectCallback): v
   if (!nextRow) return;
 
   const pushId = Number(nextRow.dataset['id']);
-  const pushes = getAllDlPushes();
-  const push = pushes.find((p) => p.id === pushId);
+  const push = getDlPushById(pushId);
   if (push) {
     onSelect(push, nextRow);
     nextRow.scrollIntoView({ block: 'nearest' });
+  }
+}
+
+/**
+ * Navigate to first or last push in the list (used for Home/End keys).
+ */
+export function navigateDlToEdge(edge: 'first' | 'last', onSelect: DlSelectCallback): void {
+  const $list = DOM.dlPushList;
+  if (!$list) return;
+
+  const rows = Array.from(
+    $list.querySelectorAll('.dl-push-row:not([style*="display: none"])')
+  ) as HTMLElement[];
+  if (rows.length === 0) return;
+
+  const targetRow = edge === 'first' ? rows[0] : rows[rows.length - 1];
+  if (!targetRow) return;
+
+  const pushId = Number(targetRow.dataset['id']);
+  const push = getDlPushById(pushId);
+  if (push) {
+    onSelect(push, targetRow);
+    targetRow.scrollIntoView({ block: 'nearest' });
   }
 }
 
@@ -390,38 +381,56 @@ export function dlMatchesFilter(
   return true;
 }
 
+// ─── SORT CACHE ───────────────────────────────────────────────────────────────
+
+let _sortCache: { key: string; result: number[] } | null = null;
+
+/**
+ * Invalidate the sort cache (call after prune or clear).
+ */
+export function invalidateDlSortCache(): void {
+  _sortCache = null;
+}
+
 /**
  * Get sorted push IDs for rendering.
  * Default is array order (time asc). Sort modifies display order.
+ * Results are cached based on sort field and order.
  */
 export function getSortedDlPushIds(): number[] {
-  const all = getAllDlPushes();
   const field = getDlSortField();
   const order = getDlSortOrder();
+  const cacheKey = `${field}-${order}`;
 
-  if (field === 'time') {
-    return order === 'asc' ? all.map((p) => p.id) : [...all].reverse().map((p) => p.id);
+  if (_sortCache && _sortCache.key === cacheKey) {
+    return _sortCache.result;
   }
 
-  if (field === 'keycount') {
-    return [...all]
+  const all = getAllDlPushes();
+  let sorted: number[];
+
+  if (field === 'time') {
+    sorted = order === 'asc' ? all.map((p) => p.id) : [...all].reverse().map((p) => p.id);
+  } else if (field === 'keycount') {
+    sorted = [...all]
       .sort((a, b) => {
         const diff = Object.keys(b.data).length - Object.keys(a.data).length;
         return order === 'desc' ? diff : -diff;
       })
       .map((p) => p.id);
-  }
-
-  if (field === 'source') {
-    return [...all]
+  } else if (field === 'source') {
+    sorted = [...all]
       .sort((a, b) => {
         const diff = a.source.localeCompare(b.source);
         return order === 'asc' ? diff : -diff;
       })
       .map((p) => p.id);
+  } else {
+    sorted = all.map((p) => p.id);
   }
 
-  return all.map((p) => p.id);
+  _sortCache = { key: cacheKey, result: sorted };
+  return sorted;
 }
 
 /**

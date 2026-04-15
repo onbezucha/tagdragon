@@ -81,6 +81,7 @@
     --dragon-orange: #E8710A;
     --dragon-ember: #C2410C;
     --dragon-red: #DC2626;
+    --orange: var(--dragon-orange);
 
     /* ─── SÉMANTICKÉ BARVY ───────────────────────────────────────────────────── */
     --green: #3ecf8e;         /* Success */
@@ -144,6 +145,7 @@
     --dragon-orange: #7C2D12;
     --dragon-ember: #6B1F1A;
     --dragon-red: #991B1B;
+    --orange: var(--dragon-orange);
     
     /* ─── THEME TOGGLE ICON ──────────────────────────────────────────────────── */
     --theme-icon-sun: none;
@@ -527,6 +529,18 @@
 
   .param-copy-btn.copied {
     color: var(--green);
+    transform: scale(1.15);
+    transition: color 0.1s, transform 0.15s;
+  }
+
+  /* Detail pane copy button feedback */
+  #btn-copy-url.copied,
+  #btn-copy-curl.copied,
+  #btn-copy-params.copied {
+    color: var(--green) !important;
+    border-color: var(--green) !important;
+    transform: scale(0.95);
+    transition: color 0.1s, border-color 0.1s, transform 0.1s;
   }
 
   /* ═════════════════════════════════════════════════════════════════════
@@ -792,9 +806,15 @@
   }
 
   .filter-pill--provider {
-    background: rgba(255, 167, 38, 0.12);
-    border: 1px solid rgba(255, 167, 38, 0.25);
-    color: #ffcf8f;
+    border-style: dashed !important;
+    border-color: var(--text-3) !important;
+    background: transparent !important;
+    opacity: 0.85;
+  }
+
+  .filter-pill--provider:hover {
+    opacity: 1;
+    border-color: var(--accent) !important;
   }
 
   /* Clear all button */
@@ -1221,4 +1241,93 @@
 .env-footer strong {
   color: var(--text-2);
   font-weight: 500;
+}
+
+/* ─── Copy Feedback ──────────────────────────────────────────────────────── */
+
+.copy-action-btn.copied {
+  color: #22c55e;
+}
+
+/* ─── Export Split Button ───────────────────────────────────────────────── */
+
+#export-split-btn {
+  display: flex;
+  gap: 0;
+  position: relative;
+}
+
+#export-split-btn > button:first-child {
+  border-radius: 4px 0 0 4px;
+}
+
+.export-format-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  padding: 0 4px;
+  border: none;
+  background: var(--bg-2);
+  color: var(--text-2);
+  cursor: pointer;
+  border-radius: 0 4px 4px 0;
+  border-left: 1px solid var(--border);
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+.export-format-btn:hover {
+  color: var(--text-1);
+  background: var(--bg-1);
+}
+
+#export-format-menu {
+  display: none;
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px;
+  z-index: 200;
+  min-width: 80px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+#export-format-menu.visible {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.export-format-option {
+  padding: 4px 10px;
+  border: none;
+  background: none;
+  color: var(--text-1);
+  font-size: 12px;
+  cursor: pointer;
+  border-radius: 4px;
+  text-align: left;
+}
+
+.export-format-option:hover {
+  background: var(--bg-1);
+}
+
+.export-format-option.active {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* ─── DataLayer Live Inspector ──────────────────────────────────────────── */
+
+.dl-watch-empty {
+  font-size: 11px;
+  color: var(--text-3);
+  font-style: italic;
+  opacity: 0.8;
+  padding: 2px 0;
 }

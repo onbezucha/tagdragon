@@ -9,12 +9,7 @@ import * as state from './state';
 import * as dlState from './datalayer/state';
 import { DOM } from './utils/dom';
 import { getEventName, esc } from './utils/format';
-import {
-  createRequestRow,
-  navigateList,
-  navigateToEdge,
-  updateRowVisibility,
-} from './components/request-list';
+import { createRequestRow, updateRowVisibility } from './components/request-list';
 import {
   selectRequest,
   initTabHandlers,
@@ -28,15 +23,14 @@ import {
   showPruneNotification,
   clearPruneTimer,
   resetStatusBar,
+  initTimestampToggle,
 } from './components/status-bar';
 import {
   ensureProviderPill,
-  initProviderBarHandlers,
   initProviderBar,
   updateProviderCounts,
-  updateFilterBarVisibility,
 } from './components/provider-bar';
-import { initFilterPopoverHandlers, updateActiveFilters } from './components/filter-bar';
+import { updateActiveFilters } from './components/filter-bar';
 import { initAdobeEnvSwitcher } from './components/adobe-env-switcher';
 import {
   initConsentPanel,
@@ -44,19 +38,34 @@ import {
   clearConsentOverride,
 } from './components/consent-panel';
 import { initInfoPopover, closeInfoPopover } from './components/info-popover';
+import {
+  initSettingsDrawer,
+  toggleSettings,
+  syncSettingsControl,
+} from './components/settings-drawer';
+import {
+  initDlFilterPopover,
+  toggleDlFilterPopover,
+  closeDlFilterPopover,
+} from './components/dl-filter-popover';
+import {
+  initProviderFilterPopover,
+  toggleProviderFilter,
+  closeProviderFilter,
+} from './components/provider-filter-popover';
 import { applyFilters, matchesFilter } from './utils/filter';
 import { downloadCsv, downloadJson } from './utils/export';
 import {
   createDlPushRow,
   getSourceColor,
   setActiveDlRow,
-  updateDlStatusText,
   dlMatchesFilter,
   exportDlJson,
   exportDlCsv,
   updateDlRowValidation,
   getSortedDlPushIds,
   renderGroupedPushList,
+  invalidateDlSortCache,
 } from './datalayer/components/push-list';
 import {
   selectDlPush,
@@ -68,23 +77,15 @@ import {
   checkWatchPaths,
   clearLiveState,
 } from './datalayer/components/live-inspector';
-import {
-  validatePush,
-  loadValidationRules,
-  saveValidationRules,
-} from './datalayer/utils/validator';
+import { validatePush, loadValidationRules } from './datalayer/utils/validator';
 import {
   clearValidationErrors,
-  getValidationRules,
   setValidationRules,
-  isValidationLoaded,
   setValidationLoaded,
   getDlSortField,
-  setDlSortField,
   getDlSortOrder,
   toggleDlSortOrder,
   getDlGroupBySource,
-  setDlGroupBySource,
   initDlSortState,
 } from './datalayer/state';
 import { initTheme } from './theme';
@@ -99,6 +100,7 @@ import {
 } from './utils/session-persist';
 import { initDetailCopyHandlers } from './components/detail-pane';
 import { SOURCE_DESCRIPTIONS } from '@/shared/datalayer-constants';
+import { USER_ID_PARAM_KEYS } from '@/shared/constants';
 import {
   createIcons,
   Cable,
@@ -109,22 +111,41 @@ import {
   Sun,
   Moon,
   Trash2,
+  Upload,
   Settings,
   CircleHelp,
   Search,
   X,
   ArrowUpDown,
-  WrapText,
-  Maximize2,
-  AlignJustify,
   Filter,
   Download,
   Pause,
   Play,
   SlidersHorizontal,
-  ShoppingCart,
-  CheckCircle,
 } from 'lucide';
+
+declare global {
+  interface Window {
+    clearDataLayer: () => void;
+    setPanelPaused: (paused: boolean) => void;
+    isPanelPaused: () => boolean;
+    receiveRequest: (data: import('@/types/request').ParsedRequest) => void;
+    receiveDataLayerPush: (push: import('@/types/datalayer').DataLayerPush) => void;
+    receiveDataLayerSources: (
+      sources: import('@/types/datalayer').DataLayerSource[],
+      labels: Record<import('@/types/datalayer').DataLayerSource, string>
+    ) => void;
+    _deleteHeavyData: (ids: number[]) => void;
+    _clearHeavyData: () => void;
+    triggerReinject: () => void;
+    flushPendingRequests: () => void;
+    flushPendingDlPushes: () => void;
+  }
+}
+
+// ─── TIMING CONSTANTS ───────────────────────────────────────────────────────
+const FILTER_DEBOUNCE_MS = 150;
+const COOKIE_RESET_TIMEOUT_MS = 2000;
 
 // ─── LOCAL HELPERS ───────────────────────────────────────────────────────────
 
@@ -148,13 +169,8 @@ function indexRequest(data: ParsedRequest, getEventNameFn: (d: ParsedRequest) =>
     data._eventName = getEventNameFn(data);
   }
 
-  data._hasUserId = !!(
-    data.decoded?.client_id ||
-    data.decoded?.['Client ID'] ||
-    data.allParams?.cid ||
-    data.allParams?.uid ||
-    data.allParams?.user_id ||
-    data.allParams?.client_id
+  data._hasUserId = USER_ID_PARAM_KEYS.some(
+    (key) => !!(data.decoded?.[key as keyof typeof data.decoded] ?? data.allParams?.[key])
   );
 
   data._statusPrefix = data.status ? String(data.status)[0] : null;
@@ -224,7 +240,7 @@ function pruneIfNeeded(): void {
   const rows = $list.querySelectorAll('.req-row');
   let domRemoved = 0;
   for (let i = 0; i < rows.length && domRemoved < removeCount; i++) {
-    const id = rows[i].dataset.id;
+    const id = (rows[i] as HTMLElement).dataset.id;
     if (id && !state.hasRequest(id)) {
       rows[i].remove();
       domRemoved++;
@@ -248,8 +264,9 @@ function pruneIfNeeded(): void {
   let totalSize = 0;
   let totalDuration = 0;
   const filteredIds = state.getFilteredIds();
+  const hiddenProviders = state.getHiddenProviders();
   for (const r of state.getAllRequests()) {
-    if (filteredIds.has(String(r.id))) {
+    if (filteredIds.has(String(r.id)) && !hiddenProviders.has(r.provider)) {
       visibleCount++;
       totalSize += r.size || 0;
       totalDuration += r.duration || 0;
@@ -312,6 +329,12 @@ function doSelectRequest(data: ParsedRequest, row: HTMLElement): void {
   selectRequest(data, row);
 }
 
+function doSelectPush(push: DataLayerPush, row: HTMLElement): void {
+  dlState.setDlSelectedId(push.id);
+  setActiveDlRow(row);
+  selectDlPush(push, row, gotoNetworkRequest);
+}
+
 // ─── VIEW SWITCHING ───────────────────────────────────────────────────────────
 
 let activeView: 'network' | 'datalayer' = 'network';
@@ -355,22 +378,11 @@ function switchView(view: 'network' | 'datalayer'): void {
   const $hint = document.querySelector('.status-hint') as HTMLElement | null;
   if ($hint) {
     if (view === 'datalayer') {
-      $hint.innerHTML = 'Ctrl+L clear · Ctrl+F filter · ↑↓ navigate · Esc close';
+      $hint.textContent = 'Backspace clear · / filter · ↑↓ navigate · Esc close';
     } else {
-      $hint.textContent = 'Ctrl+L to clear';
+      $hint.textContent = 'Backspace to clear';
     }
   }
-
-  // Close DL popovers when switching views
-  const $dlFilterPopover = document.getElementById('dl-filter-popover');
-  if ($dlFilterPopover) $dlFilterPopover.classList.remove('visible');
-  const $dlSubmenu = document.getElementById('dl-filter-submenu-dl');
-  if ($dlSubmenu) $dlSubmenu.classList.remove('visible');
-  const $dlValPopover = document.getElementById('dl-validation-popover');
-  if ($dlValPopover) $dlValPopover.classList.remove('visible');
-
-  // Close save-filter dialog (closeSaveFilterDialog() is not in scope here)
-  document.getElementById('save-filter-dialog')?.classList.remove('visible');
 }
 
 // ─── NETWORK CLEAR ───────────────────────────────────────────────────────────
@@ -433,8 +445,7 @@ function restorePersistedRequests(): void {
   const sessionStart = persisted[0]?.timestamp;
 
   // Index and build rows; for desc order, iterate in reverse so newest ends up at top
-  const iterOrder =
-    cfg.sortOrder === 'desc' ? [...persisted].reverse() : persisted;
+  const iterOrder = cfg.sortOrder === 'desc' ? [...persisted].reverse() : persisted;
 
   for (const data of iterOrder) {
     indexRequest(data, getEventName);
@@ -477,7 +488,7 @@ function dlClearAll(): void {
   if ($empty) $empty.style.display = '';
 
   closeDlDetail();
-  updateDlStatusText(0, 0);
+  updateDlStatusBar();
 
   const $dlBadge = DOM.tabBadgeDatalayer;
   if ($dlBadge) $dlBadge.textContent = '0';
@@ -525,7 +536,7 @@ function dlApplyFilter(): void {
       dlState.getDlVisibleCount() === 0 && dlState.getDlTotalCount() === 0 ? '' : 'none';
   }
 
-  updateDlStatusText(dlState.getDlVisibleCount(), dlState.getDlTotalCount());
+  updateDlStatusBar();
 }
 
 // ─── DATALAYER FILTER CHIPS ─────────────────────────────────────────────────
@@ -595,7 +606,7 @@ function updateDlFilterChips(): void {
   const hasKey = dlState.getDlFilterHasKey();
   if (hasKey) {
     const chip = createDlFilterChip('Key', hasKey, () => {
-      dlState.setDlHasKey('');
+      dlState.setDlFilterHasKey('');
       dlApplyFilter();
       updateDlFilterChips();
     });
@@ -605,8 +616,6 @@ function updateDlFilterChips(): void {
   if (dlState.getDlEcommerceOnly()) {
     const chip = createDlFilterChip('E-commerce', 'only', () => {
       dlState.setDlEcommerceOnly(false);
-      const $btn = document.getElementById('dl-btn-ecommerce');
-      if ($btn) $btn.classList.remove('active');
       dlApplyFilter();
       updateDlFilterChips();
     });
@@ -686,7 +695,7 @@ function flushPendingDlPushes(): void {
   dlState.clearDlPendingPushes();
 
   // 3. Single status update
-  updateDlStatusText(dlState.getDlVisibleCount(), dlState.getDlTotalCount());
+  updateDlStatusBar();
 
   // 4. Update badges (single write)
   const $dlBadge = DOM.tabBadgeDatalayer;
@@ -732,7 +741,35 @@ window.receiveDataLayerPush = function (push: DataLayerPush): void {
     sourceLabel: push.sourceLabel || push.source.toUpperCase(),
   };
 
-  dlState.addDlPush(enrichedPush);
+  // Invalidate cached search index so enriched fields are included
+  delete (enrichedPush as { _searchIndex?: string })._searchIndex;
+
+  const pruned = dlState.addDlPush(enrichedPush);
+  if (pruned) {
+    // Prune occurred — filter pending queue to remove pruned IDs instead of clearing
+    const remainingIds = new Set(dlState.getAllDlPushes().map((p) => p.id));
+    const pending = dlState.getDlPendingPushes();
+    const validPending = pending.filter((item) => remainingIds.has(item.push.id));
+    // Replace pending with filtered (must mutate in place since state holds reference)
+    pending.length = 0;
+    pending.push(...validPending);
+    const rafId = dlState.getDlRafId();
+    if (rafId !== null) cancelAnimationFrame(rafId);
+    dlState.setDlRafId(null);
+    renderDlPushListFull();
+    dlApplyFilter();
+    dlState.trimCumulativeState();
+    updateDlStatusBar();
+    const $dlBadge = DOM.tabBadgeDatalayer;
+    if ($dlBadge) $dlBadge.textContent = String(dlState.getDlTotalCount());
+    const $count = document.getElementById('dl-push-count');
+    if ($count) {
+      const n = dlState.getDlTotalCount();
+      $count.textContent = `${n} push${n !== 1 ? 'es' : ''}`;
+    }
+    updateDlFilterChips();
+    return; // skip normal pending queue
+  }
 
   // Queue for batched rendering — instead of immediate DOM operations (1.3)
   const filterText = dlState.getDlFilterText();
@@ -870,6 +907,10 @@ window.receiveRequest = function (data: ParsedRequest): void {
   }
 };
 
+// Expose flush functions for devtools page to call on panel shown
+window.flushPendingRequests = flushPendingRequests;
+window.flushPendingDlPushes = flushPendingDlPushes;
+
 // ─── EXPORT HELPERS ──────────────────────────────────────────────────────────
 
 /**
@@ -913,15 +954,57 @@ function exportCsv(): void {
   downloadCsv(headers, rows, `requests-${Date.now()}.csv`);
 }
 
+// ─── PAUSE UI SYNC ───────────────────────────────────────────────────────────
+
+/**
+ * Synchronize all pause-related UI elements across Network and DataLayer views.
+ * This is the single source of truth for pause UI state.
+ */
+function syncPauseUI(paused: boolean): void {
+  // Sync state
+  state.setIsPaused(paused);
+  dlState.setDlIsPaused(paused);
+  document.body.classList.toggle('paused', paused);
+
+  // Network pause button
+  const btnPause = document.getElementById('btn-pause');
+  if (btnPause) {
+    btnPause.classList.toggle('active', paused);
+    const pauseIcon = btnPause.querySelector('.pause-icon') as HTMLElement;
+    const playIcon = btnPause.querySelector('.play-icon') as HTMLElement;
+    const pauseText = btnPause.querySelector('.pause-text') as HTMLElement;
+    const playText = btnPause.querySelector('.play-text') as HTMLElement;
+    if (pauseIcon) pauseIcon.style.display = paused ? 'none' : '';
+    if (playIcon) playIcon.style.display = paused ? '' : 'none';
+    if (pauseText) pauseText.style.display = paused ? 'none' : '';
+    if (playText) playText.style.display = paused ? '' : 'none';
+    btnPause.dataset.tooltip = paused ? 'Resume capture' : 'Pause capture';
+  }
+
+  // DataLayer pause button
+  const $dlPause = document.getElementById('dl-btn-pause');
+  if ($dlPause) {
+    $dlPause.classList.toggle('active', paused);
+    const dlPauseIcon = $dlPause.querySelector('.pause-icon') as HTMLElement;
+    const dlPlayIcon = $dlPause.querySelector('.play-icon') as HTMLElement;
+    const dlPauseText = $dlPause.querySelector('.pause-text') as HTMLElement;
+    const dlPlayText = $dlPause.querySelector('.play-text') as HTMLElement;
+    if (dlPauseIcon) dlPauseIcon.style.display = paused ? 'none' : '';
+    if (dlPlayIcon) dlPlayIcon.style.display = paused ? '' : 'none';
+    if (dlPauseText) dlPauseText.style.display = paused ? 'none' : '';
+    if (dlPlayText) dlPlayText.style.display = paused ? '' : 'none';
+    $dlPause.dataset.tooltip = paused ? 'Resume DataLayer capture' : 'Pause DataLayer capture';
+  }
+}
+
 // ─── TOOLBAR EVENTS ──────────────────────────────────────────────────────────
 
 function initToolbarHandlers(): void {
   const btnClearAll = document.getElementById('btn-clear-all');
   const btnCloseDetail = document.getElementById('btn-close-detail');
   const btnExport = document.getElementById('btn-export');
-  const btnClearCookies = document.getElementById('btn-clear-cookies');
+  const btnClearCookies = document.getElementById('btn-clear-cookies') as HTMLButtonElement | null;
   const btnSettings = document.getElementById('btn-settings');
-  const btnResetFilters = document.getElementById('btn-reset-filters');
 
   // Clear button — clears ALL data (both network and datalayer)
   btnClearAll?.addEventListener('click', () => {
@@ -941,33 +1024,21 @@ function initToolbarHandlers(): void {
     dlClearAll();
   });
 
+  // ─── PAUSE UI SYNC ───────────────────────────────────────────────────────────
+
   // Pause button
   const btnPause = document.getElementById('btn-pause');
   btnPause?.addEventListener('click', () => {
     const isPaused = !state.getIsPaused();
-    setPanelPaused(isPaused);
+    syncPauseUI(isPaused);
   });
 
   // Expose for DevTools popup ↔ panel pause sync
-  window['setPanelPaused'] = function (paused: boolean): void {
-    state.setIsPaused(paused);
-    document.body.classList.toggle('paused', paused);
-    const btnPause = document.getElementById('btn-pause');
-    if (btnPause) {
-      btnPause.classList.toggle('active', paused);
-      const pauseIcon = btnPause.querySelector('.pause-icon') as HTMLElement;
-      const playIcon = btnPause.querySelector('.play-icon') as HTMLElement;
-      const pauseText = btnPause.querySelector('.pause-text') as HTMLElement;
-      const playText = btnPause.querySelector('.play-text') as HTMLElement;
-      if (pauseIcon) pauseIcon.style.display = paused ? 'none' : '';
-      if (playIcon) playIcon.style.display = paused ? '' : 'none';
-      if (pauseText) pauseText.style.display = paused ? 'none' : '';
-      if (playText) playText.style.display = paused ? '' : 'none';
-      btnPause.dataset.tooltip = paused ? 'Resume capture' : 'Pause capture';
-    }
+  window.setPanelPaused = function (paused: boolean): void {
+    syncPauseUI(paused);
   };
 
-  window['isPanelPaused'] = function (): boolean {
+  window.isPanelPaused = function (): boolean {
     return state.getIsPaused();
   };
 
@@ -984,7 +1055,7 @@ function initToolbarHandlers(): void {
     filterTimer = setTimeout(() => {
       doApplyFilters();
       doUpdateActiveFilters();
-    }, 150);
+    }, FILTER_DEBOUNCE_MS);
   });
 
   DOM.clearFilter?.addEventListener('click', () => {
@@ -1013,6 +1084,34 @@ function initToolbarHandlers(): void {
     }
   });
 
+  // Export format split button
+  const btnExportFormat = document.getElementById('btn-export-format');
+  const exportFormatMenu = document.getElementById('export-format-menu');
+
+  btnExportFormat?.addEventListener('click', (e: Event) => {
+    e.stopPropagation();
+    exportFormatMenu?.classList.toggle('visible');
+  });
+
+  exportFormatMenu?.addEventListener('click', (e: Event) => {
+    const target = (e.target as HTMLElement).closest('.export-format-option') as HTMLElement;
+    if (!target) return;
+    const format = target.dataset.format as 'json' | 'csv';
+    if (format) {
+      state.updateConfig('exportFormat', format);
+      syncExportTooltip();
+    }
+    exportFormatMenu?.classList.remove('visible');
+  });
+
+  // Close export format menu on outside click
+  document.addEventListener('click', (e: Event) => {
+    const target = e.target as HTMLElement;
+    if (!target.closest('#export-split-btn')) {
+      exportFormatMenu?.classList.remove('visible');
+    }
+  });
+
   // Clear cookies button
   btnClearCookies?.addEventListener('click', async () => {
     const originalTitle = btnClearCookies.dataset.tooltip || 'Delete all cookies on this site';
@@ -1025,178 +1124,43 @@ function initToolbarHandlers(): void {
       setTimeout(() => {
         btnClearCookies.dataset.tooltip = originalTitle;
         btnClearCookies.disabled = false;
-      }, 2000);
+      }, COOKIE_RESET_TIMEOUT_MS);
     } catch {
       btnClearCookies.dataset.tooltip = 'Error';
       setTimeout(() => {
         btnClearCookies.dataset.tooltip = originalTitle;
         btnClearCookies.disabled = false;
-      }, 2000);
+      }, COOKIE_RESET_TIMEOUT_MS);
     }
   });
 
-  // Save filter inline dialog
-  const btnSaveFilter = document.getElementById('btn-save-filter');
-  const saveFilterDialog = document.getElementById('save-filter-dialog');
-  const saveFilterNameInput = document.getElementById('save-filter-name') as HTMLInputElement | null;
-  const btnSaveFilterConfirm = document.getElementById('btn-save-filter-confirm');
-  const btnSaveFilterCancel = document.getElementById('btn-save-filter-cancel');
-
-  function closeSaveFilterDialog(): void {
-    saveFilterDialog?.classList.remove('visible');
-    if (saveFilterNameInput) saveFilterNameInput.value = '';
-  }
-
-  function commitSaveFilter(): void {
-    const name = saveFilterNameInput?.value.trim();
-    if (!name || name.length > 80) return;
-    const cfg = state.getConfig();
-    const savedFilters = [...(cfg.savedFilters ?? [])];
-    savedFilters.push({
-      id: Date.now().toString(),
-      name,
-      text: state.getFilterText(),
-      eventType: state.getFilterEventType(),
-      userId: state.getFilterUserId(),
-      status: state.getFilterStatus(),
-      method: state.getFilterMethod(),
-      hasParam: state.getFilterHasParam(),
-    });
-    state.updateConfigImmediate('savedFilters', savedFilters);
-    renderSavedFilterChips();
-    closeSaveFilterDialog();
-  }
-
-  btnSaveFilter?.addEventListener('click', (e: Event) => {
-    e.stopPropagation();
-    const hasActiveFilter =
-      state.getFilterText() ||
-      state.getFilterEventType() ||
-      state.getFilterUserId() ||
-      state.getFilterStatus() ||
-      state.getFilterMethod() ||
-      state.getFilterHasParam();
-    if (!hasActiveFilter) return;
-    saveFilterDialog?.classList.toggle('visible');
-    if (saveFilterDialog?.classList.contains('visible')) {
-      saveFilterNameInput?.focus();
-    }
-  });
-
-  btnSaveFilterConfirm?.addEventListener('click', commitSaveFilter);
-
-  btnSaveFilterCancel?.addEventListener('click', closeSaveFilterDialog);
-
-  saveFilterNameInput?.addEventListener('keydown', (e: KeyboardEvent) => {
-    if (e.key === 'Enter') commitSaveFilter();
-    if (e.key === 'Escape') closeSaveFilterDialog();
-  });
-
-  // Settings popover
+  // Settings drawer
   btnSettings?.addEventListener('click', (e: Event) => {
     e.stopPropagation();
-    DOM.settingsPopover?.classList.toggle('visible');
-    DOM.providerPopover?.classList.remove('visible');
-    DOM.consentPopover?.classList.remove('visible');
-    closeInfoPopover();
+    toggleSettings();
   });
 
   document.addEventListener('click', (e: Event) => {
     const target = e.target as HTMLElement;
-    if (!DOM.settingsPopover?.contains(target) && !target.closest('#btn-settings')) {
-      DOM.settingsPopover?.classList.remove('visible');
-    }
-    if (!DOM.providerPopover?.contains(target) && !target.closest('#btn-providers')) {
-      DOM.providerPopover?.classList.remove('visible');
-    }
     if (!DOM.infoPopover?.contains(target) && !target.closest('#btn-info')) {
       closeInfoPopover();
     }
-    if (!saveFilterDialog?.contains(target) && !target.closest('#btn-save-filter')) {
-      closeSaveFilterDialog();
+    if (!DOM.providerFilterPopover?.contains(target) && !target.closest('#btn-providers')) {
+      closeProviderFilter();
+    }
+    if (
+      !document.getElementById('dl-filter-popover')?.contains(target) &&
+      !target.closest('#dl-btn-filter')
+    ) {
+      closeDlFilterPopover();
     }
   });
 
-  // Provider popover
+  // Provider button — open provider filter popover
   const btnProviders = document.getElementById('btn-providers');
   btnProviders?.addEventListener('click', (e: Event) => {
     e.stopPropagation();
-    DOM.providerPopover?.classList.toggle('visible');
-    DOM.settingsPopover?.classList.remove('visible');
-    DOM.consentPopover?.classList.remove('visible');
-    closeInfoPopover();
-  });
-
-  // Reset filters button
-  btnResetFilters?.addEventListener('click', () => {
-    state.resetFilters();
-    // Do NOT clear hidden providers — user configured those intentionally
-    if (DOM.filterInput) DOM.filterInput.value = '';
-    const clearFilter = DOM.clearFilter;
-    if (clearFilter) clearFilter.style.display = 'none';
-    doApplyFilters();
-    doUpdateActiveFilters();
-    DOM.settingsPopover?.classList.remove('visible');
-  });
-}
-
-// ─── SAVED FILTER CHIPS ──────────────────────────────────────────────────────
-
-function renderSavedFilterChips(): void {
-  const $container = document.getElementById('saved-filters-chips');
-  if (!$container) return;
-
-  const savedFilters = state.getConfig().savedFilters ?? [];
-  $container.innerHTML = '';
-
-  if (savedFilters.length === 0) {
-    $container.style.display = 'none';
-    return;
-  }
-  $container.style.display = '';
-
-  savedFilters.forEach((sf) => {
-    const chip = document.createElement('button');
-    chip.className = 'saved-filter-chip';
-    chip.title = `Apply: ${sf.name}`;
-
-    const label = document.createElement('span');
-    label.textContent = sf.name;
-
-    const removeBtn = document.createElement('span');
-    removeBtn.className = 'saved-filter-chip-remove';
-    removeBtn.textContent = '×';
-    removeBtn.title = 'Remove saved filter';
-
-    chip.appendChild(label);
-    chip.appendChild(removeBtn);
-
-    // Apply filter on click
-    chip.addEventListener('click', (e: Event) => {
-      if ((e.target as HTMLElement).classList.contains('saved-filter-chip-remove')) return;
-      state.setFilterText(sf.text);
-      state.setFilterEventType(sf.eventType);
-      state.setFilterUserId(sf.userId);
-      state.setFilterStatus(sf.status);
-      state.setFilterMethod(sf.method as '' | 'GET' | 'POST');
-      state.setFilterHasParam(sf.hasParam);
-      if (DOM.filterInput) DOM.filterInput.value = sf.text;
-      const clearFilter = DOM.clearFilter;
-      if (clearFilter) clearFilter.style.display = sf.text ? 'flex' : 'none';
-      doApplyFilters();
-      doUpdateActiveFilters();
-    });
-
-    // Remove saved filter on × click
-    removeBtn.addEventListener('click', (e: Event) => {
-      e.stopPropagation();
-      const cfg = state.getConfig();
-      const updated = (cfg.savedFilters ?? []).filter((f) => f.id !== sf.id);
-      state.updateConfigImmediate('savedFilters', updated);
-      renderSavedFilterChips();
-    });
-
-    $container.appendChild(chip);
+    toggleProviderFilter();
   });
 }
 
@@ -1212,9 +1176,6 @@ function applyCompactRowsClass(): void {
 
 function syncQuickButtons(): void {
   const sortBtn = document.getElementById('btn-quick-sort');
-  const wrapBtn = document.getElementById('btn-quick-wrap');
-  const expandBtn = document.getElementById('btn-quick-expand');
-  const compactBtn = document.getElementById('btn-quick-compact');
   const cfg = state.getConfig();
 
   if (sortBtn) {
@@ -1224,43 +1185,6 @@ function syncQuickButtons(): void {
         ? 'Newest first (click for oldest first)'
         : 'Oldest first (click for newest first)';
   }
-  if (wrapBtn) {
-    wrapBtn.classList.toggle('active', cfg.wrapValues);
-    wrapBtn.dataset.tooltip = cfg.wrapValues ? 'Wrap values: on' : 'Wrap values: off';
-  }
-  if (expandBtn) {
-    expandBtn.classList.toggle('active', cfg.autoExpand);
-    expandBtn.dataset.tooltip = cfg.autoExpand ? 'Auto-expand: on' : 'Auto-expand: off';
-  }
-  if (compactBtn) {
-    compactBtn.classList.toggle('active', cfg.compactRows);
-    compactBtn.dataset.tooltip = cfg.compactRows ? 'Compact list: on' : 'Compact list: off';
-  }
-}
-
-function initQuickActions(): void {
-  document.getElementById('btn-quick-sort')?.addEventListener('click', () => {
-    const next = state.getConfig().sortOrder === 'asc' ? 'desc' : 'asc';
-    state.updateConfig('sortOrder', next);
-    syncQuickButtons();
-  });
-
-  document.getElementById('btn-quick-wrap')?.addEventListener('click', () => {
-    state.updateConfig('wrapValues', !state.getConfig().wrapValues);
-    applyWrapValuesClass();
-    syncQuickButtons();
-  });
-
-  document.getElementById('btn-quick-expand')?.addEventListener('click', () => {
-    state.updateConfig('autoExpand', !state.getConfig().autoExpand);
-    syncQuickButtons();
-  });
-
-  document.getElementById('btn-quick-compact')?.addEventListener('click', () => {
-    state.updateConfig('compactRows', !state.getConfig().compactRows);
-    applyCompactRowsClass();
-    syncQuickButtons();
-  });
 }
 
 // ─── EXPORT TOOLTIP SYNC ─────────────────────────────────────────────────────
@@ -1271,102 +1195,11 @@ function syncExportTooltip(): void {
     const fmt = state.getConfig().exportFormat.toUpperCase();
     btnExport.dataset.tooltip = `Export as ${fmt}`;
   }
-}
-
-// ─── CONFIG UI ───────────────────────────────────────────────────────────────
-
-function initConfigUI(): void {
-  const cfgMaxEl = document.getElementById('cfg-max-requests') as HTMLInputElement | null;
-  const cfgPruneEl = document.getElementById('cfg-auto-prune') as HTMLInputElement | null;
-
-  if (cfgMaxEl) {
-    cfgMaxEl.value = String(state.getConfig().maxRequests);
-    cfgMaxEl.addEventListener('change', (e: Event) => {
-      const value = parseInt((e.target as HTMLInputElement).value, 10) || 0;
-      state.updateConfig('maxRequests', value);
-      pruneIfNeeded();
-    });
-  }
-
-  if (cfgPruneEl) {
-    cfgPruneEl.checked = state.getConfig().autoPrune;
-    cfgPruneEl.addEventListener('change', (e: Event) => {
-      const checked = (e.target as HTMLInputElement).checked;
-      state.updateConfig('autoPrune', checked);
-    });
-  }
-
-  const cfgSortEl = document.getElementById('cfg-sort-order') as HTMLSelectElement | null;
-  if (cfgSortEl) {
-    cfgSortEl.value = state.getConfig().sortOrder;
-    cfgSortEl.addEventListener('change', (e: Event) => {
-      const value = (e.target as HTMLSelectElement).value;
-      state.updateConfig('sortOrder', value);
-      syncQuickButtons();
-    });
-  }
-
-  const cfgWrapEl = document.getElementById('cfg-wrap-values') as HTMLInputElement | null;
-  if (cfgWrapEl) {
-    cfgWrapEl.checked = state.getConfig().wrapValues;
-    cfgWrapEl.addEventListener('change', (e: Event) => {
-      const checked = (e.target as HTMLInputElement).checked;
-      state.updateConfig('wrapValues', checked);
-      applyWrapValuesClass();
-      syncQuickButtons();
-    });
-  }
-
-  const cfgExpandEl = document.getElementById('cfg-auto-expand') as HTMLInputElement | null;
-  if (cfgExpandEl) {
-    cfgExpandEl.checked = state.getConfig().autoExpand;
-    cfgExpandEl.addEventListener('change', (e: Event) => {
-      const checked = (e.target as HTMLInputElement).checked;
-      state.updateConfig('autoExpand', checked);
-      syncQuickButtons();
-    });
-  }
-
-  const cfgDefaultTabEl = document.getElementById('cfg-default-tab') as HTMLSelectElement | null;
-  if (cfgDefaultTabEl) {
-    cfgDefaultTabEl.value = state.getConfig().defaultTab;
-    cfgDefaultTabEl.addEventListener('change', (e: Event) => {
-      const value = (e.target as HTMLSelectElement).value;
-      state.updateConfig('defaultTab', value);
-    });
-  }
-
-  const cfgCompactEl = document.getElementById('cfg-compact-rows') as HTMLInputElement | null;
-  if (cfgCompactEl) {
-    cfgCompactEl.checked = state.getConfig().compactRows;
-    cfgCompactEl.addEventListener('change', (e: Event) => {
-      const checked = (e.target as HTMLInputElement).checked;
-      state.updateConfig('compactRows', checked);
-      applyCompactRowsClass();
-    });
-  }
-
-  const cfgTimestampEl = document.getElementById(
-    'cfg-timestamp-format'
-  ) as HTMLSelectElement | null;
-  if (cfgTimestampEl) {
-    cfgTimestampEl.value = state.getConfig().timestampFormat;
-    cfgTimestampEl.addEventListener('change', (e: Event) => {
-      const value = (e.target as HTMLSelectElement).value;
-      state.updateConfig('timestampFormat', value);
-    });
-  }
-
-  const cfgExportFmtEl = document.getElementById('cfg-export-format') as HTMLSelectElement | null;
-  if (cfgExportFmtEl) {
-    cfgExportFmtEl.value = state.getConfig().exportFormat;
-    syncExportTooltip();
-    cfgExportFmtEl.addEventListener('change', (e: Event) => {
-      const value = (e.target as HTMLSelectElement).value;
-      state.updateConfig('exportFormat', value);
-      syncExportTooltip();
-    });
-  }
+  // Update format menu active state
+  document.querySelectorAll('.export-format-option').forEach((el) => {
+    const format = (el as HTMLElement).dataset.format;
+    el.classList.toggle('active', format === state.getConfig().exportFormat);
+  });
 }
 
 // ─── CATEGORY TOGGLE ─────────────────────────────────────────────────────────
@@ -1383,7 +1216,7 @@ function initCategoryToggle(): void {
     }
 
     // Persist collapsed state
-    const catKey = header.closest('.category-section')?.dataset.category;
+    const catKey = (header.closest('.category-section') as HTMLElement | null)?.dataset.category;
     if (catKey) {
       const isNowCollapsed = header.classList.contains('collapsed');
       const current = new Set(state.getConfig().collapsedGroups);
@@ -1430,6 +1263,9 @@ function initRequestListHandler(): void {
 // ─── DATALAYER FULL LIST RENDER ─────────────────────────────────────────────
 
 function renderDlPushListFull(): void {
+  // Invalidate sort cache before rendering (cache may be stale after prune)
+  invalidateDlSortCache();
+
   const $list = DOM.dlPushList;
   const $empty = DOM.dlEmptyState;
   if (!$list) return;
@@ -1471,7 +1307,7 @@ function renderDlPushListFull(): void {
     $list.appendChild(fragment);
   }
 
-  updateDlStatusText(dlState.getDlVisibleCount(), dlState.getDlTotalCount());
+  updateDlStatusBar();
 }
 
 // ─── DATALAYER HANDLERS ───────────────────────────────────────────────────────
@@ -1489,13 +1325,7 @@ async function initDatalayerHandlers(): Promise<void> {
   const $dlPause = document.getElementById('dl-btn-pause');
   $dlPause?.addEventListener('click', () => {
     const isPaused = !dlState.getDlIsPaused();
-    dlState.setDlIsPaused(isPaused);
-    $dlPause.classList.toggle('active', isPaused);
-    ($dlPause.querySelector('.pause-icon') as HTMLElement).style.display = isPaused ? 'none' : '';
-    ($dlPause.querySelector('.play-icon') as HTMLElement).style.display = isPaused ? '' : 'none';
-    ($dlPause.querySelector('.pause-text') as HTMLElement).style.display = isPaused ? 'none' : '';
-    ($dlPause.querySelector('.play-text') as HTMLElement).style.display = isPaused ? '' : 'none';
-    $dlPause.dataset.tooltip = isPaused ? 'Resume DataLayer capture' : 'Pause DataLayer capture';
+    syncPauseUI(isPaused);
   });
 
   // DL active filter pills — delegates to shared function
@@ -1517,7 +1347,7 @@ async function initDatalayerHandlers(): Promise<void> {
       dlFilterTimer = setTimeout(() => {
         dlApplyFilter();
         updateDlActiveFilters();
-      }, 150);
+      }, FILTER_DEBOUNCE_MS);
     });
   }
 
@@ -1541,17 +1371,11 @@ async function initDatalayerHandlers(): Promise<void> {
 
   // DL Re-inject button (shown in empty state)
   document.getElementById('dl-btn-reinject')?.addEventListener('click', () => {
-    window['triggerReinject']?.();
-  });
-
-  // DL E-commerce filter toggle
-  const $dlEcBtn = document.getElementById('dl-btn-ecommerce');
-  $dlEcBtn?.addEventListener('click', () => {
-    const newVal = !dlState.getDlEcommerceOnly();
-    dlState.setDlEcommerceOnly(newVal);
-    $dlEcBtn.classList.toggle('active', newVal);
-    dlApplyFilter();
-    updateDlFilterChips();
+    if (window.triggerReinject) {
+      window.triggerReinject();
+    } else {
+      chrome.runtime.sendMessage({ type: 'INJECT_DATALAYER' }).catch(() => {});
+    }
   });
 
   // DL Sort toggle
@@ -1559,485 +1383,19 @@ async function initDatalayerHandlers(): Promise<void> {
   $dlSortBtn?.addEventListener('click', () => {
     const newOrder = toggleDlSortOrder();
     $dlSortBtn.classList.toggle('active', newOrder === 'desc');
-    // Re-render list with new sort order
     renderDlPushListFull();
+    syncSettingsControl('cfg-dl-sort-order', newOrder);
   });
 
-  // DL Filter popover
+  // DL Filter button — open DL filter popover
   const $dlFilterBtn = document.getElementById('dl-btn-filter');
-  const $dlFilterPopover = document.getElementById('dl-filter-popover');
-  const $dlSubmenu = document.getElementById('dl-filter-submenu-dl');
-
   $dlFilterBtn?.addEventListener('click', (e: Event) => {
     e.stopPropagation();
-    closeDlFilterPopover();
-    closeDlValidationPopover();
-    if ($dlFilterPopover) {
-      const isVisible = $dlFilterPopover.classList.contains('visible');
-      $dlFilterPopover.classList.toggle('visible', !isVisible);
-      if (!isVisible) {
-        positionDlFilterPopover();
-      }
-    }
+    toggleDlFilterPopover();
   });
 
-  function closeDlFilterPopover(): void {
-    if ($dlFilterPopover) $dlFilterPopover.classList.remove('visible');
-    if ($dlSubmenu) $dlSubmenu.classList.remove('visible');
-  }
-
-  function positionDlFilterPopover(): void {
-    if (!$dlFilterBtn || !$dlFilterPopover) return;
-    const rect = $dlFilterBtn.getBoundingClientRect();
-    $dlFilterPopover.style.top = `${rect.bottom + 4}px`;
-    $dlFilterPopover.style.left = `${Math.min(rect.left, window.innerWidth - 260)}px`;
-  }
-
-  // DL Filter popover item clicks
-  $dlFilterPopover?.addEventListener('click', (e: Event) => {
-    const target = (e.target as HTMLElement).closest('.filter-popover-item') as HTMLElement | null;
-    if (!target) return;
-
-    const action = target.dataset['action'];
-    const submenu = target.dataset['submenu'];
-
-    if (action === 'open-dl-submenu' && submenu) {
-      openDlSubmenu(submenu, target);
-    } else if (action === 'toggle-dl-ecommerce') {
-      const newVal = !dlState.getDlEcommerceOnly();
-      dlState.setDlEcommerceOnly(newVal);
-      target.classList.toggle('active-filter', newVal);
-      const $ecBtn = document.getElementById('dl-btn-ecommerce');
-      if ($ecBtn) $ecBtn.classList.toggle('active', newVal);
-      dlApplyFilter();
-      updateDlFilterChips();
-    }
-  });
-
-  function openDlSubmenu(type: string, anchor: HTMLElement): void {
-    if (!$dlSubmenu) return;
-    const $content = document.getElementById('dl-filter-submenu-content');
-    if (!$content) return;
-
-    // Position submenu
-    const rect = anchor.getBoundingClientRect();
-    $dlSubmenu.style.top = `${rect.top}px`;
-    $dlSubmenu.style.left = `${rect.right + 4}px`;
-    $dlSubmenu.classList.add('visible');
-
-    switch (type) {
-      case 'dl-source':
-        renderDlSourceSubmenu($content);
-        break;
-      case 'dl-event':
-        renderDlEventSubmenu($content);
-        break;
-      case 'dl-haskey':
-        renderDlHasKeySubmenu($content);
-        break;
-      case 'dl-sort':
-        renderDlSortSubmenu($content);
-        break;
-    }
-  }
-
-  // === SOURCE SUBMENU ===
-  function renderDlSourceSubmenu($content: HTMLElement): void {
-    const sources: DataLayerSource[] = ['gtm', 'tealium', 'adobe', 'segment', 'digitalData'];
-    const currentSource = dlState.getDlFilterSource();
-
-    let html = `
-      <div class="filter-submenu-item ${currentSource === '' ? 'selected' : ''}" data-source="">
-        <span class="item-label">All sources</span>
-        <span class="item-count">${dlState.getAllDlPushes().length}</span>
-      </div>
-    `;
-
-    for (const src of sources) {
-      const count = dlState.getAllDlPushes().filter((p) => p.source === src).length;
-      const label = SOURCE_DESCRIPTIONS[src as keyof typeof SOURCE_DESCRIPTIONS] ?? src;
-      const color = getSourceColor(src);
-      html += `
-        <div class="filter-submenu-item ${currentSource === src ? 'selected' : ''}" data-source="${src}">
-          <span class="item-label" style="color:${color}">${esc(label)}</span>
-          <span class="item-count">${count}</span>
-        </div>
-      `;
-    }
-
-    $content.innerHTML = html;
-
-    $content.querySelectorAll('.filter-submenu-item').forEach((item) => {
-      item.addEventListener('click', () => {
-        const rawSrc = (item as HTMLElement).dataset['source'] ?? '';
-        const validSources: (DataLayerSource | '')[] = [
-          '',
-          'gtm',
-          'digitalData',
-          'tealium',
-          'adobe',
-          'segment',
-          'custom',
-        ];
-        const src: DataLayerSource | '' = validSources.includes(rawSrc as DataLayerSource | '')
-          ? (rawSrc as DataLayerSource | '')
-          : '';
-        dlState.setDlFilterSource(src);
-        dlApplyFilter();
-        updateDlFilterChips();
-        closeDlFilterPopover();
-      });
-    });
-  }
-
-  // === EVENT NAME SUBMENU ===
-  function renderDlEventSubmenu($content: HTMLElement): void {
-    const pushes = dlState.getAllDlPushes();
-    const eventCounts = new Map<string, number>();
-    for (const p of pushes) {
-      if (p._eventName) {
-        eventCounts.set(p._eventName, (eventCounts.get(p._eventName) ?? 0) + 1);
-      }
-    }
-
-    const currentEvent = dlState.getDlFilterEventName();
-
-    let html = `
-      <div class="filter-submenu-search">
-        <input type="text" id="dl-event-search" placeholder="Search events...">
-      </div>
-      <div class="filter-submenu-item ${currentEvent === '' ? 'selected' : ''}" data-event="">
-        <span class="item-label">All events</span>
-        <span class="item-count">${pushes.length}</span>
-      </div>
-      <div class="filter-submenu-divider"></div>
-    `;
-
-    const sorted = [...eventCounts.entries()].sort((a, b) => b[1] - a[1]);
-    for (const [name, count] of sorted) {
-      html += `
-        <div class="filter-submenu-item ${currentEvent === name ? 'selected' : ''}" data-event="${esc(name)}">
-          <span class="item-label">${esc(name)}</span>
-          <span class="item-count">${count}</span>
-        </div>
-      `;
-    }
-
-    $content.innerHTML = html;
-
-    const $search = document.getElementById('dl-event-search') as HTMLInputElement | null;
-    $search?.addEventListener('input', () => {
-      const query = $search.value.toLowerCase();
-      $content.querySelectorAll('.filter-submenu-item[data-event]').forEach((item) => {
-        const event = (item as HTMLElement).dataset['event'] ?? '';
-        item.style.display = event === '' || event.toLowerCase().includes(query) ? '' : 'none';
-      });
-    });
-
-    $content.querySelectorAll('.filter-submenu-item').forEach((item) => {
-      item.addEventListener('click', () => {
-        const event = (item as HTMLElement).dataset['event'] ?? '';
-        dlState.setDlFilterEventName(event);
-        dlApplyFilter();
-        updateDlFilterChips();
-        closeDlFilterPopover();
-      });
-    });
-  }
-
-  // === HAS KEY SUBMENU ===
-  function renderDlHasKeySubmenu($content: HTMLElement): void {
-    const keyCounts = new Map<string, number>();
-    for (const p of dlState.getAllDlPushes()) {
-      for (const key of Object.keys(p.data)) {
-        keyCounts.set(key, (keyCounts.get(key) ?? 0) + 1);
-      }
-    }
-
-    const sorted = [...keyCounts.entries()]
-      .filter(([k]) => !k.includes('.'))
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 50);
-
-    const currentKey = dlState.getDlFilterHasKey();
-
-    const quickpicks = [
-      'ecommerce',
-      'page_location',
-      'page_title',
-      'user_id',
-      'transaction_id',
-      'items',
-      'currency',
-      'value',
-    ];
-    const availableQuickpicks = quickpicks.filter((q) => keyCounts.has(q));
-
-    let html = `
-      <div class="filter-submenu-input-row">
-        <input type="text" id="dl-haskey-input" placeholder="Enter key name..." value="${esc(currentKey)}">
-        <button id="dl-haskey-apply">Filter</button>
-      </div>
-    `;
-
-    if (availableQuickpicks.length > 0) {
-      html += '<div class="filter-submenu-quickpicks">';
-      for (const qp of availableQuickpicks) {
-        html += `<span class="filter-submenu-quickpick" data-key="${esc(qp)}">${esc(qp)}</span>`;
-      }
-      html += '</div>';
-    }
-
-    html += '<div class="filter-submenu-divider"></div>';
-
-    for (const [key, count] of sorted) {
-      html += `
-        <div class="filter-submenu-item ${currentKey === key ? 'selected' : ''}" data-key="${esc(key)}">
-          <span class="item-label">${esc(key)}</span>
-          <span class="item-count">${count}</span>
-        </div>
-      `;
-    }
-
-    $content.innerHTML = html;
-
-    document.getElementById('dl-haskey-apply')?.addEventListener('click', () => {
-      const val = (document.getElementById('dl-haskey-input') as HTMLInputElement)?.value.trim();
-      dlState.setDlHasKey(val);
-      dlApplyFilter();
-      updateDlFilterChips();
-      closeDlFilterPopover();
-    });
-
-    (document.getElementById('dl-haskey-input') as HTMLInputElement)?.addEventListener(
-      'keydown',
-      (e) => {
-        if (e.key === 'Enter') {
-          document.getElementById('dl-haskey-apply')?.click();
-        }
-      }
-    );
-
-    $content.querySelectorAll('.filter-submenu-quickpick').forEach((qp) => {
-      qp.addEventListener('click', () => {
-        const key = (qp as HTMLElement).dataset['key'] ?? '';
-        dlState.setDlHasKey(key);
-        dlApplyFilter();
-        updateDlFilterChips();
-        closeDlFilterPopover();
-      });
-    });
-
-    $content.querySelectorAll('.filter-submenu-item[data-key]').forEach((item) => {
-      item.addEventListener('click', () => {
-        const key = (item as HTMLElement).dataset['key'] ?? '';
-        dlState.setDlHasKey(key);
-        dlApplyFilter();
-        updateDlFilterChips();
-        closeDlFilterPopover();
-      });
-    });
-  }
-
-  // === SORT SUBMENU ===
-  function renderDlSortSubmenu($content: HTMLElement): void {
-    const currentField = getDlSortField();
-    const currentOrder = getDlSortOrder();
-
-    type DlSortField = 'time' | 'keycount' | 'source';
-    const options: { field: DlSortField; label: string; icon: string }[] = [
-      { field: 'time', label: 'Time', icon: '🕐' },
-      { field: 'keycount', label: 'Key count', icon: '🔢' },
-      { field: 'source', label: 'Source', icon: '🏷️' },
-    ];
-
-    let html = '';
-    for (const opt of options) {
-      const isSelected = currentField === opt.field;
-      html += `
-        <div class="filter-submenu-item ${isSelected ? 'selected' : ''}" data-sort="${opt.field}">
-          <span class="item-label">${opt.icon} ${opt.label}</span>
-          ${isSelected ? `<span style="font-size:10px;color:var(--accent)">${currentOrder === 'asc' ? '↑ asc' : '↓ desc'}</span>` : ''}
-        </div>
-      `;
-    }
-
-    html += '<div class="filter-submenu-divider"></div>';
-    html += `
-      <div class="filter-submenu-item" data-action="toggle-sort-order" style="justify-content:center;">
-        <span class="item-label" style="color:var(--accent)">
-          ${currentOrder === 'asc' ? '↑ Switch to newest first' : '↓ Switch to oldest first'}
-        </span>
-      </div>
-    `;
-
-    html += '<div class="filter-submenu-divider"></div>';
-    html += `
-      <div class="filter-submenu-item ${getDlGroupBySource() ? 'selected' : ''}" data-action="toggle-group-by-source">
-        <span class="item-label">🏷️ Group by source</span>
-      </div>
-    `;
-
-    $content.innerHTML = html;
-
-    $content.querySelectorAll('.filter-submenu-item[data-sort]').forEach((item) => {
-      item.addEventListener('click', () => {
-        const field = (item as HTMLElement).dataset['sort'] as DlSortField;
-        setDlSortField(field);
-        renderDlPushListFull();
-        closeDlFilterPopover();
-      });
-    });
-
-    $content.querySelector('[data-action="toggle-sort-order"]')?.addEventListener('click', () => {
-      const newOrder = toggleDlSortOrder();
-      renderDlPushListFull();
-      // Sync toolbar button visual state
-      const $dlSortBtn = document.getElementById('dl-btn-sort');
-      $dlSortBtn?.classList.toggle('active', newOrder === 'desc');
-      closeDlFilterPopover();
-    });
-
-    $content
-      .querySelector('[data-action="toggle-group-by-source"]')
-      ?.addEventListener('click', () => {
-        setDlGroupBySource(!getDlGroupBySource());
-        renderDlPushListFull();
-        closeDlFilterPopover();
-      });
-  }
-
-  // DL Validation popover
-  const $dlValBtn = document.getElementById('dl-btn-validation');
-  const $dlValPopover = document.getElementById('dl-validation-popover');
-
-  function closeDlValidationPopover(): void {
-    if ($dlValPopover) $dlValPopover.classList.remove('visible');
-  }
-
-  $dlValBtn?.addEventListener('click', (e: Event) => {
-    e.stopPropagation();
-    closeDlFilterPopover();
-    closeDlValidationPopover();
-    if ($dlValPopover) {
-      const isVisible = $dlValPopover.classList.contains('visible');
-      $dlValPopover.classList.toggle('visible', !isVisible);
-      if (!isVisible) {
-        renderDlValidationRules();
-        updateDlValidationSummary();
-      }
-    }
-  });
-
-  function renderDlValidationRules(): void {
-    const $list = document.getElementById('dl-val-rules-list');
-    if (!$list) return;
-
-    const rules = dlState.getValidationRules();
-    $list.innerHTML = '';
-
-    for (const rule of rules) {
-      const row = document.createElement('div');
-      row.className = 'dl-val-rule';
-
-      const toggle = document.createElement('button');
-      toggle.className = `dl-val-rule-toggle ${rule.enabled ? 'enabled' : ''}`;
-      toggle.addEventListener('click', () => {
-        rule.enabled = !rule.enabled;
-        toggle.classList.toggle('enabled', rule.enabled);
-        saveValidationRules(dlState.getValidationRules());
-        revalidateAllDlPushes();
-      });
-
-      const name = document.createElement('span');
-      name.className = 'dl-val-rule-name';
-      name.textContent = rule.name;
-
-      const scope = document.createElement('span');
-      scope.className = 'dl-val-rule-scope';
-      const scopeParts: string[] = [];
-      if (rule.scope.eventName) {
-        const events = Array.isArray(rule.scope.eventName)
-          ? rule.scope.eventName
-          : rule.scope.eventName;
-        scopeParts.push(String(events));
-      }
-      if (rule.scope.ecommerceType) scopeParts.push(rule.scope.ecommerceType);
-      if (rule.scope.source) scopeParts.push(rule.scope.source);
-      scope.textContent = scopeParts.length > 0 ? scopeParts.join(' · ') : 'all';
-
-      row.appendChild(toggle);
-      row.appendChild(name);
-      row.appendChild(scope);
-      $list.appendChild(row);
-    }
-  }
-
-  function renderDlCustomRules(): void {
-    const $list = document.getElementById('dl-val-custom-rules');
-    if (!$list) return;
-
-    const rules = dlState.getValidationRules().filter((r) => r.id.startsWith('custom-'));
-    $list.innerHTML = '';
-
-    for (const rule of rules) {
-      const row = document.createElement('div');
-      row.className = 'dl-val-rule';
-
-      const toggle = document.createElement('button');
-      toggle.className = `dl-val-rule-toggle ${rule.enabled ? 'enabled' : ''}`;
-      toggle.addEventListener('click', () => {
-        rule.enabled = !rule.enabled;
-        toggle.classList.toggle('enabled', rule.enabled);
-        saveValidationRules(dlState.getValidationRules());
-        revalidateAllDlPushes();
-      });
-
-      const name = document.createElement('span');
-      name.className = 'dl-val-rule-name';
-      name.textContent = rule.name;
-
-      const deleteBtn = document.createElement('button');
-      deleteBtn.textContent = '×';
-      deleteBtn.style.cssText =
-        'background:none;border:none;color:var(--red);cursor:pointer;font-size:14px;padding:0 4px;';
-      deleteBtn.addEventListener('click', () => {
-        const updated = dlState.getValidationRules().filter((r) => r.id !== rule.id);
-        dlState.setValidationRules(updated);
-        saveValidationRules(updated);
-        renderDlCustomRules();
-        revalidateAllDlPushes();
-        updateDlValidationSummary();
-      });
-
-      row.appendChild(toggle);
-      row.appendChild(name);
-      row.appendChild(deleteBtn);
-      $list.appendChild(row);
-    }
-  }
-
-  function updateDlValidationSummary(): void {
-    const $count = document.getElementById('dl-val-error-count');
-    if (!$count) return;
-
-    const pushes = dlState.getAllDlPushes();
-    let affectedCount = 0;
-    for (const p of pushes) {
-      if (dlState.getValidationErrors(p.id).length > 0) affectedCount++;
-    }
-    $count.textContent = String(affectedCount);
-
-    const $btn = document.getElementById('dl-btn-validation');
-    if ($btn) {
-      $btn.classList.toggle('active', affectedCount > 0);
-    }
-
-    // Also render custom rules
-    renderDlCustomRules();
-  }
-
-  function revalidateAllDlPushes(): void {
+  // Listen for revalidate events from the settings drawer
+  document.addEventListener('tagdragon:revalidate', () => {
     const rules = dlState.getValidationRules().filter((r) => r.enabled);
     const pushes = dlState.getAllDlPushes();
 
@@ -2051,76 +1409,6 @@ async function initDatalayerHandlers(): Promise<void> {
     }
 
     updateDlRowValidation();
-    updateDlValidationSummary();
-  }
-
-  // Add custom rule handler
-  document.getElementById('dl-val-add-rule')?.addEventListener('click', () => {
-    const $container = document.getElementById('dl-val-custom-rules');
-    if (!$container) return;
-    if ($container.querySelector('.dl-val-add-form')) return;
-
-    const form = document.createElement('div');
-    form.className = 'dl-val-add-form';
-    form.style.cssText = 'padding:8px 0;';
-    form.innerHTML = `
-      <div style="margin-bottom:6px;">
-        <input type="text" id="dl-val-new-name" placeholder="Rule name" class="dl-val-add-form">
-      </div>
-      <div style="display:flex;gap:4px;margin-bottom:6px;">
-        <select id="dl-val-new-type" class="dl-val-add-form">
-          <option value="required_key">Required key</option>
-          <option value="forbidden_key">Forbidden key</option>
-        </select>
-      </div>
-      <div style="margin-bottom:6px;">
-        <input type="text" id="dl-val-new-key" placeholder="Key path (e.g. ecommerce.transaction_id)" class="dl-val-add-form">
-      </div>
-      <div style="display:flex;gap:4px;">
-        <input type="text" id="dl-val-new-event" placeholder="Event name (optional)" class="dl-val-add-form">
-        <button id="dl-val-save-new" style="
-          padding:4px 12px;background:var(--accent);color:#fff;border:none;
-          border-radius:4px;font-size:11px;font-weight:600;cursor:pointer;
-        ">Add</button>
-        <button id="dl-val-cancel-new" style="
-          padding:4px 8px;background:var(--bg-2);color:var(--text-1);border:1px solid var(--border);
-          border-radius:4px;font-size:11px;cursor:pointer;
-        ">Cancel</button>
-      </div>
-    `;
-
-    $container.appendChild(form);
-    (document.getElementById('dl-val-new-name') as HTMLInputElement)?.focus();
-
-    document.getElementById('dl-val-cancel-new')?.addEventListener('click', () => form.remove());
-    document.getElementById('dl-val-save-new')?.addEventListener('click', () => {
-      const name = (document.getElementById('dl-val-new-name') as HTMLInputElement)?.value.trim();
-      const type = (document.getElementById('dl-val-new-type') as HTMLSelectElement)?.value;
-      const key = (document.getElementById('dl-val-new-key') as HTMLInputElement)?.value.trim();
-      const event = (document.getElementById('dl-val-new-event') as HTMLInputElement)?.value.trim();
-
-      if (!name || !key) return;
-
-      const newRule = {
-        id: `custom-${Date.now()}`,
-        name,
-        enabled: true,
-        scope: event ? { eventName: event } : {},
-        checks: [
-          {
-            type,
-            key,
-            message: `${type === 'required_key' ? 'Missing' : 'Forbidden'} ${key}`,
-          },
-        ],
-      };
-
-      const rules = [...dlState.getValidationRules(), newRule];
-      dlState.setValidationRules(rules);
-      saveValidationRules(rules);
-      revalidateAllDlPushes();
-      form.remove();
-    });
   });
 
   // DL Detail close button
@@ -2170,6 +1458,15 @@ async function initDatalayerHandlers(): Promise<void> {
 // ─── INITIALIZE ──────────────────────────────────────────────────────────────
 
 async function init(): Promise<void> {
+  // ─── GLOBAL ERROR BOUNDARY ─────────────────────────────────────────────
+  window.addEventListener('error', (e) => {
+    console.error('[TagDragon] Unhandled error:', e.error);
+  });
+
+  window.addEventListener('unhandledrejection', (e) => {
+    console.warn('[TagDragon] Unhandled promise rejection:', e.reason);
+  });
+
   // Lucide icons — replace <i data-lucide="..."> placeholders with SVGs
   createIcons({
     icons: {
@@ -2186,16 +1483,12 @@ async function init(): Promise<void> {
       Search,
       X,
       ArrowUpDown,
-      WrapText,
-      Maximize2,
-      AlignJustify,
       Filter,
       Download,
       Pause,
       Play,
       SlidersHorizontal,
-      ShoppingCart,
-      CheckCircle,
+      Upload,
     },
   });
 
@@ -2232,20 +1525,23 @@ async function init(): Promise<void> {
 
   // Initialize all handlers
   initTabHandlers();
-  initProviderBarHandlers(doApplyFilters, doUpdateActiveFilters);
   initProviderBar();
-  initFilterPopoverHandlers(doApplyFilters, doUpdateActiveFilters);
   initToolbarHandlers();
-  renderSavedFilterChips();
   initKeyboardHandlers({
     getActiveView: () => activeView,
     doApplyFilters,
     doUpdateActiveFilters,
     doSelectRequest,
+    doSelectPush,
+    toggleSettingsDrawer: toggleSettings,
   });
   await initSplitter();
-  initConfigUI();
-  initQuickActions();
+  document.getElementById('btn-quick-sort')?.addEventListener('click', () => {
+    const next = state.getConfig().sortOrder === 'asc' ? 'desc' : 'asc';
+    state.updateConfig('sortOrder', next);
+    syncQuickButtons();
+    syncSettingsControl('cfg-sort-order', next);
+  });
   syncQuickButtons();
   applyWrapValuesClass();
   initCategoryToggle();
@@ -2253,6 +1549,27 @@ async function init(): Promise<void> {
   initDetailCopyHandlers();
   initRequestListHandler();
   applyCompactRowsClass();
+
+  initSettingsDrawer({
+    getActiveView: () => activeView,
+    doApplyFilters,
+    doUpdateActiveFilters,
+    syncQuickButtons,
+    applyWrapValuesClass,
+    applyCompactRowsClass,
+  });
+
+  initProviderFilterPopover({
+    doApplyFilters,
+    doUpdateActiveFilters,
+  });
+
+  initDlFilterPopover({
+    doApplyFilters: dlApplyFilter,
+    updateDlFilterChips,
+  });
+
+  initTimestampToggle();
 
   // Initialize Adobe env switcher
   initAdobeEnvSwitcher();
@@ -2262,32 +1579,6 @@ async function init(): Promise<void> {
 
   // Initialize Info Popover
   initInfoPopover();
-
-  // Close DL popovers on outside click
-  document.addEventListener('click', (e: Event) => {
-    const $dlFilterPopover = document.getElementById('dl-filter-popover');
-    const $dlSubmenu = document.getElementById('dl-filter-submenu-dl');
-    const $dlValPopover = document.getElementById('dl-validation-popover');
-    const $dlFilterBtn = document.getElementById('dl-btn-filter');
-    const $dlValBtn = document.getElementById('dl-btn-validation');
-
-    if (
-      $dlFilterPopover?.classList.contains('visible') &&
-      !$dlFilterPopover.contains(e.target as Node) &&
-      !$dlFilterBtn?.contains(e.target as Node)
-    ) {
-      $dlFilterPopover.classList.remove('visible');
-      $dlSubmenu?.classList.remove('visible');
-    }
-
-    if (
-      $dlValPopover?.classList.contains('visible') &&
-      !$dlValPopover.contains(e.target as Node) &&
-      !$dlValBtn?.contains(e.target as Node)
-    ) {
-      $dlValPopover.classList.remove('visible');
-    }
-  });
 
   // Initialize DataLayer handlers
   await initDatalayerHandlers();

@@ -28,17 +28,16 @@ export function findCorrelatedRequests(
   if (isNaN(pushTime)) return [];
 
   return requests
-    .filter((r) => {
+    .reduce<CorrelatedRequest[]>((results, r) => {
       const reqTime = r._ts ?? new Date(r.timestamp).getTime();
-      if (isNaN(reqTime)) return false;
+      if (isNaN(reqTime)) return results;
       const diff = reqTime - pushTime;
       // Allow configurable lookback for requests already in flight, up to +window
-      return diff >= -lookback && diff <= window;
-    })
-    .map((r) => ({
-      request: r,
-      delayMs: (r._ts ?? new Date(r.timestamp).getTime()) - pushTime,
-    }))
+      if (diff >= -lookback && diff <= window) {
+        results.push({ request: r, delayMs: diff });
+      }
+      return results;
+    }, [])
     .sort((a, b) => a.delayMs - b.delayMs);
 }
 
@@ -95,10 +94,14 @@ export function renderCorrelation(
 
     const url = document.createElement('span');
     url.className = 'dl-correlation-url';
-    const urlObj = tryParseUrl(request.url);
-    url.textContent = urlObj
-      ? urlObj.hostname + urlObj.pathname.slice(0, 30)
-      : request.url.slice(0, 50);
+    // Use request._displayUrl if available (pre-parsed), otherwise parse and cache
+    if (!request._displayUrl) {
+      const urlObj = tryParseUrl(request.url);
+      (request as { _displayUrl?: string })._displayUrl = urlObj
+        ? urlObj.hostname + urlObj.pathname.slice(0, 30)
+        : request.url.slice(0, 50);
+    }
+    url.textContent = request._displayUrl ?? request.url.slice(0, 50);
     url.title = request.url;
 
     const gotoBtn = document.createElement('button');

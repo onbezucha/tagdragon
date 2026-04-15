@@ -5,7 +5,7 @@ export const splitIo: Provider = {
   color: '#00B5AD',
   pattern: /events\.split\.io\/api\/events/,
 
-  parseParams(url: string, postBody: unknown): Record<string, string | undefined> {
+  parseParams(_url: string, postBody: unknown): Record<string, string | undefined> {
     let eventType: string | undefined;
     let key: string | undefined;
     let trafficType: string | undefined;

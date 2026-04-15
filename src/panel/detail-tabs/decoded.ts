@@ -22,7 +22,7 @@ export function renderCategorizedParams(
     ([, a], [, b]) => (a._meta?.order ?? 999) - (b._meta?.order ?? 999)
   );
 
-  let html = '';
+  const parts: string[] = [];
 
   for (const [catKey, params] of sortedEntries) {
     const category = params._meta;
@@ -41,10 +41,10 @@ export function renderCategorizedParams(
     const collapsedClass = isCollapsed ? 'collapsed' : '';
     const providerColor = data.color || '#6b7090';
 
-    html += `
+    parts.push(`
       <div class="category-section"
-           data-category="${catKey}"
-           style="--provider-color: ${providerColor};">
+           data-category="${esc(catKey)}"
+           style="--provider-color: ${esc(providerColor)};">
         <div class="category-header ${collapsedClass}">
           <div class="category-left">
             <span class="category-icon">${category.icon}</span>
@@ -59,10 +59,10 @@ export function renderCategorizedParams(
           </div>
         </div>
       </div>
-    `;
+    `);
   }
 
-  return html || '<div class="empty-tab">No parameters.</div>';
+  return parts.join('') || '<div class="empty-tab">No parameters.</div>';
 }
 
 /**

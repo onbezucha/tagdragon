@@ -20,7 +20,7 @@ interface ProductItem {
 /**
  * Extract products array from e-commerce data (GA4 + UA compatible).
  */
-export function extractProducts(ec: Record<string, unknown>): ProductItem[] {
+function extractProducts(ec: Record<string, unknown>): ProductItem[] {
   // GA4: ecommerce.items
   if (Array.isArray(ec['items'])) {
     return (ec['items'] as Record<string, unknown>[]).map(normalizeProduct);

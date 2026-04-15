@@ -50,13 +50,8 @@ interface DOMRefs {
   readonly providerGroupList: HTMLElement | null;
   readonly providerSearchInput: HTMLInputElement | null;
   readonly activeFilters: HTMLElement | null;
-  readonly providerPopover: HTMLElement | null;
   readonly btnProviders: HTMLElement | null;
   readonly filterBar: HTMLElement | null;
-  readonly settingsPopover: HTMLElement | null;
-  readonly filterPopover: HTMLElement | null;
-  readonly filterSubmenu: HTMLElement | null;
-  readonly filterSubmenuContent: HTMLElement | null;
   readonly main: HTMLElement | null;
   readonly splitter: HTMLElement | null;
   readonly envBadge: HTMLElement | null;
@@ -89,6 +84,15 @@ interface DOMRefs {
   readonly dlDetailTabs: HTMLElement | null;
   readonly dlDetailBadge: HTMLElement | null;
   readonly dlDetailTitle: HTMLElement | null;
+  // ─── SETTINGS POPOVER REFS ─────────────────────────────────────────────
+  readonly settingsPopover: HTMLElement | null;
+  readonly popoverBody: HTMLElement | null;
+  readonly btnSettingsClose: HTMLElement | null;
+  readonly settingsSearch: HTMLInputElement | null;
+  // ─── PROVIDER FILTER POPOVER REFS ──────────────────────────────────
+  readonly providerFilterPopover: HTMLElement | null;
+  readonly providerPopoverBody: HTMLElement | null;
+  readonly btnProviderPopoverClose: HTMLElement | null;
 }
 
 export const DOM: DOMRefs = {
@@ -175,26 +179,11 @@ export const DOM: DOMRefs = {
   get activeFilters() {
     return $('active-filters');
   },
-  get providerPopover() {
-    return $('provider-popover');
-  },
   get btnProviders() {
     return $('btn-providers');
   },
   get filterBar() {
     return $('filter-bar');
-  },
-  get settingsPopover() {
-    return $('settings-popover');
-  },
-  get filterPopover() {
-    return $('filter-popover');
-  },
-  get filterSubmenu() {
-    return $('filter-submenu');
-  },
-  get filterSubmenuContent() {
-    return $('filter-submenu-content');
   },
   get main() {
     return $('main');
@@ -287,5 +276,28 @@ export const DOM: DOMRefs = {
   },
   get dlDetailTitle() {
     return $('dl-detail-title');
+  },
+  // ─── SETTINGS POPOVER REFS ─────────────────────────────────────────────
+  get settingsPopover() {
+    return $('settings-popover');
+  },
+  get popoverBody() {
+    return $('popover-body');
+  },
+  get btnSettingsClose() {
+    return $('btn-settings-close');
+  },
+  get settingsSearch() {
+    return $<HTMLInputElement>('settings-search');
+  },
+  // ─── PROVIDER FILTER POPOVER REFS ──────────────────────────────────
+  get providerFilterPopover() {
+    return $('provider-filter-popover');
+  },
+  get providerPopoverBody() {
+    return $('provider-popover-body');
+  },
+  get btnProviderPopoverClose() {
+    return $('btn-provider-popover-close');
   },
 };

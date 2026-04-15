@@ -3,6 +3,7 @@
 
 import type { DataLayerPush } from '@/types/datalayer';
 import type { ValidationRule, ValidationResult, ValidationCheck } from '@/types/datalayer';
+import { getNestedValue } from '@/shared/object-utils';
 // ─── STORAGE ───────────────────────────────────────────────────────────────
 
 const STORAGE_KEY = 'rt_dl_validation_rules';
@@ -13,7 +14,7 @@ export const PRESET_RULES: ValidationRule[] = [
   {
     id: 'preset-purchase-txid',
     name: 'Purchase requires transaction_id',
-    enabled: false,
+    enabled: true,
     scope: { eventName: 'purchase' },
     checks: [
       {
@@ -31,7 +32,7 @@ export const PRESET_RULES: ValidationRule[] = [
   {
     id: 'preset-ecommerce-currency',
     name: 'E-commerce requires currency',
-    enabled: false,
+    enabled: true,
     scope: { ecommerceType: 'purchase' },
     checks: [
       { type: 'required_key', key: 'ecommerce.currency', message: 'Missing ecommerce.currency' },
@@ -217,20 +218,6 @@ function runCheck(
     default:
       return null;
   }
-}
-
-function getNestedValue(obj: Record<string, unknown>, path: string): unknown {
-  const parts = path.replace(/\[(\d+)\]/g, '.$1').split('.');
-  let current: unknown = obj;
-  for (const part of parts) {
-    if (current === null || current === undefined) return undefined;
-    if (typeof current === 'object') {
-      current = (current as Record<string, unknown>)[part];
-    } else {
-      return undefined;
-    }
-  }
-  return current;
 }
 
 function hasUndefinedValues(obj: unknown, depth = 0): boolean {

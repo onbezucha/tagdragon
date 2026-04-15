@@ -1504,6 +1504,7 @@ export const PROVIDER_CATEGORIES: AllProviderCategories = {
       order: 3,
       defaultExpanded: true,
       prefixMatch: ['c_'],
+      patterns: [],
     },
     private: {
       label: 'Private Attributes',
@@ -1511,6 +1512,7 @@ export const PROVIDER_CATEGORIES: AllProviderCategories = {
       order: 4,
       defaultExpanded: false,
       prefixMatch: ['p_'],
+      patterns: [],
     },
   },
 

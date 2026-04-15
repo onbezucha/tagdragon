@@ -34,6 +34,17 @@ function scheduleFlush(): void {
   }, 100);
 }
 
+// ─── CACHE INVALIDATION ───────────────────────────────────────────────────────
+
+/**
+ * Invalidate the in-memory stats cache.
+ * Call this whenever storage is mutated outside of the normal update path
+ * (e.g. when a tab is closed and its entry is deleted directly from storage).
+ */
+export function invalidateStatsCache(): void {
+  _statsCache = null;
+}
+
 // ─── MESSAGE HANDLERS ─────────────────────────────────────────────────────────
 
 export function initPopupBridge(): void {
@@ -79,7 +90,7 @@ export function initPopupBridge(): void {
 
 async function loadAllStats(): Promise<Record<number, TabPopupStats>> {
   const result = await chrome.storage.session.get('popup_stats');
-  return result['popup_stats'] ?? {};
+  return (result['popup_stats'] ?? {}) as Record<number, TabPopupStats>;
 }
 
 async function getActiveTabId(): Promise<number> {
@@ -105,6 +116,7 @@ function createEmptyStats(tabId: number): TabPopupStats {
 // ─── HANDLERS ─────────────────────────────────────────────────────────────────
 
 async function handleUpdateStats(message: UpdatePopupStatsMessage): Promise<void> {
+  if (typeof message.tabId !== 'number' || message.tabId <= 0) return;
   const allStats = await loadStatsCache();
   const stats: TabPopupStats = allStats[message.tabId] ?? createEmptyStats(message.tabId);
 
@@ -131,6 +143,7 @@ async function handleUpdateStats(message: UpdatePopupStatsMessage): Promise<void
 }
 
 async function handleGetStats(tabId?: number): Promise<PopupStatsResponse> {
+  if (typeof tabId !== 'number' || tabId <= 0) return buildPopupResponse(createEmptyStats(0), 0);
   const targetTabId = tabId ?? (await getActiveTabId());
   const allStats = await loadStatsCache();
   const stats = allStats[targetTabId] ?? createEmptyStats(targetTabId);
@@ -156,25 +169,22 @@ function buildPopupResponse(stats: TabPopupStats, tabId: number): PopupStatsResp
 }
 
 async function handleSetPaused(tabId: number | undefined, paused: boolean): Promise<void> {
-  const targetTabId = tabId ?? (await getActiveTabId());
+  if (typeof tabId !== 'number' || tabId <= 0) return;
   const allStats = await loadStatsCache();
-  const stats = allStats[targetTabId] ?? createEmptyStats(targetTabId);
+  const stats = allStats[tabId] ?? createEmptyStats(tabId);
   stats.isPaused = paused;
-  allStats[targetTabId] = stats;
+  allStats[tabId] = stats;
   scheduleFlush();
 
-  // Notify devtools script so it can stop/resume processing requests
-  chrome.runtime
-    .sendMessage({
-      type: paused ? 'RECORDING_PAUSED' : 'RECORDING_RESUMED',
-      tabId: targetTabId,
-    })
-    .catch(() => {
-      // DevTools may be closed, that's fine
-    });
+  // Notify only the specific tab's DevTools panel — avoids broadcasting to all open panels
+  const port = devToolsPorts.get(tabId);
+  if (port) {
+    port.postMessage({ type: paused ? 'RECORDING_PAUSED' : 'RECORDING_RESUMED' });
+  }
 }
 
 async function handleClear(tabId?: number): Promise<void> {
+  if (typeof tabId !== 'number' || tabId <= 0) return;
   const targetTabId = tabId ?? (await getActiveTabId());
   const allStats = await loadStatsCache();
   delete allStats[targetTabId];

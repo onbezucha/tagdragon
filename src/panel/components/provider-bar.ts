@@ -32,6 +32,9 @@ function getGroupIconSvg(groupId: string): string {
 
 // ─── GROUP DOM ───────────────────────────────────────────────────────────────
 
+// Cache DOM elements to avoid repeated querySelector calls
+const _groupCache = new Map<string, HTMLElement>();
+
 /**
  * Ensure a provider group element exists in #provider-group-list. Returns the .pgroup-pills container.
  */
@@ -43,10 +46,19 @@ function ensureProviderGroup(
 ): HTMLElement | null {
   const groupList = DOM.providerGroupList;
   if (!groupList) return null;
+
+  // Check cache first
+  const cached = _groupCache.get(groupId);
+  if (cached && cached.parentElement) {
+    return cached.querySelector('.pgroup-pills') as HTMLElement;
+  }
+
+  // Fall back to DOM query
   const existing = groupList.querySelector(
     `.pgroup[data-group="${CSS.escape(groupId)}"]`
   ) as HTMLElement | null;
   if (existing) {
+    _groupCache.set(groupId, existing);
     return existing.querySelector('.pgroup-pills') as HTMLElement;
   }
 
@@ -118,6 +130,7 @@ function ensureProviderGroup(
   });
 
   groupList.appendChild($group);
+  _groupCache.set(groupId, $group);
   return $pills;
 }
 
@@ -267,9 +280,7 @@ function toggleProvider(
  * Update filter bar visibility and provider button active state.
  */
 export function updateFilterBarVisibility(): void {
-  const activeProviders = getActiveProviders();
   const hiddenProviders = getHiddenProviders();
-  const hasProviders = activeProviders.size > 0;
   const hasFilters = !!(
     getFilterText() ||
     getFilterEventType() ||
@@ -284,17 +295,9 @@ export function updateFilterBarVisibility(): void {
   const $btn = DOM.btnProviders;
   $btn?.classList.toggle('active', hiddenProviders.size > 0);
 
-  // Empty state in popover
-  const $empty = document.getElementById('provider-popover-empty') as HTMLElement | null;
-  if ($empty) $empty.style.display = hasProviders ? 'none' : '';
-
   DOM.filterBar?.classList.toggle('visible', hasFilters);
 
   updateHiddenBadge();
-
-  // Hide footer when no providers are captured yet
-  const $footer = document.getElementById('provider-popover-footer');
-  if ($footer) $footer.style.display = hasProviders ? '' : 'none';
 }
 
 // ─── TRI-STATE GROUP INDICATORS ───────────────────────────────────────────────
@@ -304,7 +307,7 @@ type GroupState = 'all' | 'partial' | 'none';
 /**
  * Update tri-state indicators on all group headers.
  */
-function updateGroupStates(): void {
+export function updateGroupStates(): void {
   const groupList = DOM.providerGroupList;
   if (!groupList) return;
 
@@ -335,7 +338,7 @@ function updateGroupStates(): void {
 /**
  * Update the hidden count badge on the #btn-providers button.
  */
-function updateHiddenBadge(): void {
+export function updateHiddenBadge(): void {
   const hiddenProviders = getHiddenProviders();
   const badge = document.getElementById('provider-hidden-badge') as HTMLElement | null;
   if (!badge) return;
@@ -350,7 +353,7 @@ function updateHiddenBadge(): void {
 /**
  * Update the "X of Y visible" footer text.
  */
-function updateFooterSummary(): void {
+export function updateFooterSummary(): void {
   const activeProviders = getActiveProviders();
   const hiddenProviders = getHiddenProviders();
   const total = activeProviders.size;
@@ -360,10 +363,6 @@ function updateFooterSummary(): void {
   const totalEl = document.getElementById('provider-footer-total');
   if (countEl) countEl.textContent = String(visible);
   if (totalEl) totalEl.textContent = String(total);
-
-  // Hide footer when no providers exist
-  const $footer = document.getElementById('provider-popover-footer');
-  if ($footer) $footer.style.display = activeProviders.size > 0 ? '' : 'none';
 }
 
 // ─── CONTEXT MENU ─────────────────────────────────────────────────────────────
@@ -455,119 +454,6 @@ function showProviderContextMenu(
 function closeProviderContextMenu(): void {
   const existing = document.getElementById('ppill-context-menu');
   if (existing) existing.remove();
-}
-
-// ─── SEARCH ───────────────────────────────────────────────────────────────────
-
-function initProviderSearch(): void {
-  const $input = DOM.providerSearchInput;
-  const $clearBtn = document.getElementById(
-    'btn-provider-search-clear'
-  ) as HTMLButtonElement | null;
-  if (!$input) return;
-
-  const doSearch = (query: string) => {
-    const q = query.toLowerCase();
-    const groupList = DOM.providerGroupList;
-    if (!groupList) return;
-
-    qsa('.ppill', groupList).forEach((pill) => {
-      const name = ((pill as HTMLElement).dataset.provider ?? '').toLowerCase();
-      const hidden = q.length > 0 && !name.includes(q);
-      pill.classList.toggle('search-hidden', hidden);
-    });
-
-    qsa('.pgroup', groupList).forEach((group) => {
-      const pills = qsa('.ppill', group);
-      const allHidden =
-        pills.length > 0 && pills.every((p) => p.classList.contains('search-hidden'));
-      group.classList.toggle('search-empty', allHidden);
-    });
-
-    if ($clearBtn) $clearBtn.classList.toggle('hidden', q.length === 0);
-  };
-
-  $input.addEventListener('input', (e: Event) => {
-    doSearch((e.target as HTMLInputElement).value);
-  });
-
-  $clearBtn?.addEventListener('click', () => {
-    $input.value = '';
-    doSearch('');
-  });
-}
-
-// ─── HANDLERS ─────────────────────────────────────────────────────────────────
-
-/**
- * Initialize provider bar button handlers (search + All/None).
- */
-export function initProviderBarHandlers(
-  applyFiltersCallback: () => void,
-  updateActiveFiltersCallback: () => void
-): void {
-  const $btnAll = document.getElementById('btn-providers-all') as HTMLElement;
-  const $btnNone = document.getElementById('btn-providers-none') as HTMLElement;
-  const hiddenProviders = getHiddenProviders();
-  const activeProviders = getActiveProviders();
-
-  if ($btnAll) {
-    $btnAll.addEventListener('click', () => {
-      hiddenProviders.clear();
-      qsa('.ppill.inactive').forEach((p) => {
-        p.classList.replace('inactive', 'active');
-        const iconEl = p.querySelector('.ppill-icon');
-        iconEl?.classList.remove('icon-hidden');
-      });
-      syncHiddenProviders();
-      applyFiltersCallback();
-      updateActiveFiltersCallback();
-      updateGroupStates();
-      updateFooterSummary();
-      updateHiddenBadge();
-    });
-  }
-
-  if ($btnNone) {
-    $btnNone.addEventListener('click', () => {
-      for (const provider of activeProviders) {
-        hiddenProviders.add(provider);
-      }
-      qsa('.ppill.active').forEach((p) => {
-        p.classList.replace('active', 'inactive');
-        const iconEl = p.querySelector('.ppill-icon');
-        iconEl?.classList.add('icon-hidden');
-      });
-      syncHiddenProviders();
-      applyFiltersCallback();
-      updateActiveFiltersCallback();
-      updateGroupStates();
-      updateFooterSummary();
-      updateHiddenBadge();
-    });
-  }
-
-  // "Show all" footer button
-  const btnShowAll = document.getElementById('btn-show-all-providers');
-  btnShowAll?.addEventListener('click', () => {
-    hiddenProviders.clear();
-    qsa('.ppill.inactive').forEach((p) => {
-      p.classList.replace('inactive', 'active');
-      const iconEl = p.querySelector('.ppill-icon');
-      iconEl?.classList.remove('icon-hidden');
-    });
-    syncHiddenProviders();
-    applyFiltersCallback();
-    updateActiveFiltersCallback();
-    updateGroupStates();
-    updateFooterSummary();
-    updateHiddenBadge();
-  });
-
-  initProviderSearch();
-  updateGroupStates();
-  updateFooterSummary();
-  updateHiddenBadge();
 }
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────

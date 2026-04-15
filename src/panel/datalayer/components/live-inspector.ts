@@ -4,6 +4,7 @@
 
 import { DOM } from '../../utils/dom';
 import { getWatchedPaths, addWatchedPath, removeWatchedPath, clearWatchedPaths } from '../state';
+import { getNestedValue } from '@/shared/object-utils';
 
 // ─── TYPES ─────────────────────────────────────────────────────────────────
 
@@ -148,7 +149,7 @@ export function checkWatchPaths(
     const oldVal = getNestedValue(prevState, path);
     const newVal = getNestedValue(newState, path);
 
-    if (JSON.stringify(oldVal) !== JSON.stringify(newVal)) {
+    if (!shallowEqual(oldVal, newVal)) {
       showWatchToast(toastArea, path, oldVal, newVal);
     }
   }
@@ -315,7 +316,7 @@ function renderWatchBar(container: HTMLElement): void {
   if (watched.length === 0) {
     const empty = document.createElement('span');
     empty.className = 'dl-watch-empty';
-    empty.textContent = 'Right-click a key to watch';
+    empty.textContent = '💡 Right-click a key to watch it';
     bar.appendChild(empty);
   } else {
     for (const path of watched) {
@@ -588,6 +589,23 @@ function isExpandable(val: unknown): boolean {
   return val !== null && typeof val === 'object';
 }
 
+/**
+ * Shallow compare for primitive and simple object equality.
+ * Used to avoid JSON.stringify for watch path comparisons.
+ */
+function shallowEqual(a: unknown, b: unknown): boolean {
+  if (a === b) return true;
+  if (typeof a !== typeof b) return false;
+  if (a === null || b === null) return a === b;
+  if (typeof a !== 'object') return false;
+  const keysA = Object.keys(a as object);
+  const keysB = Object.keys(b as object);
+  if (keysA.length !== keysB.length) return false;
+  return keysA.every(
+    (k) => (a as Record<string, unknown>)[k] === (b as Record<string, unknown>)[k]
+  );
+}
+
 function formatValue(val: unknown): string {
   if (val === null) return 'null';
   if (val === undefined) return 'undefined';
@@ -615,16 +633,4 @@ function formatValueShort(val: unknown): string {
   return String(val);
 }
 
-function getNestedValue(obj: Record<string, unknown>, path: string): unknown {
-  const parts = path.replace(/\[(\d+)\]/g, '.$1').split('.');
-  let current: unknown = obj;
-  for (const part of parts) {
-    if (current === null || current === undefined) return undefined;
-    if (typeof current === 'object') {
-      current = (current as Record<string, unknown>)[part];
-    } else {
-      return undefined;
-    }
-  }
-  return current;
-}
+// ─── END ───────────────────────────────────────────────────────────────────────

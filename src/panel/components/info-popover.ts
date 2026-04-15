@@ -4,7 +4,8 @@ import { PROVIDERS } from '@/providers/index';
 import { PROVIDER_GROUPS } from '@/shared/provider-groups';
 import { DATA_LAYER_SOURCES } from '@/shared/datalayer-constants';
 import { DOM } from '../utils/dom';
-import { isMac, modLabel } from '../utils/platform';
+import { closeAllPopovers } from '../utils/popover-manager';
+import { isMac } from '../utils/platform';
 import { esc } from '../utils/format';
 import { buildGroupIcon } from '../utils/icon-builder';
 import { GROUP_ICONS } from '../utils/group-icons';
@@ -33,6 +34,7 @@ import {
   SlidersHorizontal,
   ShoppingCart,
   CheckCircle,
+  Upload,
 } from 'lucide';
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
@@ -48,10 +50,7 @@ export function initInfoPopover(): void {
     const opening = !$popover.classList.contains('visible');
     $popover.classList.toggle('visible');
     if (opening) {
-      DOM.settingsPopover?.classList.remove('visible');
-      DOM.providerPopover?.classList.remove('visible');
-      DOM.consentPopover?.classList.remove('visible');
-      DOM.envPopover?.classList.remove('visible');
+      closeAllPopovers();
       // Focus search on open
       setTimeout(
         () => (document.getElementById('info-search') as HTMLInputElement | null)?.focus(),
@@ -73,6 +72,10 @@ export function initInfoPopover(): void {
 
 export function closeInfoPopover(): void {
   DOM.infoPopover?.classList.remove('visible');
+}
+
+export function isOpen(): boolean {
+  return DOM.infoPopover?.classList.contains('visible') ?? false;
 }
 
 // ─── VERSION ──────────────────────────────────────────────────────────────────
@@ -135,34 +138,57 @@ function renderShortcuts(): void {
   const $container = document.getElementById('info-shortcuts-list');
   if (!$container) return;
 
-  const shortcuts: Array<{
-    label: string;
-    keys: string;
-  }> = [
+  const groups = [
     {
-      label: 'Clear all (network)',
-      keys: 'Ctrl+L',
+      label: 'Navigation',
+      items: [
+        { label: 'Navigate list', keys: '↑ ↓' },
+        { label: 'Jump first / last', keys: isMac ? '⌘↑ / ⌘↓' : 'Home / End' },
+      ],
     },
     {
-      label: 'Focus search',
-      keys: 'Ctrl+F',
+      label: 'Actions',
+      items: [
+        { label: 'Clear all', keys: 'Backspace' },
+        { label: 'Pause / Resume', keys: 'Space' },
+        { label: 'Export data', keys: 'E' },
+      ],
     },
     {
-      label: 'Navigate list',
-      keys: '↑ ↓',
+      label: 'Search & Display',
+      items: [
+        { label: 'Focus search', keys: '/' },
+        { label: 'Switch detail tab', keys: '1–5' },
+        { label: 'Toggle theme', keys: 'T' },
+      ],
     },
     {
-      label: 'Jump to first / last',
-      keys: isMac ? '⌘↑ / ⌘↓' : 'Home / End',
-    },
-    {
-      label: 'Close detail / clear search',
-      keys: 'Esc',
+      label: 'Panels',
+      items: [
+        { label: 'Close / clear', keys: 'Esc' },
+        { label: 'Toggle settings', keys: 'Ctrl+,' },
+      ],
     },
   ];
 
-  $container.innerHTML = shortcuts
-    .map((s) => `<div class="info-shortcut"><span>${s.label}</span><kbd>${s.keys}</kbd></div>`)
+  $container.innerHTML = groups
+    .map(
+      (group) => `
+      <div class="info-shortcuts-group">
+        <div class="info-shortcuts-group-label">${group.label}</div>
+        ${group.items
+          .map(
+            (item) => `
+          <div class="info-shortcut">
+            <span>${item.label}</span>
+            <kbd>${item.keys}</kbd>
+          </div>
+        `
+          )
+          .join('')}
+      </div>
+    `
+    )
     .join('');
 }
 
@@ -171,8 +197,6 @@ function renderShortcuts(): void {
 function renderToolbarIcons(): void {
   const $container = document.getElementById('info-toolbar-icons');
   if (!$container) return;
-
-  const mod = modLabel();
 
   const groups: Array<{
     label: string;
@@ -186,8 +210,8 @@ function renderToolbarIcons(): void {
         { icon: 'eraser', name: 'Clear Cookies', desc: 'Delete all cookies on the inspected page' },
         { icon: 'cookie', name: 'Consent', desc: 'Open cookie consent state inspector' },
         { icon: 'sun', name: 'Theme', desc: 'Toggle between light and dark mode' },
-        { icon: 'trash-2', name: 'Clear All', desc: `Clear all captured requests (${mod}+L)` },
-        { icon: 'settings', name: 'Settings', desc: 'Open filters and settings popover' },
+        { icon: 'trash-2', name: 'Clear All', desc: 'Clear all captured requests (Backspace)' },
+        { icon: 'settings', name: 'Settings', desc: 'Open settings drawer (Ctrl+,)' },
         { icon: 'circle-help', name: 'Info', desc: 'Open this About panel' },
       ],
     },
@@ -197,7 +221,7 @@ function renderToolbarIcons(): void {
         {
           icon: 'search',
           name: 'Search',
-          desc: `Filter by URL, parameter, or provider (${mod}+F)`,
+          desc: 'Filter by URL, parameter, or provider (/)',
         },
         { icon: 'arrow-up-down', name: 'Sort', desc: 'Toggle between newest/oldest first' },
         { icon: 'wrap-text', name: 'Wrap', desc: 'Toggle long parameter value wrapping' },
@@ -211,7 +235,7 @@ function renderToolbarIcons(): void {
     {
       label: 'DataLayer bar',
       items: [
-        { icon: 'search', name: 'Search', desc: `Filter by event, key, or value (${mod}+F)` },
+        { icon: 'search', name: 'Search', desc: 'Filter by event, key, or value (/)' },
         { icon: 'download', name: 'Export', desc: 'Export DataLayer pushes as JSON' },
         { icon: 'pause', name: 'Pause', desc: 'Pause/resume DataLayer capture' },
       ],
@@ -269,6 +293,7 @@ function renderToolbarIcons(): void {
       SlidersHorizontal,
       ShoppingCart,
       CheckCircle,
+      Upload,
     },
   });
 }
@@ -281,12 +306,17 @@ function renderDataLayerSources(): void {
 
   $container.innerHTML = DATA_LAYER_SOURCES.map(
     (src) => `
-    <div class="info-dl-source">
+    <div class="info-dl-source" data-source="${src.id}">
       <div class="info-dl-source-header">
-        <span class="info-dl-source-label">${src.label}</span>
-        <code class="info-dl-source-var">${src.globalVar}</code>
+        <span class="info-dl-source-label">${esc(src.label)}</span>
+        <code class="info-dl-source-var">${esc(src.globalVar)}</code>
       </div>
-      <div class="info-dl-source-desc">${src.description}</div>
+      <div class="info-dl-source-desc">${esc(src.whatIs)}</div>
+      <div class="info-dl-source-howto"><strong>▸ How to read:</strong> ${esc(src.howToRead)}</div>
+      <div class="info-dl-source-events">
+        <span class="info-dl-source-events-label">▸ Common:</span>
+        ${src.typicalEvents.map((e) => `<span class="info-dl-source-event-tag">${esc(e)}</span>`).join('')}
+      </div>
     </div>
   `
   ).join('');

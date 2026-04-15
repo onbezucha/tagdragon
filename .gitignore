@@ -8,39 +8,63 @@
 Thumbs.db
 ehthumbs.db
 
-# Linux / editors
+# Linux
 *.swp
 *.swo
+.directory
 
-# JetBrains IDEs
+# IDEs
 .idea/
+.vscode/
+.fleet/
 
+# AI coding tools
+AGENTS.md
+CLAUDE.md
+JEAN.md
+.claude/
+.cursor/
+.windsurf/
+.aider*
+
+# Dependencies
 node_modules/
 
-# Logs (npm, yarn)
+# Build output
+dist/
+
+# Logs
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log
 
-.vscode/
-dist/
-AGENTS.md
-CLAUDE.md
+# Environment
 .env
 .env.local
+.env.*.local
 
-# ESLint cache
+# Cache
 .eslintcache
+tsconfig.tsbuildinfo
 
 # Test coverage (future-proofing)
 coverage/
 
+# Chrome Extension artifacts
+*.crx
+*.pem
+*.heapsnapshot
+
 # Release artifacts
 *.zip
+*.tgz
 
 # AI task artifacts
 .task-*.md
 
 # Patch files
 *.patch
+
+# VS Code Local History
+.history/

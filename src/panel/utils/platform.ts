@@ -1,9 +1,7 @@
 // ─── PLATFORM DETECTION ─────────────────────────────────────────────────────
 
-const isMac = navigator.platform.includes('Mac');
+const isMac =
+  (navigator as unknown as { userAgentData?: { platform?: string } })?.userAgentData?.platform ===
+    'macOS' || navigator.platform.includes('Mac');
 
-function modLabel(): string {
-  return isMac ? '⌘' : 'Ctrl';
-}
-
-export { isMac, modLabel };
+export { isMac };

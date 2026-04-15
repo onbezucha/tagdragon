@@ -20,16 +20,8 @@ export interface AppConfig {
   dlSortField: 'time' | 'keycount' | 'source';
   dlSortOrder: 'asc' | 'desc';
   dlGroupBySource: boolean;
-  savedFilters: Array<{
-    id: string;
-    name: string;
-    text: string;
-    eventType: string;
-    userId: string;
-    status: string;
-    method: string;
-    hasParam: string;
-  }>;
+  maxDlPushes: number;
+  correlationWindowMs: number;
 }
 
 export const DEFAULT_CONFIG: AppConfig = {
@@ -48,5 +40,12 @@ export const DEFAULT_CONFIG: AppConfig = {
   dlSortField: 'time',
   dlSortOrder: 'asc',
   dlGroupBySource: false,
-  savedFilters: [],
+  maxDlPushes: 1000,
+  correlationWindowMs: 2000,
 };
+
+/** Max buffered messages before dropping oldest (panel-bridge, data-layer-relay) */
+export const MAX_BUFFER = 500;
+
+/** Parameter keys that indicate a user ID is present in a request */
+export const USER_ID_PARAM_KEYS = ['client_id', 'Client ID', 'cid', 'uid', 'user_id'] as const;

@@ -342,27 +342,6 @@ export function getStats(): Readonly<StatsState> {
 }
 
 /**
- * Get the count of currently visible requests.
- */
-export function getStatsVisibleCount(): number {
-  return statsState.visibleCount;
-}
-
-/**
- * Get the total size of all visible requests in bytes.
- */
-export function getStatsTotalSize(): number {
-  return statsState.totalSize;
-}
-
-/**
- * Get the total duration of all visible requests in milliseconds.
- */
-export function getStatsTotalDuration(): number {
-  return statsState.totalDuration;
-}
-
-/**
  * Reset all statistics to zero.
  */
 export function resetStats(): void {
@@ -552,6 +531,14 @@ export function updateConfigImmediate<K extends keyof AppConfig>(
   value: AppConfig[K]
 ): void {
   config[key] = value;
+  void saveConfig();
+}
+
+/**
+ * Reset all config values to defaults and persist immediately.
+ */
+export function resetConfig(): void {
+  config = { ...DEFAULT_CONFIG };
   void saveConfig();
 }
 

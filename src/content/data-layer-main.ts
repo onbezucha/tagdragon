@@ -6,7 +6,7 @@ import { SOURCE_DESCRIPTIONS } from '@/shared/datalayer-constants';
 
 (function () {
   // ─── GUARD: prevent double execution when injected more than once ─────────
-  const win = window as Record<string, unknown>;
+  const win = window as unknown as Record<string, unknown>;
   if (win['__tagdragon_main__']) return;
   win['__tagdragon_main__'] = true;
 
@@ -96,7 +96,8 @@ import { SOURCE_DESCRIPTIONS } from '@/shared/datalayer-constants';
   // ─── GTM / window.dataLayer ──────────────────────────────────────────────
 
   function replayDataLayer(dataLayer: unknown[]): void {
-    const navStart = window.performance?.timing?.navigationStart ?? Date.now();
+    const navStart =
+      window.performance?.timeOrigin ?? window.performance?.timing?.navigationStart ?? Date.now();
     for (let i = 0; i < dataLayer.length; i++) {
       const item = dataLayer[i];
       if (item === null || typeof item !== 'object') continue;
@@ -109,14 +110,16 @@ import { SOURCE_DESCRIPTIONS } from '@/shared/datalayer-constants';
   }
 
   function interceptDataLayer(dataLayer: unknown[]): void {
-    // Replay all existing items
-    replayDataLayer(dataLayer);
+    // Replay all existing items (only if array has content)
+    if (Array.isArray(dataLayer) && dataLayer.length > 0) {
+      replayDataLayer(dataLayer);
+    }
 
     // Monkey-patch .push on the specific instance (NOT Array.prototype)
     const originalPush = dataLayer.push.bind(dataLayer);
     dataLayer.push = function (...args: unknown[]) {
-      args.forEach((arg) => {
-        sendPush('gtm', dataLayer.length, new Date().toISOString(), arg, false);
+      args.forEach((arg, i) => {
+        sendPush('gtm', dataLayer.length + i, new Date().toISOString(), arg, false);
       });
       return originalPush(...args);
     };
@@ -173,7 +176,9 @@ import { SOURCE_DESCRIPTIONS } from '@/shared/datalayer-constants';
   // ─── TEALIUM / window.utag.data ──────────────────────────────────────────
 
   function interceptTealium(): void {
-    const utag = (window as Record<string, unknown>)['utag'] as Record<string, unknown> | undefined;
+    const utag = (window as unknown as Record<string, unknown>)['utag'] as
+      | Record<string, unknown>
+      | undefined;
     if (!utag || typeof utag !== 'object') return;
 
     const utagData = utag['data'];
@@ -198,7 +203,7 @@ import { SOURCE_DESCRIPTIONS } from '@/shared/datalayer-constants';
   // ─── ADOBE (_satellite / adobeDataLayer) ─────────────────────────────────
 
   function interceptAdobe(): void {
-    const win = window as Record<string, unknown>;
+    const win = window as unknown as Record<string, unknown>;
     let adobeIdx = 0;
 
     // Adobe Client Data Layer (ACDL)
@@ -238,7 +243,7 @@ import { SOURCE_DESCRIPTIONS } from '@/shared/datalayer-constants';
   // ─── SEGMENT / window.analytics ──────────────────────────────────────────
 
   function interceptSegment(): void {
-    const analytics = (window as Record<string, unknown>)['analytics'] as
+    const analytics = (window as unknown as Record<string, unknown>)['analytics'] as
       | Record<string, unknown>
       | undefined;
     if (!analytics || typeof analytics !== 'object') return;
@@ -408,7 +413,14 @@ import { SOURCE_DESCRIPTIONS } from '@/shared/datalayer-constants';
   const retryInterval = setInterval(() => {
     detectAndIntercept();
     retries++;
-    if (retries >= 20) clearInterval(retryInterval); // Stop after 10s (20 × 500ms)
+    // Clear interval early if all sources are detected
+    const allDetected =
+      detected.gtm &&
+      detected.tealium &&
+      detected.adobe &&
+      detected.segment &&
+      detected.digitalData;
+    if (allDetected || retries >= 20) clearInterval(retryInterval);
   }, 500);
 
   // Also detect on DOMContentLoaded

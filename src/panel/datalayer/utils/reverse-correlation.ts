@@ -3,6 +3,7 @@
 
 import type { ParsedRequest } from '@/types/request';
 import type { DataLayerPush } from '@/types/datalayer';
+import { getSourceColor } from '@/shared/datalayer-constants';
 
 export interface TriggeringPushResult {
   push: DataLayerPush;
@@ -34,7 +35,11 @@ export function findTriggeringPush(
 
   while (lo < hi) {
     const mid = (lo + hi) >> 1;
-    const midTime = pushes[mid]._ts ?? 0;
+    const midTime = pushes[mid]._ts;
+    if (midTime == null || isNaN(midTime)) {
+      lo = mid + 1;
+      continue;
+    }
     if (midTime < minTime) {
       lo = mid + 1;
     } else {
@@ -51,7 +56,8 @@ export function findTriggeringPush(
     if (isNaN(pushTime)) continue;
 
     const delay = reqTime - pushTime;
-    if (delay < -200 || delay > lookbackMs) continue;
+    if (delay < -200) continue;
+    if (delay > lookbackMs) break;
 
     if (!best || Math.abs(delay) < Math.abs(best.delayMs)) {
       const confidence = delay < 200 ? 'high' : delay < 1000 ? 'medium' : 'low';
@@ -71,15 +77,7 @@ export function renderTriggeredBy(
   result: TriggeringPushResult,
   onGotoPush: (pushId: number) => void
 ): void {
-  const colors: Record<string, string> = {
-    gtm: '#E8710A',
-    tealium: '#2C7A7B',
-    adobe: '#E53E3E',
-    segment: '#3182CE',
-    digitalData: '#38A169',
-    custom: '#718096',
-  };
-  const color = colors[result.push.source] ?? '#718096';
+  const color = getSourceColor(result.push.source);
 
   // Confidence colors
   const confidenceColors: Record<string, string> = {

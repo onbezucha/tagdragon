@@ -3,7 +3,7 @@
  * Shared URL/POST body parsing utilities used by all providers.
  */
 
-import type { HARPostData as HARPostBody } from '@/types/har';
+import type { HARPostBody } from '@/types/har';
 
 type ParamValue = string;
 type ParamRecord = Record<string, ParamValue>;
@@ -60,7 +60,21 @@ export function getParams(url: string, postBody?: unknown): ParamRecord {
   // 2. POST body — overwrites any duplicates from URL
   const bodyStr = postBodyToString(postBody);
   if (bodyStr) {
-    // Try JSON (Web SDK, some modern implementations)
+    // Try URLencoded first (most common for tracking pixels and AA implementations)
+    // v1=value&v2=other&pageName=Home&events=purchase
+    try {
+      const urlParams = new URLSearchParams(bodyStr);
+      let hasParams = false;
+      urlParams.forEach((v, k) => {
+        params[k] = v;
+        hasParams = true;
+      });
+      if (hasParams) return params;
+    } catch {
+      // URLSearchParams parsing failed, continue
+    }
+
+    // Fallback to JSON (Web SDK, some modern implementations)
     try {
       const json = JSON.parse(bodyStr);
       if (json && typeof json === 'object') {
@@ -68,17 +82,7 @@ export function getParams(url: string, postBody?: unknown): ParamRecord {
         return params;
       }
     } catch {
-      // Not JSON, continue
-    }
-
-    // URLencoded (AppMeasurement, classic AA implementations)
-    // v1=value&v2=other&pageName=Home&events=purchase
-    try {
-      new URLSearchParams(bodyStr).forEach((v, k) => {
-        params[k] = v;
-      });
-    } catch {
-      // URLSearchParams parsing failed
+      // Not JSON, give up
     }
   }
 

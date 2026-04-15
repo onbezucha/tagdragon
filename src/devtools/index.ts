@@ -1,7 +1,7 @@
 // ─── DEVTOOLS ENTRY POINT ────────────────────────────────────────────────────
 // Creates the DevTools panel and initializes network capture.
 
-import { setPanelWindow, getPanelWindow } from './panel-bridge';
+import { setPanelWindow, getPanelWindow, type PanelWindow } from './panel-bridge';
 import { initNetworkCapture } from './network-capture';
 import {
   sendDataLayerPushToPanel,
@@ -55,6 +55,13 @@ function attachPortListener(port: chrome.runtime.Port): void {
         msg.labels as Record<string, string>
       );
     }
+    // Forward pause/resume from popup → panel window
+    if (msg.type === 'RECORDING_PAUSED' || msg.type === 'RECORDING_RESUMED') {
+      const panelWin = getPanelWindow();
+      if (panelWin && !panelWin.closed) {
+        panelWin._setPaused(msg.type === 'RECORDING_PAUSED');
+      }
+    }
   });
 
   port.onDisconnect.addListener(() => {
@@ -85,18 +92,28 @@ attachPortListener(devToolsPort);
 chrome.devtools.panels.create('TagDragon', '', 'public/panel.html', (panel) => {
   // When panel becomes visible, establish the bridge and flush buffered requests
   panel.onShown.addListener((win: Window) => {
-    setPanelWindow(win);
+    const panelWin = win as PanelWindow;
+    setPanelWindow(panelWin);
     // Wire pause sync: popup → background → network-capture → panel UI
-    (win as Record<string, unknown>)['_setPaused'] = (paused: boolean) => {
-      const fn = (win as Record<string, unknown>)['setPanelPaused'];
-      if (typeof fn === 'function') fn(paused);
+    panelWin._setPaused = (paused: boolean) => {
+      // Call setPanelPaused on panel if it exists (defined by panel/index.ts)
+      if (typeof panelWin.setPanelPaused === 'function') {
+        panelWin.setPanelPaused(paused);
+      }
     };
     // Expose re-inject helper so panel.js can trigger injection on demand
-    (win as Record<string, unknown>)['triggerReinject'] = () => {
+    panelWin.triggerReinject = () => {
       chrome.runtime.sendMessage({ type: 'INJECT_DATALAYER', tabId }).catch(() => {});
     };
     // Flush any DataLayer pushes that arrived before the panel was visible
     flushDataLayerBuffer();
+    // Flush panel-side pending requests that didn't render while panel was hidden
+    if (typeof panelWin.flushPendingRequests === 'function') {
+      panelWin.flushPendingRequests();
+    }
+    if (typeof panelWin.flushPendingDlPushes === 'function') {
+      panelWin.flushPendingDlPushes();
+    }
     // Inject DataLayer content scripts into inspected tab (idempotent).
     // Bridge is injected and awaited BEFORE main, so bridge's message listener
     // is ready when main runs and sends TAGDRAGON_DL_PUSH via postMessage.

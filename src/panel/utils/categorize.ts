@@ -1,7 +1,6 @@
 // ─── CATEGORIZATION UTILITIES ────────────────────────────────────────────────
 // Functions for categorizing and validating parameters
 
-import type { ParsedRequest } from '@/types/request';
 import type { SpecialRenderer } from '@/types/categories';
 import { PROVIDER_CATEGORIES } from '@/shared/categories';
 

@@ -278,7 +278,9 @@ export function matchProvider(url: string): Provider | null {
     // but since PROVIDERS ordering is preserved, first match still wins
     const ordered = [...candidates, ...genericIndices];
     for (const idx of ordered) {
-      if (PROVIDERS[idx].pattern.test(url)) {
+      const p = PROVIDERS[idx].pattern;
+      p.lastIndex = 0; // defensive reset — prevent stale state from global-flagged regexes
+      if (p.test(url)) {
         return PROVIDERS[idx] as Provider;
       }
     }
@@ -287,5 +289,10 @@ export function matchProvider(url: string): Provider | null {
   }
 
   // Fallback: full scan (should rarely be reached)
-  return PROVIDERS.find((p) => p.pattern.test(url)) ?? null;
+  return (
+    PROVIDERS.find((p) => {
+      p.pattern.lastIndex = 0;
+      return p.pattern.test(url);
+    }) ?? null
+  );
 }

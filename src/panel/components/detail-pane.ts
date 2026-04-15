@@ -69,10 +69,11 @@ export function selectRequest(data: ParsedRequest, row: HTMLElement): void {
   }
 
   const $detail = DOM.detail;
+  if (!$detail) return;
   const cfg = getConfig();
   const sessionStart = getAllRequests()[0]?.timestamp;
 
-  $detail!.classList.remove('hidden');
+  $detail.classList.remove('hidden');
 
   // ─── SUMMARY CARD RENDERING ────────────────────────────────────────────
 

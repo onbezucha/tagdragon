@@ -9,8 +9,7 @@ import { detectEcommerceType } from '@/shared/ecommerce';
 import { generateId } from '@/shared/id-gen';
 
 import { SOURCE_DESCRIPTIONS } from '@/shared/datalayer-constants';
-
-const MAX_BUFFER = 500;
+import { MAX_BUFFER } from '@/shared/constants';
 let dlBuffer: DataLayerPush[] = [];
 
 function buildPush(msg: {

@@ -29,6 +29,7 @@ export interface ParsedRequest {
   _hasUserId?: boolean;
   _statusPrefix?: string | null;
   _categorized?: import('@/panel/utils/categorize').CategorizedParams;
+  _displayUrl?: string; // Cached display URL for correlation UI
 
   // Optional metadata
   readonly source?: 'extension';

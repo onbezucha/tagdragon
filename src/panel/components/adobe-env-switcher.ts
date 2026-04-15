@@ -3,7 +3,7 @@
 import type { AdobeEnvState } from '@/types/request';
 import { DOM, qsa } from '../utils/dom';
 import { adobeEnvState } from '../state';
-import { closeFilterPopover } from './filter-bar';
+import { closeAllPopovers } from '../utils/popover-manager';
 
 type AdobeDetected = AdobeEnvState['detected'];
 type AdobeEnvConfig = Exclude<AdobeEnvState['config'], null>;
@@ -267,9 +267,7 @@ function setupEnvEventListeners(): void {
   if ($envBadge) {
     $envBadge.addEventListener('click', (e: MouseEvent) => {
       e.stopPropagation();
-      DOM.settingsPopover!.classList.remove('visible');
-      DOM.infoPopover?.classList.remove('visible');
-      if (typeof closeFilterPopover === 'function') closeFilterPopover();
+      closeAllPopovers();
 
       if ($envPopover.classList.contains('visible')) {
         $envPopover.classList.remove('visible');

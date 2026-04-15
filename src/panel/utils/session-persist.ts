@@ -4,8 +4,15 @@
 
 import type { ParsedRequest } from '@/types/request';
 
-const SESSION_KEY = 'tagdragon_requests';
-const SAVE_DEBOUNCE_MS = 500;
+function getSessionKey(): string {
+  try {
+    const tabId = chrome.devtools.inspectedWindow.tabId;
+    return `tagdragon_requests_${tabId}`;
+  } catch {
+    return 'tagdragon_requests';
+  }
+}
+const SAVE_DEBOUNCE_MS = 1500;
 
 let saveTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -32,13 +39,16 @@ function stripHeavyFields(r: ParsedRequest): Record<string, unknown> {
 function persistRequests(requests: ParsedRequest[]): void {
   try {
     const toStore = requests.map(stripHeavyFields);
-    sessionStorage.setItem(SESSION_KEY, JSON.stringify(toStore));
+    sessionStorage.setItem(getSessionKey(), JSON.stringify(toStore));
   } catch {
     // Quota exceeded — try storing just the last 100 requests
     try {
-      sessionStorage.setItem(SESSION_KEY, JSON.stringify(requests.slice(-100).map(stripHeavyFields)));
+      sessionStorage.setItem(
+        getSessionKey(),
+        JSON.stringify(requests.slice(-100).map(stripHeavyFields))
+      );
     } catch {
-      sessionStorage.removeItem(SESSION_KEY);
+      sessionStorage.removeItem(getSessionKey());
     }
   }
 }
@@ -49,15 +59,20 @@ function persistRequests(requests: ParsedRequest[]): void {
  */
 export function loadPersistedRequests(): ParsedRequest[] {
   try {
-    const raw = sessionStorage.getItem(SESSION_KEY);
+    const raw = sessionStorage.getItem(getSessionKey());
     if (!raw) return [];
     const parsed: unknown = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
-    // Basic shape check: first item must have id, url, provider
-    const first = parsed[0];
-    if (first && (typeof first.id === 'undefined' || typeof first.url !== 'string' || typeof first.provider !== 'string')) {
-      return [];
-    }
+    // Validate each item has minimum required shape (id, url, provider)
+    const valid = parsed.every(
+      (item: unknown): item is ParsedRequest =>
+        item !== null &&
+        typeof item === 'object' &&
+        'id' in item &&
+        'url' in item &&
+        'provider' in item
+    );
+    if (!valid) return [];
     return parsed as ParsedRequest[];
   } catch {
     return [];
@@ -73,5 +88,5 @@ export function clearPersistedRequests(): void {
     clearTimeout(saveTimer);
     saveTimer = null;
   }
-  sessionStorage.removeItem(SESSION_KEY);
+  sessionStorage.removeItem(getSessionKey());
 }

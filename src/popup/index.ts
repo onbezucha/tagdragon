@@ -1,7 +1,7 @@
 // ─── POPUP ────────────────────────────────────────────────────────────────────
 // Quick-view popup showing request statistics for the active tab.
 
-import type { PopupStatsResponse, ProviderStats } from '@/types/popup';
+import type { PopupStatsResponse, ProviderStats, TabPopupStats } from '@/types/popup';
 import { formatBytes } from '@/panel/utils/format';
 
 // ─── DOM REFS ─────────────────────────────────────────────────────────────────
@@ -168,7 +168,7 @@ $btnShowAll.addEventListener('click', () => {
 
 chrome.storage.session.onChanged.addListener((changes) => {
   if ('popup_stats' in changes && currentTabId !== null) {
-    const allStats = changes['popup_stats'].newValue ?? {};
+    const allStats = (changes['popup_stats'].newValue ?? {}) as Record<number, TabPopupStats>;
     if (!allStats[currentTabId]) return;
     // Reload full computed stats (includes computed fields like avgDuration)
     loadStats().catch(() => {});
@@ -178,6 +178,13 @@ chrome.storage.session.onChanged.addListener((changes) => {
 // ─── INIT ─────────────────────────────────────────────────────────────────────
 
 async function init(): Promise<void> {
+  // Set version from manifest
+  const manifestVersion = chrome.runtime.getManifest().version;
+  const versionEl = document.getElementById('popup-version');
+  if (versionEl && manifestVersion) {
+    versionEl.textContent = `v${manifestVersion}`;
+  }
+
   // Get current tab ID
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   currentTabId = tab?.id ?? null;

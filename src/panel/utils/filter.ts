@@ -1,12 +1,14 @@
 // ─── FILTER UTILITIES ────────────────────────────────────────────────────────
 
 import type { ParsedRequest } from '@/types/request';
-import { getEventName, getHostname } from './format';
+import { getEventName } from './format';
 import * as state from '@/panel/state';
+import { USER_ID_PARAM_KEYS } from '@/shared/constants';
 
 // Cache compiled regex objects to avoid recompilation on every matchesFilter call.
 // null = previously compiled but invalid (parse error)
 const _regexCache = new Map<string, RegExp | null>();
+const REGEX_CACHE_MAX = 50;
 
 /**
  * Check if a request matches current filters.
@@ -38,6 +40,10 @@ export function matchesFilter(data: ParsedRequest): boolean {
           regex = null; // Invalid regex — plain text fallback below
         }
         _regexCache.set(filterText, regex);
+        if (_regexCache.size > REGEX_CACHE_MAX) {
+          const oldestKey = _regexCache.keys().next().value;
+          if (oldestKey !== undefined) _regexCache.delete(oldestKey);
+        }
       }
 
       if (regex) {
@@ -45,7 +51,8 @@ export function matchesFilter(data: ParsedRequest): boolean {
         if (!regex.test(haystack)) return false;
       } else {
         const q = filterText.toLowerCase();
-        const haystack = data._searchIndex ?? `${data.url.toLowerCase()}\0${data.provider.toLowerCase()}`;
+        const haystack =
+          data._searchIndex ?? `${data.url.toLowerCase()}\0${data.provider.toLowerCase()}`;
         if (!haystack.includes(q)) return false;
       }
     } else {
@@ -88,13 +95,8 @@ export function matchesFilter(data: ParsedRequest): boolean {
     const hasUserId =
       data._hasUserId !== undefined
         ? data._hasUserId
-        : !!(
-            data.decoded?.client_id ||
-            data.decoded?.['Client ID'] ||
-            data.allParams?.cid ||
-            data.allParams?.uid ||
-            data.allParams?.user_id ||
-            data.allParams?.client_id
+        : USER_ID_PARAM_KEYS.some(
+            (key) => !!(data.decoded?.[key as keyof typeof data.decoded] ?? data.allParams?.[key])
           );
     if (filterUserId === 'has' && !hasUserId) return false;
     if (filterUserId === 'missing' && hasUserId) return false;
@@ -167,102 +169,4 @@ export function applyFilters(
   // Callbacks
   if (updateStatusBar) updateStatusBar(visibleCount, totalSize, totalDuration);
   if (updateRowVisibility) updateRowVisibility();
-}
-
-/**
- * Get known event names with counts.
- */
-export function getKnownEventNames(): Array<[string, number]> {
-  const counts = new Map<string, number>();
-  const allRequests = state.getAllRequests();
-
-  allRequests.forEach((r) => {
-    const name = r._eventName || getEventName(r);
-    if (name && name !== getHostname(r.url)) {
-      counts.set(name, (counts.get(name) || 0) + 1);
-    }
-  });
-  return [...counts.entries()].sort((a, b) => b[1] - a[1]);
-}
-
-/**
- * Get status code counts grouped by first digit.
- */
-export function getStatusCounts(): Record<string, number> {
-  const counts: Record<string, number> = {};
-  const allRequests = state.getAllRequests();
-
-  allRequests.forEach((r) => {
-    if (r._statusPrefix) {
-      counts[r._statusPrefix] = (counts[r._statusPrefix] || 0) + 1;
-    }
-  });
-  return counts;
-}
-
-/**
- * Get HTTP method counts.
- */
-export function getMethodCounts(): Record<string, number> {
-  const counts: Record<string, number> = {};
-  const allRequests = state.getAllRequests();
-
-  allRequests.forEach((r) => {
-    if (r.method) {
-      counts[r.method] = (counts[r.method] || 0) + 1;
-    }
-  });
-  return counts;
-}
-
-/**
- * Get user ID presence counts.
- */
-export function getUserIdCounts(): { has: number; missing: number } {
-  let has = 0;
-  let missing = 0;
-  const allRequests = state.getAllRequests();
-
-  allRequests.forEach((r) => {
-    if (r._hasUserId) has++;
-    else missing++;
-  });
-  return { has, missing };
-}
-
-/**
- * Get common parameter names for quick picks.
- */
-export function getCommonParams(): string[] {
-  const counts = new Map<string, number>();
-  const interesting = [
-    'transaction_id',
-    'client_id',
-    'user_id',
-    'currency',
-    'value',
-    'items',
-    'products',
-    'event_name',
-    'page_location',
-    'page_title',
-  ];
-  const allRequests = state.getAllRequests();
-
-  allRequests.forEach((r) => {
-    const allKeys = new Set([...Object.keys(r.allParams || {}), ...Object.keys(r.decoded || {})]);
-    allKeys.forEach((k) => {
-      counts.set(k, (counts.get(k) || 0) + 1);
-    });
-  });
-
-  // Return interesting params that actually exist, plus top frequent ones
-  const existing = interesting.filter((p) => counts.has(p));
-  const frequent = [...counts.entries()]
-    .filter(([k]) => !interesting.includes(k))
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 6)
-    .map(([k]) => k);
-
-  return [...new Set([...existing, ...frequent])].slice(0, 10);
 }

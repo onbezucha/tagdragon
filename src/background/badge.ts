@@ -2,6 +2,7 @@
 // Updates the extension icon badge with the request count for the active tab.
 
 import type { TabPopupStats } from '@/types/popup';
+import { invalidateStatsCache } from './popup-bridge';
 
 const BADGE_COLOR = '#e8710a';
 
@@ -41,7 +42,7 @@ export async function updateBadgeForActiveTab(tabId?: number): Promise<void> {
   }
 
   const result = await chrome.storage.session.get('popup_stats');
-  const allStats: Record<number, TabPopupStats> = result['popup_stats'] ?? {};
+  const allStats = (result['popup_stats'] ?? {}) as Record<number, TabPopupStats>;
   const stats = allStats[targetTabId];
   await setBadgeCount(stats?.totalRequests ?? 0);
 }
@@ -53,7 +54,8 @@ async function setBadgeCount(count: number): Promise<void> {
 
 async function cleanupTabStats(tabId: number): Promise<void> {
   const result = await chrome.storage.session.get('popup_stats');
-  const allStats: Record<number, TabPopupStats> = result['popup_stats'] ?? {};
+  const allStats = (result['popup_stats'] ?? {}) as Record<number, TabPopupStats>;
   delete allStats[tabId];
   await chrome.storage.session.set({ popup_stats: allStats });
+  invalidateStatsCache();
 }

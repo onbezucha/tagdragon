@@ -17,7 +17,7 @@ function detectContext(): string {
   // In background service worker, chrome.tabs is available but chrome.devtools is not
   if (typeof chrome !== 'undefined' && chrome.devtools) return 'devtools';
   // Content scripts run in isolated world; MAIN world scripts don't have chrome.runtime
-  if (typeof chrome !== 'undefined' && chrome.runtime?.getManifest) {
+  if (typeof chrome !== 'undefined' && chrome.runtime) {
     // Could be background or panel — background has no document
     if (typeof document === 'undefined') return 'background';
     return 'panel';
@@ -36,5 +36,5 @@ export function generateId(): number {
     const ctx = detectContext();
     _resolvedOffset = CONTEXT_OFFSET[ctx] ?? 0;
   }
-  return Date.now() * 1000 + (_resolvedOffset + (_counter++ % 500));
+  return Date.now() * 1000 + (_resolvedOffset + _counter++);
 }

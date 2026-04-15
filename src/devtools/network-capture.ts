@@ -4,8 +4,9 @@
 import { matchProvider } from '@/providers/index';
 import { getParams } from '@/providers/url-parser';
 import { headersToObj } from '@/shared/http-utils';
-import { sendToPanel, heavyDataStore, getPanelWindow } from './panel-bridge';
+import { sendToPanel, heavyDataStore, getPanelWindow, clearHeavyData } from './panel-bridge';
 import type { ParsedRequest } from '@/types/request';
+import type { TabPopupStats } from '@/types/popup';
 import type { HARPostData } from '@/types/har';
 import { generateId } from '@/shared/id-gen';
 
@@ -19,7 +20,7 @@ let isPaused = false;
 chrome.storage.session
   .get('popup_stats')
   .then((result) => {
-    const allStats = result['popup_stats'] ?? {};
+    const allStats = (result['popup_stats'] ?? {}) as Record<number, TabPopupStats>;
     if (allStats[tabId]?.isPaused === true) {
       isPaused = true;
     }
@@ -96,7 +97,7 @@ function processRequest(req: chrome.devtools.network.Request): void {
       method: req.request.method as ParsedRequest['method'],
       status: req.response.status,
       timestamp: new Date().toISOString(),
-      duration: Math.round(req.time),
+      duration: Math.round(req.time * 1000),
       size,
       allParams,
       decoded,
@@ -124,7 +125,7 @@ function processRequest(req: chrome.devtools.network.Request): void {
         color: provider.color,
         size,
         status: req.response.status,
-        duration: Math.round(req.time),
+        duration: Math.round(req.time * 1000),
       })
       .catch(() => {
         // Background may not be ready, ignore
@@ -148,12 +149,12 @@ interface ClearHeavyDataMessage {
 
 interface RecordingPausedMessage {
   type: 'RECORDING_PAUSED';
-  tabId: number;
+  tabId?: number;
 }
 
 interface RecordingResumedMessage {
   type: 'RECORDING_RESUMED';
-  tabId: number;
+  tabId?: number;
 }
 
 type RuntimeMessage =
@@ -184,16 +185,16 @@ function handleRuntimeMessage(msg: RuntimeMessage): void {
   }
 
   if (msg.type === 'CLEAR_HEAVY_DATA') {
-    heavyDataStore.clear();
+    clearHeavyData();
   }
 
   // Keep local pause flag in sync; also notify the panel window if visible
-  if (msg.type === 'RECORDING_PAUSED' && msg.tabId === tabId) {
+  if (msg.type === 'RECORDING_PAUSED') {
     isPaused = true;
     getPanelWindow()?._setPaused?.(true);
   }
 
-  if (msg.type === 'RECORDING_RESUMED' && msg.tabId === tabId) {
+  if (msg.type === 'RECORDING_RESUMED') {
     isPaused = false;
     getPanelWindow()?._setPaused?.(false);
   }

@@ -39,6 +39,7 @@ export interface DataLayerState {
   isPaused: boolean;
   sources: Set<DataLayerSource>; // Detected sources on this page
   sourceLabels: Map<DataLayerSource, string>; // GTM-GTMXXXXX, etc.
+  _sourceCountMap?: Map<DataLayerSource, number>; // Cached source counts for O(1) lookups
 }
 
 // ─── VALIDATION TYPES ──────────────────────────────────────────────────────

@@ -12,7 +12,7 @@ import { fileURLToPath } from 'url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
 const ICONS_DIR = join(ROOT, 'assets', 'icons_providers');
-const OUTPUT_FILE = join(ROOT, 'src', 'panel', 'utils', 'provider-icons.ts');
+const OUTPUT_FILE = join(ROOT, 'src', 'panel', 'utils', 'icon-registry.ts');
 
 // PNG filename → provider name(s) mapping
 const PNG_TO_PROVIDERS = {

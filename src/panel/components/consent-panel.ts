@@ -3,6 +3,7 @@
 import type { ConsentData } from '@/types/consent';
 import { DOM } from '../utils/dom';
 import { esc } from '../utils/format';
+import { closeAllPopovers } from '../utils/popover-manager';
 import {
   GET_CONSENT_DATA_SCRIPT,
   ACCEPT_ALL_SCRIPT,
@@ -94,9 +95,7 @@ export async function initConsentPanel(): Promise<void> {
     e.stopPropagation();
     const isVisible = $consentPopover.classList.contains('visible');
     $consentPopover.classList.toggle('visible', !isVisible);
-    DOM.settingsPopover?.classList.remove('visible');
-    DOM.providerPopover?.classList.remove('visible');
-    DOM.infoPopover?.classList.remove('visible');
+    closeAllPopovers();
 
     if (!isVisible) {
       renderOverrideBadge();
@@ -195,11 +194,9 @@ export async function clearAllCookies(): Promise<number> {
   // 5-second timeout to prevent infinite hang if background doesn't respond
   try {
     return await Promise.race<number>([
-      new Promise<number>((resolve) => {
-        chrome.runtime.sendMessage({ type: 'CLEAR_COOKIES', url }, (resp: unknown) => {
-          resolve((resp as { deleted?: number } | null)?.deleted ?? 0);
-        });
-      }),
+      chrome.runtime
+        .sendMessage({ type: 'CLEAR_COOKIES', url })
+        .then((resp: unknown) => (resp as { deleted?: number } | null)?.deleted ?? 0),
       new Promise<never>((_, reject) =>
         setTimeout(() => reject(new Error('Clear cookies timeout')), 5000)
       ),
@@ -322,7 +319,7 @@ function renderNoData(message: string): void {
     $categories.innerHTML = `
     <div class="consent-no-data">
       <div class="consent-no-data-icon">🍪</div>
-      <div class="consent-no-data-text">${message}</div>
+      <div class="consent-no-data-text">${esc(message)}</div>
       <div class="consent-no-data-hint">Open a page with CMP to view consent data</div>
     </div>
   `;

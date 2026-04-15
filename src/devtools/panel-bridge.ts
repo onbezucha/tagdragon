@@ -1,8 +1,11 @@
-// ─── PANEL BRIDGE ────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+// PANEL BRIDGE
 // Handles buffering and communication with the DevTools panel window.
+// ═══════════════════════════════════════════════════════════════════════════
 
 import type { ParsedRequest } from '@/types/request';
 import type { DataLayerPush, DataLayerSource } from '@/types/datalayer';
+import { MAX_BUFFER } from '@/shared/constants';
 
 interface HeavyData {
   responseBody: string;
@@ -10,18 +13,152 @@ interface HeavyData {
   responseHeaders: Record<string, string>;
 }
 
-interface PanelWindow extends Window {
+// ═══════════════════════════════════════════════════════════════════════════
+// SIZE TRACKING MAP
+// A Map wrapper that tracks estimated memory usage and auto-evicts oldest
+// entries when exceeding the configured max size budget.
+// ═══════════════════════════════════════════════════════════════════════════
+
+class SizeTrackingMap<K, V> {
+  private _map: Map<K, V>;
+  private _estimateSize: (value: V) => number;
+  private _maxSize: number;
+  private _sizeEstimate: number = 0;
+
+  /**
+   * @param estimateSize Function to calculate the byte size of a value
+   * @param maxSize Maximum byte size budget before auto-eviction
+   */
+  constructor(estimateSize: (value: V) => number, maxSize: number) {
+    this._map = new Map<K, V>();
+    this._estimateSize = estimateSize;
+    this._maxSize = maxSize;
+  }
+
+  /**
+   * Get the current estimated total size in bytes.
+   */
+  get sizeEstimate(): number {
+    return this._sizeEstimate;
+  }
+
+  /**
+   * Get the number of entries in the map.
+   */
+  get size(): number {
+    return this._map.size;
+  }
+
+  /**
+   * Get a value by key.
+   */
+  get(key: K): V | undefined {
+    return this._map.get(key);
+  }
+
+  /**
+   * Check if a key exists.
+   */
+  has(key: K): boolean {
+    return this._map.has(key);
+  }
+
+  /**
+   * Set a key-value pair. Tracks size and auto-evicts oldest entries if over budget.
+   */
+  set(key: K, value: V): this {
+    // Subtract size of existing value if updating
+    const old = this._map.get(key);
+    if (old !== undefined) {
+      this._sizeEstimate -= this._estimateSize(old);
+    }
+
+    // Add size of new value
+    this._sizeEstimate += this._estimateSize(value);
+
+    // Evict oldest entries if over budget
+    while (this._sizeEstimate > this._maxSize && this._map.size > 0) {
+      const firstKey = this._map.keys().next().value!;
+      const removed = this._map.get(firstKey)!;
+      this._sizeEstimate -= this._estimateSize(removed);
+      this._map.delete(firstKey);
+    }
+
+    this._map.set(key, value);
+    return this;
+  }
+
+  /**
+   * Delete a key-value pair.
+   */
+  delete(key: K): boolean {
+    const old = this._map.get(key);
+    if (old !== undefined) {
+      this._sizeEstimate -= this._estimateSize(old);
+    }
+    return this._map.delete(key);
+  }
+
+  /**
+   * Clear all entries and reset size estimate.
+   */
+  clear(): void {
+    this._map.clear();
+    this._sizeEstimate = 0;
+  }
+
+  /**
+   * Iterate over keys.
+   */
+  keys(): IterableIterator<K> {
+    return this._map.keys();
+  }
+
+  /**
+   * Iterate over values.
+   */
+  values(): IterableIterator<V> {
+    return this._map.values();
+  }
+
+  /**
+   * Iterate over entries.
+   */
+  entries(): IterableIterator<[K, V]> {
+    return this._map.entries();
+  }
+
+  /**
+   * Iterate over entries with callback.
+   */
+  forEach(callbackfn: (value: V, key: K, map: Map<K, V>) => void): void {
+    this._map.forEach((value, key) => callbackfn(value, key, this._map));
+  }
+
+  /**
+   * Returns an iterable of entries.
+   */
+  [Symbol.iterator](): IterableIterator<[K, V]> {
+    return this._map[Symbol.iterator]();
+  }
+}
+
+export interface PanelWindow extends Window {
   receiveRequest: (data: ParsedRequest) => void;
   receiveDataLayerPush: (data: DataLayerPush) => void;
   receiveDataLayerSources: (
     sources: DataLayerSource[],
     labels: Record<DataLayerSource, string>
   ) => void;
-  triggerReinject?: () => void;
-  _getHeavyData?: (requestId: number) => HeavyData | null;
-  _clearHeavyData?: () => void;
-  _deleteHeavyData?: (ids: number[]) => void;
-  _setPaused?: (paused: boolean) => void;
+  triggerReinject: () => void;
+  clearDataLayer: () => void;
+  _getHeavyData: (requestId: number) => HeavyData | null;
+  _clearHeavyData: () => void;
+  _deleteHeavyData: (ids: number[]) => void;
+  _setPaused: (paused: boolean) => void;
+  setPanelPaused: (paused: boolean) => void;
+  flushPendingRequests: () => void;
+  flushPendingDlPushes: () => void;
 }
 
 let panelWindow: PanelWindow | null = null;
@@ -33,9 +170,6 @@ let buffer: ParsedRequest[] = [];
 // Includes automatic size tracking and eviction when over budget.
 
 const MAX_HEAVY_DATA_SIZE = 5 * 1024 * 1024; // 5MB
-let heavyDataSizeEstimate = 0;
-
-export const heavyDataStore = new Map<number, HeavyData>();
 
 function estimateSize(data: HeavyData): number {
   return (
@@ -51,48 +185,14 @@ function estimateSize(data: HeavyData): number {
   );
 }
 
-// Wrap set to track size and auto-evict when over budget
-const originalSet = heavyDataStore.set.bind(heavyDataStore);
-heavyDataStore.set = function (key: number, value: HeavyData): Map<number, HeavyData> {
-  const old = heavyDataStore.get(key);
-  if (old) {
-    heavyDataSizeEstimate -= estimateSize(old);
-  }
-  heavyDataSizeEstimate += estimateSize(value);
-
-  // Evict oldest entries if over budget
-  while (heavyDataSizeEstimate > MAX_HEAVY_DATA_SIZE && heavyDataStore.size > 0) {
-    const firstKey = heavyDataStore.keys().next().value!;
-    const removed = heavyDataStore.get(firstKey)!;
-    heavyDataSizeEstimate -= estimateSize(removed);
-    heavyDataStore.delete(firstKey);
-  }
-
-  return originalSet(key, value);
-};
-
-// Wrap delete to update size estimate
-const originalDelete = heavyDataStore.delete.bind(heavyDataStore);
-heavyDataStore.delete = function (key: number): boolean {
-  const old = heavyDataStore.get(key);
-  if (old) {
-    heavyDataSizeEstimate -= estimateSize(old);
-  }
-  return originalDelete(key);
-};
-
-// Wrap clear to reset size estimate
-const originalClear = heavyDataStore.clear.bind(heavyDataStore);
-heavyDataStore.clear = function (): void {
-  heavyDataSizeEstimate = 0;
-  return originalClear();
-};
+export const heavyDataStore = new SizeTrackingMap<number, HeavyData>(
+  estimateSize,
+  MAX_HEAVY_DATA_SIZE
+);
 
 /**
  * Send data to the panel window. Buffers if panel is not yet open.
  */
-const MAX_BUFFER = 500;
-
 export function sendToPanel(data: ParsedRequest): void {
   if (panelWindow && !panelWindow.closed && panelWindow.receiveRequest) {
     try {

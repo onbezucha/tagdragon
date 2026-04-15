@@ -175,30 +175,30 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     // cause data-layer-main.js to see __tagdragon_main__ still set and exit early).
     // Return the Promise so the service worker stays alive until all injections complete.
     return (async () => {
-      // 1. Clear the bridge guard (ISOLATED world).
-      await chrome.scripting
-        .executeScript({
-          target: { tabId },
-          func: () => {
-            delete (window as unknown as Record<string, unknown>)['__tagdragon_bridge__'];
-          },
-        })
-        .catch(() => {
-          /* ignore — tab may not be scriptable */
-        });
-
-      // 2. Clear the MAIN world guard.
-      await chrome.scripting
-        .executeScript({
-          target: { tabId },
-          func: () => {
-            delete (window as unknown as Record<string, unknown>)['__tagdragon_main__'];
-          },
-          world: 'MAIN' as chrome.scripting.ExecutionWorld,
-        })
-        .catch(() => {
-          /* ignore — tab may not be scriptable */
-        });
+      // 1+2. Clear both guards in parallel (ISOLATED + MAIN world)
+      await Promise.all([
+        chrome.scripting
+          .executeScript({
+            target: { tabId },
+            func: () => {
+              delete (window as unknown as Record<string, unknown>)['__tagdragon_bridge__'];
+            },
+          })
+          .catch(() => {
+            /* ignore — tab may not be scriptable */
+          }),
+        chrome.scripting
+          .executeScript({
+            target: { tabId },
+            func: () => {
+              delete (window as unknown as Record<string, unknown>)['__tagdragon_main__'];
+            },
+            world: 'MAIN' as chrome.scripting.ExecutionWorld,
+          })
+          .catch(() => {
+            /* ignore — tab may not be scriptable */
+          }),
+      ]);
 
       // 3. ISOLATED world bridge (relays postMessage → runtime.sendMessage)
       //    AWAIT so the bridge's message listener is registered before MAIN world runs.
@@ -223,6 +223,22 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
   if (message.type === 'CLEAR_COOKIES') {
     const { url } = message;
+
+    // Validate that the URL's origin matches the sender's tab origin
+    if (_sender.tab?.url) {
+      try {
+        const senderOrigin = new URL(_sender.tab.url).origin;
+        const targetOrigin = new URL(url).origin;
+        if (senderOrigin !== targetOrigin) {
+          sendResponse({ deleted: 0 });
+          return;
+        }
+      } catch {
+        sendResponse({ deleted: 0 });
+        return;
+      }
+    }
+
     (async () => {
       try {
         let urlObj: URL;
@@ -305,6 +321,7 @@ chrome.webRequest.onBeforeSendHeaders.addListener(
           // Message delivery failed, ignore (devtools panel may not be open)
         });
     }
+    return undefined;
   },
   { urls: ['<all_urls>'] },
   ['requestHeaders']
