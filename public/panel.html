@@ -33,11 +33,6 @@
       overflow: hidden;
     }
 
-    /* Paused state visual indicator */
-    body.paused #empty-state .empty-title {
-      color: var(--accent);
-    }
-
     body.paused #status-bar {
       background-color: var(--accent-muted);
       border-top-color: var(--accent);
@@ -1130,6 +1125,83 @@
       background: rgba(239, 83, 80, 0.08);
     }
 
+    /* HTTP filter sections */
+    #http-filter-sections {
+      border-bottom: 1px solid var(--border);
+    }
+
+    .http-filter-group {
+      padding: 6px 10px 8px;
+    }
+
+    .http-filter-group + .http-filter-group {
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    .http-filter-header {
+      margin-bottom: 4px;
+    }
+
+    .http-filter-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      color: var(--text-2);
+    }
+
+    .http-filter-pills {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+
+    /* Individual HTTP filter pill */
+    .hpill {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+      font-family: var(--font-mono);
+      cursor: pointer;
+      user-select: none;
+      background: var(--bg-2);
+      border: 1px solid var(--border-subtle);
+      transition: all 150ms var(--ease);
+    }
+
+    .hpill:hover {
+      background: var(--bg-3);
+      border-color: var(--border);
+    }
+
+    .hpill-count {
+      font-size: 10px;
+      font-weight: 400;
+      color: var(--text-3);
+      font-family: var(--font-mono);
+    }
+
+    /* Active state — uses the same color as status badges */
+    .hpill.active {
+      border-color: currentColor;
+      outline: 1px solid currentColor;
+      outline-offset: -1px;
+    }
+
+    /* Status pill color variants */
+    .hpill[data-prefix="2xx"] { color: var(--green); }
+    .hpill[data-prefix="3xx"] { color: var(--accent); }
+    .hpill[data-prefix="4xx"] { color: var(--dragon-orange); }
+    .hpill[data-prefix="5xx"] { color: var(--red); }
+
+    /* Method pill color variants */
+    .hpill[data-method="GET"] { color: var(--green); }
+    .hpill[data-method="POST"] { color: var(--accent); }
+
     /* === FILTER BAR === */
     #filter-bar {
       display: none;
@@ -1289,17 +1361,6 @@
     #dl-push-list::-webkit-scrollbar { width: 8px; }
     #dl-push-list::-webkit-scrollbar-track { background: var(--bg-0); }
     #dl-push-list::-webkit-scrollbar-thumb { background: var(--bg-2); border-radius: 4px; }
-
-    #dl-empty-state {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      padding: 20px;
-      color: var(--text-2);
-    }
 
     #dl-status-text {
       padding: 3px 8px;
@@ -1695,35 +1756,6 @@
       background: var(--bg-0);
       flex-shrink: 0;
       line-height: 1.4;
-    }
-
-    /* === DL FEATURE CARDS === */
-    .dl-feature-card {
-      padding: 8px;
-      background: var(--bg-1);
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      text-align: center;
-    }
-
-    .dl-source-status-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 3px;
-      padding: 2px 6px;
-      border-radius: 8px;
-      font-size: 10px;
-      font-weight: 600;
-    }
-
-    .dl-source-status-pill.detected {
-      background: rgba(72, 187, 120, 0.12);
-      color: var(--green, #48bb78);
-    }
-
-    .dl-source-status-pill.not-detected {
-      background: var(--bg-2);
-      color: var(--text-3);
     }
 
     /* === DL LIVE INSPECTOR === */
@@ -2315,54 +2347,188 @@
       background: var(--bg-3);
     }
 
-    #empty-state {
+    /* ═══════════════════════════════════════════════════════════════════════════
+       EMPTY STATE — Unified for Network & DataLayer
+       ═══════════════════════════════════════════════════════════════════════════ */
+
+    .es-container {
       flex: 1;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       text-align: center;
-      padding: 20px;
+      padding: 24px 20px;
       color: var(--text-2);
+      gap: 0;
     }
 
-    .empty-icon {
-      margin-bottom: 12px;
-      opacity: 0.7;
+    /* ─── Brand Header ────────────────────────────────────────────────────── */
+
+    .es-brand {
       display: flex;
+      flex-direction: column;
       align-items: center;
-      justify-content: center;
+      margin-bottom: 16px;
     }
 
-    @keyframes radarSweep {
-      from { transform: rotate(0deg); }
-      to { transform: rotate(360deg); }
-    }
-
-    .empty-radar {
-      opacity: 0.6;
-    }
-
-    .radar-sweep {
-      transform-origin: 20px 20px;
-      animation: radarSweep 3s linear infinite;
-    }
-
-    .empty-title {
-      font-weight: 500;
-      font-size: 13px;
-      color: var(--text-1);
+    .es-logo {
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
       margin-bottom: 6px;
+      flex-shrink: 0;
+      /* Subtle golden glow on dark, warm shadow on light */
+      box-shadow: 0 0 12px var(--accent-glow);
     }
+
+    .es-brand-name {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-0);
+      letter-spacing: 0.3px;
+      line-height: 1.3;
+    }
+
+    .es-brand-subtitle {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--accent);
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      margin-top: 1px;
+    }
+
+    /* ─── Source Detection (DL only) ──────────────────────────────────────── */
+
+    .es-source-detection {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 14px;
+    }
+
+    .es-source-detection:empty {
+      display: none;
+    }
+
+    /* ─── Feature Cards ───────────────────────────────────────────────────── */
+
+    .es-features {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+      max-width: 360px;
+      width: 100%;
+      margin-bottom: 16px;
+    }
+
+    .es-feature-card {
+      padding: 10px 6px 8px;
+      background: var(--bg-1);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      text-align: center;
+      transition: border-color 150ms var(--ease);
+    }
+
+    .es-feature-card:hover {
+      border-color: var(--accent-glow);
+    }
+
+    .es-feature-icon {
+      font-size: 16px;
+      margin-bottom: 4px;
+      line-height: 1;
+    }
+
+    .es-feature-title {
+      font-weight: 600;
+      font-size: 11px;
+      color: var(--text-1);
+      margin-bottom: 2px;
+    }
+
+    .es-feature-desc {
+      font-size: 10px;
+      color: var(--text-2);
+      line-height: 1.3;
+    }
+
+    /* ─── Action Button ───────────────────────────────────────────────────── */
+
+    .es-action-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      font-size: 12px;
+      font-weight: 500;
+      font-family: inherit;
+      border-radius: 5px;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: var(--bg-2);
+      color: var(--text-1);
+      transition: all 150ms var(--ease);
+      margin-bottom: 12px;
+    }
+
+    .es-action-btn:hover {
+      background: var(--accent-muted);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .es-action-btn:active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+
+    .es-action-btn svg {
+      width: 14px;
+      height: 14px;
+      flex-shrink: 0;
+    }
+
+    /* ─── Subtitle (hint at bottom) ───────────────────────────────────────── */
 
     .empty-subtitle {
       font-size: 11px;
-      color: var(--text-2);
+      color: var(--text-3);
       line-height: 1.5;
       max-width: 280px;
     }
 
+    /* ─── Paused state (Network only) ─────────────────────────────────────── */
 
+    body.paused .es-container .es-brand-subtitle {
+      color: var(--accent);
+    }
+
+    /* ─── Source status pills (DL only, reuse styles) ─────────────────────── */
+
+    .dl-source-status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      padding: 2px 6px;
+      border-radius: 8px;
+      font-size: 10px;
+      font-weight: 600;
+    }
+
+    .dl-source-status-pill.detected {
+      background: rgba(72, 187, 120, 0.12);
+      color: var(--green, #48bb78);
+    }
+
+    .dl-source-status-pill.not-detected {
+      background: var(--bg-2);
+      color: var(--text-3);
+    }
 
     /* === SPLITTER === */
     #splitter {
@@ -3689,7 +3855,7 @@
       <button id="btn-quick-sort" class="quick-btn" data-tooltip="Sort: Newest first">
         <i data-lucide="arrow-up-down"></i>
       </button>
-      <button id="btn-providers" data-tooltip="Provider filter" style="position:relative;">
+      <button id="btn-providers" data-tooltip="Filters" style="position:relative;">
         <i data-lucide="filter"></i>
         <span class="provider-hidden-badge" id="provider-hidden-badge"></span>
       </button>
@@ -3742,10 +3908,19 @@
       <i data-lucide="arrow-up-down"></i>
     </button>
     <div class="toolbar-separator"></div>
-    <button id="dl-btn-export" data-tooltip="Export DataLayer" style="display:flex;align-items:center;gap:4px;padding:4px 8px;font-size:12px;">
-      <i data-lucide="download"></i>
-      <span>Export</span>
-    </button>
+    <div id="dl-export-split-btn">
+      <button id="dl-btn-export" data-tooltip="Export as JSON">
+        <i data-lucide="download"></i>
+        <span>Export</span>
+      </button>
+      <button id="dl-btn-export-format" data-tooltip="Change format" class="export-format-btn">
+        <i data-lucide="chevron-down"></i>
+      </button>
+      <div id="dl-export-format-menu">
+        <button data-format="json" class="export-format-option">JSON</button>
+        <button data-format="csv" class="export-format-option">CSV</button>
+      </div>
+    </div>
       <div class="toolbar-separator"></div>
       <button id="dl-btn-pause" class="pause-btn" data-tooltip="Pause DataLayer capture">
         <span class="pause-icon"><i data-lucide="pause"></i></span>
@@ -3816,7 +3991,7 @@
   <!-- PROVIDER FILTER POPOVER -->
   <div id="provider-filter-popover">
     <div class="popover-header">
-      <span class="popover-title">Provider Filter</span>
+      <span class="popover-title">Filters</span>
       <div style="display:flex;align-items:center;gap:6px;">
         <div id="provider-search-wrap">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -3830,6 +4005,20 @@
       </div>
     </div>
     <div class="popover-body" id="provider-popover-body">
+      <div id="http-filter-sections">
+        <div class="http-filter-group">
+          <div class="http-filter-header">
+            <span class="http-filter-label">HTTP Status</span>
+          </div>
+          <div class="http-filter-pills" id="http-status-pills"></div>
+        </div>
+        <div class="http-filter-group">
+          <div class="http-filter-header">
+            <span class="http-filter-label">HTTP Method</span>
+          </div>
+          <div class="http-filter-pills" id="http-method-pills"></div>
+        </div>
+      </div>
       <div id="provider-group-list"></div>
     </div>
     <div class="popover-footer">
@@ -4014,17 +4203,47 @@
     <div id="list-pane">
       <div id="memory-bar-top"><div id="memory-bar-top-fill"></div></div>
        <div id="request-list">
-         <div id="empty-state">
-           <div class="empty-icon">
-             <svg width="40" height="40" viewBox="0 0 40 40" class="empty-radar">
-               <circle cx="20" cy="20" r="16" stroke="var(--text-3)" stroke-width="1" fill="none"/>
-               <circle cx="20" cy="20" r="10" stroke="var(--text-3)" stroke-width="1" fill="none" opacity="0.5"/>
-               <circle cx="20" cy="20" r="4" stroke="var(--text-3)" stroke-width="1" fill="none" opacity="0.3"/>
-               <line x1="20" y1="20" x2="20" y2="4" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" class="radar-sweep"/>
+         <div id="empty-state" class="es-container">
+           <!-- Brand Header -->
+           <div class="es-brand">
+             <img src="icons/icon48.png" class="es-logo" alt="TagDragon" width="32" height="32">
+             <div class="es-brand-name">TagDragon</div>
+             <div class="es-brand-subtitle">Network Monitor</div>
+           </div>
+
+           <!-- Feature Cards -->
+           <div class="es-features">
+             <div class="es-feature-card">
+               <div class="es-feature-icon">📡</div>
+               <div class="es-feature-title">Capture</div>
+               <div class="es-feature-desc">Intercepts 69+ marketing &amp; analytics platforms</div>
+             </div>
+             <div class="es-feature-card">
+               <div class="es-feature-icon">🔍</div>
+               <div class="es-feature-title">Decode</div>
+               <div class="es-feature-desc">Decodes tracking parameters into readable format</div>
+             </div>
+             <div class="es-feature-card">
+               <div class="es-feature-icon">📊</div>
+               <div class="es-feature-title">Export</div>
+               <div class="es-feature-desc">JSON or CSV export for further analysis</div>
+             </div>
+           </div>
+
+           <!-- Action Button -->
+           <button id="btn-reload-page" class="es-action-btn">
+             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+               <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+               <path d="M3 3v5h5"/>
+               <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/>
+               <path d="M16 16h5v5"/>
              </svg>
-           </div>            <div class="empty-title">Waiting for requests...</div>
-            <div class="empty-subtitle">Navigate the page to capture tracking activity. Supports GA4, UA, GTM, Meta, Hotjar, Tealium, Adobe, LinkedIn, Sklik, Bing and more.</div>
-          </div>
+             Reload page
+           </button>
+
+           <!-- Hint -->
+           <div class="empty-subtitle">Navigate the page to start capturing tracking requests</div>
+         </div>
     </div>
 
   </div>
@@ -4123,57 +4342,51 @@
     <div id="dl-main">
       <!-- PUSH LIST PANE -->
       <div id="dl-list-pane">
-        <div id="dl-push-list"></div>
-        <div id="dl-empty-state">
-          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.5;margin-bottom:10px">
-            <ellipse cx="12" cy="5" rx="9" ry="3"/>
-            <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
-            <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
-          </svg>
-          <div style="font-weight:600;font-size:13px;color:var(--text-1);margin-bottom:6px">
-            Waiting for DataLayer events
-          </div>
-          <div style="font-size:11px;color:var(--text-2);line-height:1.6;max-width:300px;margin-bottom:12px">
-            TagDragon intercepts GTM, W3C digitalData, Tealium, Adobe, and Segment data layers.<br>
-            If you navigated here with DevTools already open, click Re-inject below.
-          </div>
-          <div style="font-size:10px;color:var(--text-3);line-height:1.5;max-width:300px;margin-bottom:8px;font-style:italic">
-            If pushes aren't appearing, the site may not use a supported data layer. Try the Re-inject button below.
-          </div>
-          <div id="dl-source-detection" style="
-            display:flex;gap:8px;flex-wrap:wrap;justify-content:center;
-            margin-bottom:12px;font-size:10px;
-          "></div>
-          <div style="
-            display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;
-            margin-bottom:12px;max-width:340px;
-          ">
-            <div class="dl-feature-card">
-              <div style="font-size:16px;margin-bottom:4px">📡</div>
-              <div style="font-weight:600;font-size:11px;color:var(--text-1)">Monitor</div>
-              <div style="font-size:10px;color:var(--text-2);line-height:1.3">
-                Browse live pushes from GTM, Tealium, Adobe, Segment
+        <div id="dl-push-list">
+          <div id="dl-empty-state" class="es-container">
+            <!-- Brand Header -->
+            <div class="es-brand">
+              <img src="icons/icon48.png" class="es-logo" alt="TagDragon" width="32" height="32">
+              <div class="es-brand-name">TagDragon</div>
+              <div class="es-brand-subtitle">DataLayer Inspector</div>
+            </div>
+
+            <!-- Source Detection -->
+            <div id="dl-source-detection" class="es-source-detection"></div>
+
+            <!-- Feature Cards -->
+            <div class="es-features">
+              <div class="es-feature-card">
+                <div class="es-feature-icon">📡</div>
+                <div class="es-feature-title">Monitor</div>
+                <div class="es-feature-desc">Live pushes from GTM, Tealium, Adobe, Segment</div>
+              </div>
+              <div class="es-feature-card">
+                <div class="es-feature-icon">🔍</div>
+                <div class="es-feature-title">Inspect</div>
+                <div class="es-feature-desc">Diff, correlation, cumulative state, live tree</div>
+              </div>
+              <div class="es-feature-card">
+                <div class="es-feature-icon">✅</div>
+                <div class="es-feature-title">Validate</div>
+                <div class="es-feature-desc">Catch missing fields or incorrect values</div>
               </div>
             </div>
-            <div class="dl-feature-card">
-              <div style="font-size:16px;margin-bottom:4px">🔍</div>
-              <div style="font-weight:600;font-size:11px;color:var(--text-1)">Inspect</div>
-              <div style="font-size:10px;color:var(--text-2);line-height:1.3">
-                Diff, correlation, cumulative state, live tree
-              </div>
-            </div>
-            <div class="dl-feature-card">
-              <div style="font-size:16px;margin-bottom:4px">✅</div>
-              <div style="font-weight:600;font-size:11px;color:var(--text-1)">Validate</div>
-              <div style="font-size:10px;color:var(--text-2);line-height:1.3">
-                Catch missing fields or incorrect values
-              </div>
-            </div>
+
+            <!-- Action Button -->
+            <button id="dl-btn-reinject" class="es-action-btn">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                <path d="M3 3v5h5"/>
+                <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/>
+                <path d="M16 16h5v5"/>
+              </svg>
+              Re-inject scripts
+            </button>
+
+            <!-- Hint -->
+            <div class="empty-subtitle">Push data to start monitoring your data layer</div>
           </div>
-          <button id="dl-btn-reinject" style="
-            padding:5px 12px;font-size:12px;border-radius:4px;cursor:pointer;
-            background:var(--bg-2);color:var(--text-1);border:1px solid var(--border);
-          ">Re-inject scripts</button>
         </div>
         <div id="dl-status-text"></div>
       </div>

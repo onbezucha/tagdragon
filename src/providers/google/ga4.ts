@@ -18,7 +18,7 @@ export const ga4: Provider = {
       'Session Count': p.sct,
       'Session Engaged': p.seg,
       'Hit Sequence': p._s,
-      Engagement: p._et ? `${p._et}ms` : undefined,
+      Engagement: p._et && Number(p._et) > 0 ? `${p._et}ms` : undefined,
       // User & Session
       'Client ID': p.cid,
       'User ID': p.uid,
@@ -61,6 +61,17 @@ export const ga4: Provider = {
         decoded[key] = value;
       }
     }
+
+    // Campaign attribution IDs
+    if (p.gclid) decoded['gclid'] = p.gclid;
+    if (p.dclid) decoded['dclid'] = p.dclid;
+    if (p.gbraid) decoded['gbraid'] = p.gbraid;
+    if (p.wbraid) decoded['wbraid'] = p.wbraid;
+    if (p.srsltid) decoded['srsltid'] = p.srsltid;
+
+    // Debug
+    if (p._dbg) decoded['_dbg'] = p._dbg;
+    if (p.fid) decoded['fid'] = p.fid;
 
     return decoded;
   },

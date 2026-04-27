@@ -13,6 +13,12 @@ export const adobeHeartbeat: Provider = {
       'Stream Name': p['s:sp:nam'],
       Channel: p['s:sp:channel'],
       'Stream ID': p['s:sp:id'],
+      Publisher: p['s:sp:pub'],
+      'SDK Version': p['s:sp:sdk'],
+      'Player Name': p['s:sp:pln'],
+      'Video Length': p['s:sp:len'] ? `${p['s:sp:len']}s` : undefined,
+      Bitrate: p['s:sp:brt'],
+      FPS: p['s:sp:fps'],
     };
   },
 } as const;

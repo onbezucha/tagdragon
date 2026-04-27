@@ -26,9 +26,13 @@ export const twitterPixel: Provider = {
       'User ID (twpid)': p['twpid'],
       'Sale Amount': p['tw_sale_amount'],
       'Order Quantity': p['tw_order_quantity'],
-      Version: p['version'],
-      Type: p['type'],
       'Transaction ID': p['txn_id'],
+      'Page Title': p.tw_document_title,
+      'Conversion ID': p.tw_conversion_id,
+      'Email (hashed)': p.em,
+      'Phone (hashed)': p.ph,
+      'First Name (hashed)': p.fn,
+      'Last Name (hashed)': p.ln,
     };
   },
 } as const;

@@ -6,8 +6,11 @@ export const piwikProTm: Provider = {
   pattern: /[a-z0-9-]+\.piwik\.pro\/[a-z0-9-]+\/[a-z0-9]+\.js/,
 
   parseParams(url: string): Record<string, string | undefined> {
+    const match = url.match(/([a-z0-9-]+)\.piwik\.pro\/([a-f0-9-]+)\/([a-f0-9]+)\.js/);
     return {
-      URL: url,
+      'Account ID': match?.[2],
+      'Container ID': match?.[3],
+      'Request Type': 'Library Load',
     };
   },
 } as const;

@@ -14,7 +14,11 @@ export const theTradeDesk: Provider = {
       'Universal Pixel ID': p['upid'],
       Value: p['v'],
       'Order ID': p['orderid'],
-      URL: url,
+      'Transaction ID': p.tda,
+      'Match ID': p.tm,
+      'Conversion Type': p.tdu,
+      'Custom X': p.tx,
+      'Custom Y': p.ty,
     };
   },
 } as const;

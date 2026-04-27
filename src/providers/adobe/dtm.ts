@@ -10,7 +10,6 @@ export const adobeDTM: Provider = {
     return {
       'Org ID (partial)': m?.[1],
       'Property hash': m?.[2],
-      URL: url,
     };
   },
 } as const;

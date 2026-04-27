@@ -13,7 +13,10 @@ export const linkedin: Provider = {
     return {
       'Partner ID': p.pid,
       Conversion: p.conversionId,
-      URL: url,
+      'Conversion Hash': p.ch,
+      Time: p.time,
+      'Conversion ID': p._litr,
+      Version: p.v,
     };
   },
 } as const;

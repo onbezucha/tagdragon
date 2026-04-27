@@ -1,6 +1,7 @@
 import type { Provider } from '../../types/provider';
 import type { HARPostBody } from '../../types/har';
 import { getParams } from '../url-parser';
+import { titleCase, formatJsonValue } from '../parse-helpers';
 
 export const aepWebSDK: Provider = {
   name: 'Adobe Server-Side',
@@ -101,7 +102,7 @@ export const aepWebSDK: Provider = {
       return String(v);
     };
 
-    return {
+    const result: Record<string, string | undefined> = {
       // Basic info
       'Datastream ID': datastreamId,
       'Request type': requestType,
@@ -130,5 +131,47 @@ export const aepWebSDK: Provider = {
       Screen: screenDimensions,
       'Screen orient': str(device.screenOrientation),
     };
+
+    // XDM Commerce
+    const commerce = (xdm.commerce as Record<string, unknown>) ?? {};
+    if (commerce.order) {
+      const order = commerce.order as Record<string, unknown>;
+      if (order.purchaseID) result['Purchase ID'] = str(order.purchaseID);
+      if (order.priceTotal) result['Price Total'] = str(order.priceTotal);
+      if (order.currencyCode) result['Order Currency'] = str(order.currencyCode);
+    }
+
+    // Product List Items
+    const productListItems = xdm.productListItems as Array<Record<string, unknown>> | undefined;
+    if (productListItems && productListItems.length > 0) {
+      result['Products'] = JSON.stringify(productListItems, null, 2);
+    }
+
+    // Commerce actions
+    const commerceActions = [
+      'productListAdds',
+      'productListOpens',
+      'productListRemovals',
+      'productListReopens',
+      'productListViews',
+      'purchases',
+      'saveForLaters',
+    ];
+    for (const action of commerceActions) {
+      const val = commerce[action];
+      if (val && typeof val === 'object') {
+        result[titleCase(action)] = formatJsonValue(val);
+      }
+    }
+
+    // Browser details
+    const browser = (xdm.environment?.browserDetails as Record<string, unknown>) ?? {};
+    if (browser.browserName) result['Browser'] = str(browser.browserName);
+    if (browser.browserVersion) result['Browser Version'] = str(browser.browserVersion);
+
+    // Remove Screen orient (noise)
+    delete result['Screen orient'];
+
+    return result;
   },
 };

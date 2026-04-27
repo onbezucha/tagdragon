@@ -13,11 +13,17 @@ export const pinterestPixel: Provider = {
     // 'ed' — event data JSON (may contain value/currency for purchase events)
     let edValue: string | undefined;
     let edCurrency: string | undefined;
+    let edOrderId: string | undefined;
+    let edSearchQuery: string | undefined;
+    let edLeadType: string | undefined;
     if (p['ed']) {
       try {
         const ed = JSON.parse(p['ed']) as Record<string, unknown>;
         edValue = ed['value'] != null ? String(ed['value']) : undefined;
         edCurrency = ed['currency'] != null ? String(ed['currency']) : undefined;
+        edOrderId = ed['order_id'] != null ? String(ed['order_id']) : undefined;
+        edSearchQuery = ed['search_query'] != null ? String(ed['search_query']) : undefined;
+        edLeadType = ed['lead_type'] != null ? String(ed['lead_type']) : undefined;
       } catch {
         /* ignore */
       }
@@ -69,11 +75,14 @@ export const pinterestPixel: Provider = {
       'Network Provider': np,
       'GTM Version': gtmVersion,
       // Page
-      URL: loc,
+      'Page URL': loc,
       Referrer: ref,
       // Ecommerce
       Value: edValue,
       Currency: edCurrency,
+      'Order ID': edOrderId,
+      'Search Query': edSearchQuery,
+      'Lead Type': edLeadType,
       // Device
       'Screen Resolution': screenRes,
       Platform: platform,

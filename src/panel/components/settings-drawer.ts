@@ -18,6 +18,7 @@ export interface DrawerContext {
   doApplyFilters: () => void;
   doUpdateActiveFilters: () => void;
   syncQuickButtons: () => void;
+  syncDlQuickButtons: () => void;
   applyWrapValuesClass: () => void;
   applyCompactRowsClass: () => void;
 }
@@ -424,6 +425,7 @@ function wireUpSectionControls(tab: DrawerTab): void {
     wireSelect('cfg-dl-sort-order', 'dlSortOrder', () => {
       const val = (document.getElementById('cfg-dl-sort-order') as HTMLSelectElement)?.value;
       if (val) dlState.setDlSortOrder(val as 'asc' | 'desc');
+      ctx?.syncDlQuickButtons();
     });
     wireCheckbox('cfg-dl-group-by-source', 'dlGroupBySource', () => {
       dlState.setDlGroupBySource(state.getConfig().dlGroupBySource);
@@ -496,6 +498,7 @@ function wireFooterButtons(): void {
     dlState.initDlSortState();
     closeSettings();
     ctx?.syncQuickButtons();
+    ctx?.syncDlQuickButtons();
     ctx?.applyWrapValuesClass();
     ctx?.applyCompactRowsClass();
   });
@@ -532,6 +535,7 @@ function wireFooterButtons(): void {
           dlState.initDlSortState();
           refreshContent();
           ctx?.syncQuickButtons();
+          ctx?.syncDlQuickButtons();
           ctx?.applyWrapValuesClass();
           ctx?.applyCompactRowsClass();
         } catch {

@@ -4,7 +4,7 @@ import { PROVIDERS } from '@/providers/index';
 import { PROVIDER_GROUPS } from '@/shared/provider-groups';
 import { DATA_LAYER_SOURCES } from '@/shared/datalayer-constants';
 import { DOM } from '../utils/dom';
-import { closeAllPopovers } from '../utils/popover-manager';
+import { closeAllPopovers, registerPopover } from '../utils/popover-manager';
 import { isMac } from '../utils/platform';
 import { esc } from '../utils/format';
 import { buildGroupIcon } from '../utils/icon-builder';
@@ -48,9 +48,9 @@ export function initInfoPopover(): void {
   $btn.addEventListener('click', (e: MouseEvent) => {
     e.stopPropagation();
     const opening = !$popover.classList.contains('visible');
-    $popover.classList.toggle('visible');
+    closeAllPopovers();
     if (opening) {
-      closeAllPopovers();
+      $popover.classList.add('visible');
       // Focus search on open
       setTimeout(
         () => (document.getElementById('info-search') as HTMLInputElement | null)?.focus(),
@@ -66,6 +66,7 @@ export function initInfoPopover(): void {
   renderDataLayerSources();
   initAccordion($popover);
   initSearch();
+  registerPopover('info', closeInfoPopover);
 }
 
 // ─── CLOSE (called from external handlers) ────────────────────────────────────

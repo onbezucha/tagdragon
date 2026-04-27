@@ -1,42 +1,63 @@
 import type { Provider } from '@/types/provider';
 import { getParams } from './url-parser';
+import { titleCase, formatJsonValue } from './parse-helpers';
+
+/**
+ * Decode Mixpanel base64-encoded data parameter.
+ */
+function decodeMixpanelData(data: string | undefined): Record<string, unknown> | null {
+  if (!data) return null;
+  try {
+    const decoded = JSON.parse(atob(data));
+    return Array.isArray(decoded) ? (decoded[0] as Record<string, unknown>) : decoded;
+  } catch {
+    return null;
+  }
+}
 
 export const mixpanel: Provider = {
   name: 'Mixpanel',
   color: '#7856FF',
-  // Mixpanel tracking and engage endpoints
   pattern: /mixpanel\.com\/(track|engage|import)/,
-
   parseParams(url: string, postRaw: unknown): Record<string, string | undefined> {
     const p = getParams(url, postRaw);
+    const str = (v: unknown) => (v != null ? String(v) : undefined);
 
-    // Mixpanel classic: POSTs data= param with base64-encoded JSON array
-    let eventName: string | undefined = p['event'];
-    let distinctId: string | undefined = p['distinct_id'];
-    let token: string | undefined = p['token'];
-    let currentUrl: string | undefined = p['$current_url'];
+    // Base from URL params
+    let eventName: string | undefined = p.event;
+    let distinctId: string | undefined;
+    let token: string | undefined;
 
-    if (p['data']) {
-      try {
-        const decoded = JSON.parse(atob(p['data']));
-        const item: Record<string, unknown> = Array.isArray(decoded) ? decoded[0] : decoded;
-        if (item) {
-          eventName = item['event'] != null ? String(item['event']) : eventName;
-          const props = (item['properties'] as Record<string, unknown>) ?? {};
-          distinctId = props['distinct_id'] != null ? String(props['distinct_id']) : distinctId;
-          token = props['token'] != null ? String(props['token']) : token;
-          currentUrl = props['$current_url'] != null ? String(props['$current_url']) : currentUrl;
-        }
-      } catch {
-        /* Ignore decode errors */
+    // Decode base64 data param
+    const decoded = decodeMixpanelData(p.data);
+
+    // Pass-through all properties from decoded JSON
+    const result: Record<string, string | undefined> = {};
+
+    if (decoded) {
+      eventName = str(decoded.event) ?? eventName;
+      const props = (decoded.properties as Record<string, unknown>) ?? {};
+      distinctId = str(props.distinct_id);
+      token = str(props.token);
+
+      // All properties as flat pass-through
+      for (const [key, value] of Object.entries(props)) {
+        // Skip internal system params we already have explicitly
+        if (key === 'distinct_id' || key === 'token') continue;
+
+        // Remove $ prefix for cleaner display
+        const displayKey = key.startsWith('$') ? key.slice(1) : key;
+        result[titleCase(displayKey)] = formatJsonValue(value);
       }
     }
 
-    return {
+    // Core (always at the beginning)
+    const core: Record<string, string | undefined> = {
       Event: eventName,
       'Distinct ID': distinctId,
       Token: token,
-      URL: currentUrl ?? url,
     };
+
+    return { ...core, ...result };
   },
 } as const;

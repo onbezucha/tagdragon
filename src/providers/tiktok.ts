@@ -1,16 +1,6 @@
 import type { Provider } from '@/types/provider';
-import type { HARPostBody } from '@/types/har';
 import { getParams } from './url-parser';
-
-function parseHARJson(postRaw: unknown): Record<string, unknown> {
-  try {
-    const har = postRaw as HARPostBody;
-    const text = har?.text ?? (har?.raw?.[0]?.bytes ? atob(har.raw[0].bytes) : '');
-    return text ? (JSON.parse(text) as Record<string, unknown>) : {};
-  } catch {
-    return {};
-  }
-}
+import { parsePostBodyJson, formatJsonValue, titleCase } from './parse-helpers';
 
 export const tiktokPixel: Provider = {
   name: 'TikTok Pixel',
@@ -20,7 +10,7 @@ export const tiktokPixel: Provider = {
 
   parseParams(url: string, postRaw: unknown): Record<string, string | undefined> {
     const p = getParams(url, postRaw);
-    const body = parseHARJson(postRaw);
+    const body = parsePostBodyJson(postRaw);
 
     const props = (body['properties'] as Record<string, unknown>) ?? {};
     const ctx = (body['context'] as Record<string, unknown>) ?? {};
@@ -29,7 +19,7 @@ export const tiktokPixel: Provider = {
 
     const str = (v: unknown): string | undefined => (v != null ? String(v) : undefined);
 
-    return {
+    const result: Record<string, string | undefined> = {
       // Event
       Event: str(body['event']) ?? p['event'],
       Timestamp: str(body['timestamp']),
@@ -49,7 +39,27 @@ export const tiktokPixel: Provider = {
       // User
       'Click ID': str(ctxUser['ttclid']),
       'User ID': str(ctxUser['external_id']),
+      'TT Cookie ID': str(ctxUser.ttp),
       Locale: str(ctxUser['locale']),
     };
+
+    // Pass-through of extra properties
+    const skipProps = new Set([
+      'url',
+      'value',
+      'currency',
+      'content_id',
+      'content_type',
+      'content_name',
+      'order_id',
+      'search_string',
+    ]);
+    for (const [key, value] of Object.entries(props)) {
+      if (!skipProps.has(key)) {
+        result[titleCase(key)] = formatJsonValue(value);
+      }
+    }
+
+    return result;
   },
 } as const;

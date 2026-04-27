@@ -39,6 +39,18 @@ export const adobeAA: Provider = {
       if (p[`c${i}`] && !String(p[`c${i}`]).startsWith('.')) props[`prop${i}`] = p[`c${i}`];
     }
 
+    // List Variables
+    const lists: Record<string, string> = {};
+    for (let i = 1; i <= 3; i++) {
+      if (p[`l${i}`]) lists[`list${i}`] = p[`l${i}`];
+    }
+
+    // Hierarchies
+    const hiers: Record<string, string> = {};
+    for (let i = 1; i <= 5; i++) {
+      if (p[`h${i}`]) hiers[`hier${i}`] = p[`h${i}`];
+    }
+
     return {
       'Hit type': hitType,
       'Report suite': rsid,
@@ -59,6 +71,8 @@ export const adobeAA: Provider = {
       AppMeasurement: p.ndh === '1' ? 'Yes' : undefined,
       ...eVars,
       ...props,
+      ...lists,
+      ...hiers,
       ...(Object.keys(contextData).length ? { 'Context data': JSON.stringify(contextData) } : {}),
     };
   },

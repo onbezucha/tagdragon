@@ -30,20 +30,17 @@ export const metaPixel: Provider = {
       if (k.startsWith('expv2[')) experiments.push(v);
     }
 
-    return {
+    const result: Record<string, string | undefined> = {
       // Event
       Event: p.ev,
       Action: p.a,
       'Event ID': p.eid,
       'Event Count': p.ec,
-      Ordinal: p.o,
-      'Last Event Result': p.ler,
       // Pixel Info
       'Pixel ID': p.id,
       'Pixel Version': p.v,
-      Release: p.r,
       // Page
-      URL: p.dl,
+      'Page URL': p.dl,
       Referrer: p.rl || undefined,
       // Ecommerce
       Value: p['cd[value]'],
@@ -63,11 +60,31 @@ export const metaPixel: Provider = {
       Timestamp: p.ts,
       'Page Load Time': plt,
       'Init Time': p.it ? new Date(parseInt(p.it, 10)).toISOString() : undefined,
-      'In iFrame': p.if,
-      'Click-Only': p.coo,
       'Consent Data Layer': p.cdl,
       'Consent Flag': p.cf,
       Experiments: experiments.length > 0 ? experiments.join(', ') : undefined,
     };
+
+    // Pass-through of custom cd[*] params not in whitelist
+    const knownCd = new Set([
+      'cd[value]',
+      'cd[currency]',
+      'cd[content_ids]',
+      'cd[content_name]',
+      'cd[content_type]',
+      'cd[content_category]',
+      'cd[num_items]',
+      'cd[contents]',
+      'cd[predicted_ltv]',
+      'cd[delivery_category]',
+    ]);
+
+    for (const [key, value] of Object.entries(p)) {
+      if (key.startsWith('cd[') && !knownCd.has(key) && value) {
+        result[key.slice(3, -1)] = value;
+      }
+    }
+
+    return result;
   },
 } as const;

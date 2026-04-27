@@ -8,10 +8,15 @@ export const fullstory: Provider = {
 
   parseParams(url: string, postBody: unknown): Record<string, string | undefined> {
     const p = getParams(url, postBody);
+    const orgMatch = url.match(/fullstory\.com\/rec\/([^/]+)/);
+    const sessionMatch = url.match(/session[/:]([^/?]+)/);
+
     return {
       'User ID': p.uid,
       'Display Name': p.displayName,
       Email: p.email,
+      'Org ID': orgMatch?.[1],
+      'Session ID': sessionMatch?.[1],
     };
   },
 } as const;

@@ -293,7 +293,8 @@ export function updateFilterBarVisibility(): void {
 
   // Indicator on the button
   const $btn = DOM.btnProviders;
-  $btn?.classList.toggle('active', hiddenProviders.size > 0);
+  const hasHttpFilter = !!(getFilterStatus() || getFilterMethod());
+  $btn?.classList.toggle('active', hiddenProviders.size > 0 || hasHttpFilter);
 
   DOM.filterBar?.classList.toggle('visible', hasFilters);
 

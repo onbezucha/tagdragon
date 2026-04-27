@@ -1322,6 +1322,51 @@
   font-weight: 600;
 }
 
+/* ─── DataLayer Export Split Button ──────────────────────────────── */
+
+#dl-export-split-btn {
+  display: flex;
+  gap: 0;
+  position: relative;
+}
+
+#dl-export-split-btn > button:first-child {
+  border-radius: 4px 0 0 4px;
+}
+
+#dl-btn-export {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  font-size: 12px;
+}
+
+#dl-btn-export svg {
+  width: 12px;
+  height: 12px;
+}
+
+#dl-export-format-menu {
+  display: none;
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px;
+  z-index: 200;
+  min-width: 80px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+#dl-export-format-menu.visible {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
 /* ─── DataLayer Live Inspector ──────────────────────────────────────────── */
 
 .dl-watch-empty {

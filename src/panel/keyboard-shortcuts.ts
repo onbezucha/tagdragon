@@ -20,6 +20,8 @@ import {
   closeDlFilterPopover,
 } from './components/dl-filter-popover';
 import { isOpen as isInfoPopoverOpen, closeInfoPopover } from './components/info-popover';
+import { isConsentOpen, closeConsentPanel } from './components/consent-panel';
+import { isEnvPopoverOpen, closeEnvPopover } from './components/adobe-env-switcher';
 
 export interface KeyboardContext {
   getActiveView: () => 'network' | 'datalayer';
@@ -48,6 +50,13 @@ function isInteractiveFocused(): boolean {
   return false;
 }
 
+function isExportFormatMenuOpen(): boolean {
+  return !!(
+    document.getElementById('export-format-menu')?.classList.contains('visible') ||
+    document.getElementById('dl-export-format-menu')?.classList.contains('visible')
+  );
+}
+
 /**
  * Check if any popover or drawer is open.
  * Used to guard shortcuts like `/` from conflicting with
@@ -55,7 +64,13 @@ function isInteractiveFocused(): boolean {
  */
 function isAnyPopoverOpen(): boolean {
   return (
-    isProviderFilterOpen() || isDlFilterPopoverOpen() || isInfoPopoverOpen() || isSettingsOpen()
+    isProviderFilterOpen() ||
+    isDlFilterPopoverOpen() ||
+    isInfoPopoverOpen() ||
+    isSettingsOpen() ||
+    isConsentOpen() ||
+    isEnvPopoverOpen() ||
+    isExportFormatMenuOpen()
   );
 }
 
@@ -136,12 +151,28 @@ export function initKeyboardHandlers(ctx: KeyboardContext): void {
         closeInfoPopover();
         return;
       }
-      // 4. Close settings drawer
+      // 4. Close consent panel
+      if (isConsentOpen()) {
+        closeConsentPanel();
+        return;
+      }
+      // 5. Close Adobe env popover
+      if (isEnvPopoverOpen()) {
+        closeEnvPopover();
+        return;
+      }
+      // 6. Close export format menus
+      if (isExportFormatMenuOpen()) {
+        document.getElementById('export-format-menu')?.classList.remove('visible');
+        document.getElementById('dl-export-format-menu')?.classList.remove('visible');
+        return;
+      }
+      // 7. Close settings drawer
       if (isSettingsOpen()) {
         closeSettings();
         return;
       }
-      // 5. Clear network search if focused
+      // 8. Clear network search if focused
       if (document.activeElement === DOM.filterInput) {
         state.setFilterText('');
         if (DOM.filterInput) DOM.filterInput.value = '';
@@ -149,7 +180,7 @@ export function initKeyboardHandlers(ctx: KeyboardContext): void {
         ctx.doApplyFilters();
         ctx.doUpdateActiveFilters();
       }
-      // 6. Clear DL search if focused
+      // 9. Clear DL search if focused
       else if (document.activeElement === DOM.dlFilterInput) {
         const $input = DOM.dlFilterInput;
         if ($input) {
@@ -161,11 +192,11 @@ export function initKeyboardHandlers(ctx: KeyboardContext): void {
         const event = new Event('input', { bubbles: true });
         $input?.dispatchEvent(event);
       }
-      // 7. Close network detail pane
+      // 10. Close network detail pane
       else if (!DOM.detail?.classList.contains('hidden')) {
         closeDetailPane();
       }
-      // 8. Close DataLayer detail pane
+      // 11. Close DataLayer detail pane
       else if (!DOM.dlDetailPane?.classList.contains('hidden')) {
         closeDlDetail();
         dlState.setDlSelectedId(null);

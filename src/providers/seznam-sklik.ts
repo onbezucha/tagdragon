@@ -28,7 +28,6 @@ export const seznamSklik: Provider = {
       'Page URL': p.url ? decodeURIComponent(p.url) : undefined,
       Consent: p.consent,
       'User ID': udid,
-      URL: url,
     };
   },
 } as const;

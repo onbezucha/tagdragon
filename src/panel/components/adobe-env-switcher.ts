@@ -3,7 +3,7 @@
 import type { AdobeEnvState } from '@/types/request';
 import { DOM, qsa } from '../utils/dom';
 import { adobeEnvState } from '../state';
-import { closeAllPopovers } from '../utils/popover-manager';
+import { closeAllPopovers, registerPopover } from '../utils/popover-manager';
 
 type AdobeDetected = AdobeEnvState['detected'];
 type AdobeEnvConfig = Exclude<AdobeEnvState['config'], null>;
@@ -229,6 +229,15 @@ async function switchAdobeEnv(fromUrl: string, toUrl: string | null): Promise<vo
 
 // ─── INIT ─────────────────────────────────────────────────────────────────
 
+export function closeEnvPopover(): void {
+  const $envPopover = DOM.envPopover;
+  if ($envPopover) $envPopover.classList.remove('visible');
+}
+
+export function isEnvPopoverOpen(): boolean {
+  return DOM.envPopover?.classList.contains('visible') ?? false;
+}
+
 export async function initAdobeEnvSwitcher(): Promise<void> {
   const detected = await detectAdobeLibrary();
   if (!detected) {
@@ -263,19 +272,18 @@ function setupEnvEventListeners(): void {
   const $envApply = DOM.envApply as HTMLButtonElement;
   const $envReset = DOM.envReset as HTMLButtonElement;
 
+  registerPopover('adobe-env', closeEnvPopover);
+
   // Badge click → toggle popover
   if ($envBadge) {
     $envBadge.addEventListener('click', (e: MouseEvent) => {
       e.stopPropagation();
+      const isVisible = $envPopover.classList.contains('visible');
       closeAllPopovers();
-
-      if ($envPopover.classList.contains('visible')) {
-        $envPopover.classList.remove('visible');
-        return;
+      if (!isVisible) {
+        renderEnvPopover();
+        $envPopover.classList.add('visible');
       }
-
-      renderEnvPopover();
-      $envPopover.classList.add('visible');
     });
   }
 
@@ -321,7 +329,7 @@ function setupEnvEventListeners(): void {
       void switchAdobeEnv(fromUrl, targetUrl);
 
       updateEnvBadge(sel, false);
-      $envPopover.classList.remove('visible');
+      closeEnvPopover();
     });
   }
 
@@ -345,7 +353,7 @@ function setupEnvEventListeners(): void {
       updateEnvBadge('prod', false);
 
       void switchAdobeEnv(originalUrl, null);
-      $envPopover.classList.remove('visible');
+      closeEnvPopover();
     });
   }
 
@@ -356,7 +364,7 @@ function setupEnvEventListeners(): void {
       !$envPopover.contains(e.target as Node) &&
       !(e.target as HTMLElement).closest('#adobe-env-badge')
     ) {
-      $envPopover.classList.remove('visible');
+      closeEnvPopover();
     }
   });
 }

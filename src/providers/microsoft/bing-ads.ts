@@ -16,7 +16,7 @@ export const bingAds: Provider = {
       'Tag Manager': p.tm,
       'UET Version': p.Ver,
       // Page
-      URL: p.p,
+      'Page URL': p.p,
       'Page Title': p.tl,
       Referrer: p.r || undefined,
       // Session & Identity
@@ -26,8 +26,14 @@ export const bingAds: Provider = {
       'Click ID': p.msclkid && p.msclkid !== 'N' ? p.msclkid : undefined,
       // Device
       'Screen Resolution': p.sw && p.sh ? `${p.sw}x${p.sh}` : undefined,
-      'Color Depth': p.sc ? `${p.sc}bit` : undefined,
-      Language: p.lg,
+      // Custom Events
+      'Event Category': p.ec,
+      'Event Action': p.ea,
+      'Event Label': p.el,
+      'Event Value': p.ev,
+      'Goal Value': p.gv,
+      'Goal Currency': p.gc,
+      Revenue: p.revenue,
       // Technical
       'Load Time': p.lt ? `${p.lt}ms` : undefined,
       Consent: p.cdb,

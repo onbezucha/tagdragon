@@ -8,8 +8,10 @@ export const hotjar: Provider = {
 
   parseParams(url: string): Record<string, string | undefined> {
     const p = getParams(url);
+    const typeMatch = url.match(/hotjar\.com\/([^?/]+)/);
     return {
       'Site ID': p.hjid || p.siteId,
+      'Request Type': typeMatch?.[1],
     };
   },
 } as const;

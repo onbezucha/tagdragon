@@ -7,7 +7,6 @@ import type { Provider, ProviderRegistry } from '@/types/provider';
 
 // Google
 import { ga4 } from './google/ga4';
-import { gaUA } from './google/ga-ua';
 import { gtm } from './google/gtm';
 import { googleAds } from './google/google-ads';
 
@@ -116,7 +115,6 @@ import { merkury } from './merkury';
 export const PROVIDERS: ProviderRegistry = [
   // Google
   ga4,
-  gaUA,
   gtm,
   googleAds,
 

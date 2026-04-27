@@ -17,7 +17,6 @@ export const PROVIDER_GROUPS: readonly ProviderGroup[] = [
     icon: '📊',
     providers: [
       'GA4',
-      'GA (UA)',
       'Adobe Client-Side',
       'Adobe Server-Side',
       'Scorecard',

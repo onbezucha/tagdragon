@@ -3,7 +3,7 @@
 import type { ConsentData } from '@/types/consent';
 import { DOM } from '../utils/dom';
 import { esc } from '../utils/format';
-import { closeAllPopovers } from '../utils/popover-manager';
+import { closeAllPopovers, registerPopover } from '../utils/popover-manager';
 import {
   GET_CONSENT_DATA_SCRIPT,
   ACCEPT_ALL_SCRIPT,
@@ -35,6 +35,17 @@ async function loadOverride(): Promise<void> {
 export async function clearConsentOverride(): Promise<void> {
   await saveOverride(null);
   renderOverrideBadge();
+}
+
+// ─── PUBLIC CLOSE ────────────────────────────────────────────────────────
+
+export function closeConsentPanel(): void {
+  const $consentPopover = DOM.consentPopover;
+  if ($consentPopover) $consentPopover.classList.remove('visible');
+}
+
+export function isConsentOpen(): boolean {
+  return DOM.consentPopover?.classList.contains('visible') ?? false;
 }
 
 async function saveOverride(value: ConsentOverride): Promise<void> {
@@ -90,14 +101,14 @@ export async function initConsentPanel(): Promise<void> {
   const $consentPopover = DOM.consentPopover;
 
   if (!$btnConsent || !$consentPopover) return;
+  registerPopover('consent', closeConsentPanel);
 
   $btnConsent.addEventListener('click', (e: MouseEvent) => {
     e.stopPropagation();
     const isVisible = $consentPopover.classList.contains('visible');
-    $consentPopover.classList.toggle('visible', !isVisible);
     closeAllPopovers();
-
     if (!isVisible) {
+      $consentPopover.classList.add('visible');
       renderOverrideBadge();
       refreshConsentData();
     }

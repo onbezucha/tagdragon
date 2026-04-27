@@ -13,7 +13,6 @@ export const adobeLaunchChina: Provider = {
         ? envMatch[2].charAt(0).toUpperCase() + envMatch[2].slice(1)
         : 'Production',
       'Library ID': envMatch?.[1],
-      URL: url,
     };
   },
 } as const;

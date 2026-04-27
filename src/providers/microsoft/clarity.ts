@@ -129,6 +129,8 @@ function decodeEnvelope(e: unknown[]): {
  */
 function decodeAnalyticsEvents(events: unknown[][]): Record<string, string | undefined> {
   const params: Record<string, string | undefined> = {};
+  let pingCount = 0;
+  let pingGap: number | undefined;
 
   for (let i = 0; i < events.length; i++) {
     const ev = events[i];
@@ -161,8 +163,9 @@ function decodeAnalyticsEvents(events: unknown[][]): Record<string, string | und
       }
 
       case 25: // Ping
-        params[`Ping [${i}]`] = `gap=${ev[2] ?? '?'}ms`;
-        break;
+        pingCount++;
+        pingGap = ev[2] as number | undefined;
+        continue;
 
       case 27: // Input
         params[`Input [${i}]`] = `target=${ev[2] ?? '?'}`;
@@ -257,6 +260,10 @@ function decodeAnalyticsEvents(events: unknown[][]): Record<string, string | und
         break;
       }
     }
+  }
+
+  if (pingCount > 0) {
+    params['Pings'] = `${pingCount}× (gap: ${pingGap != null ? String(pingGap) : '?'}ms)`;
   }
 
   return params;

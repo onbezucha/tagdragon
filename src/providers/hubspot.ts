@@ -15,6 +15,9 @@ export const hubspot: Provider = {
       'Page Title': p.pageTitle,
       Campaign: p.hsa_cam,
       Source: p.hsa_src,
+      'User Token': p.hutk,
+      'Session Count': p.hssc,
+      'Long-term Cookie': p.hstc,
     };
   },
 } as const;

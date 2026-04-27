@@ -13,6 +13,10 @@ export const adobeECID: Provider = {
       'Org ID': p.d_orgid,
       Version: p.d_ver,
       Response: p.d_rtbd,
+      Blob: p.d_blob,
+      'Device Co-op': p.dpv,
+      Platform: p.d_ptype,
+      Region: p.dcs_region,
     };
   },
 } as const;

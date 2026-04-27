@@ -52,6 +52,7 @@ import {
   initProviderFilterPopover,
   toggleProviderFilter,
   closeProviderFilter,
+  refreshHttpFilterPillStates,
 } from './components/provider-filter-popover';
 import { applyFilters, matchesFilter } from './utils/filter';
 import { downloadCsv, downloadJson } from './utils/export';
@@ -91,6 +92,7 @@ import {
 import { initTheme } from './theme';
 import { savePanelSetting, loadPanelSetting } from './utils/persistence';
 import { init as initTooltip } from './utils/tooltip';
+import { closeAllPopovers, registerPopover } from './utils/popover-manager';
 import { initSplitter } from './splitter';
 import { initKeyboardHandlers } from './keyboard-shortcuts';
 import {
@@ -313,12 +315,14 @@ function flushPendingRequests(): void {
   // Update network tab badge
   const $networkBadge = DOM.tabBadgeNetwork;
   if ($networkBadge) $networkBadge.textContent = String(state.getAllRequests().length);
+  refreshHttpFilterPillStates();
 }
 
 // ─── CALLBACKS ───────────────────────────────────────────────────────────────
 
 function doApplyFilters(): void {
   applyFilters(updateRowVisibility, updateStatusBar);
+  refreshHttpFilterPillStates();
 }
 
 function doUpdateActiveFilters(): void {
@@ -482,9 +486,11 @@ function dlClearAll(): void {
   dlState.clearDlPendingPushes();
 
   const $list = DOM.dlPushList;
-  if ($list) $list.innerHTML = '';
-
   const $empty = DOM.dlEmptyState;
+  if ($list) {
+    $list.innerHTML = '';
+    if ($empty) $list.appendChild($empty);
+  }
   if ($empty) $empty.style.display = '';
 
   closeDlDetail();
@@ -1084,13 +1090,30 @@ function initToolbarHandlers(): void {
     }
   });
 
+  // ─── EXPORT FORMAT MENUS (popover-managed) ──────────────────────────────
+
+  function closeExportFormatMenu(): void {
+    document.getElementById('export-format-menu')?.classList.remove('visible');
+  }
+
+  function closeDlExportFormatMenu(): void {
+    document.getElementById('dl-export-format-menu')?.classList.remove('visible');
+  }
+
+  registerPopover('export-format', closeExportFormatMenu);
+  registerPopover('dl-export-format', closeDlExportFormatMenu);
+
   // Export format split button
   const btnExportFormat = document.getElementById('btn-export-format');
   const exportFormatMenu = document.getElementById('export-format-menu');
 
   btnExportFormat?.addEventListener('click', (e: Event) => {
     e.stopPropagation();
-    exportFormatMenu?.classList.toggle('visible');
+    const opening = !exportFormatMenu?.classList.contains('visible');
+    closeAllPopovers();
+    if (opening) {
+      exportFormatMenu?.classList.add('visible');
+    }
   });
 
   exportFormatMenu?.addEventListener('click', (e: Event) => {
@@ -1102,14 +1125,6 @@ function initToolbarHandlers(): void {
       syncExportTooltip();
     }
     exportFormatMenu?.classList.remove('visible');
-  });
-
-  // Close export format menu on outside click
-  document.addEventListener('click', (e: Event) => {
-    const target = e.target as HTMLElement;
-    if (!target.closest('#export-split-btn')) {
-      exportFormatMenu?.classList.remove('visible');
-    }
   });
 
   // Clear cookies button
@@ -1187,15 +1202,37 @@ function syncQuickButtons(): void {
   }
 }
 
+function syncDlQuickButtons(): void {
+  const $dlSortBtn = document.getElementById('dl-btn-sort');
+  const order = dlState.getDlSortOrder();
+
+  if ($dlSortBtn) {
+    $dlSortBtn.classList.toggle('active', order === 'desc');
+    $dlSortBtn.dataset.tooltip =
+      order === 'desc'
+        ? 'Newest first (click for oldest first)'
+        : 'Oldest first (click for newest first)';
+  }
+}
+
 // ─── EXPORT TOOLTIP SYNC ─────────────────────────────────────────────────────
 
 function syncExportTooltip(): void {
+  const fmt = state.getConfig().exportFormat.toUpperCase();
+
+  // Network export tooltip
   const btnExport = document.getElementById('btn-export');
   if (btnExport) {
-    const fmt = state.getConfig().exportFormat.toUpperCase();
     btnExport.dataset.tooltip = `Export as ${fmt}`;
   }
-  // Update format menu active state
+
+  // DataLayer export tooltip
+  const btnDlExport = document.getElementById('dl-btn-export');
+  if (btnDlExport) {
+    btnDlExport.dataset.tooltip = `Export as ${fmt}`;
+  }
+
+  // Update ALL format menu active states (both toolbars)
   document.querySelectorAll('.export-format-option').forEach((el) => {
     const format = (el as HTMLElement).dataset.format;
     el.classList.toggle('active', format === state.getConfig().exportFormat);
@@ -1369,6 +1406,39 @@ async function initDatalayerHandlers(): Promise<void> {
     else exportDlJson(pushes);
   });
 
+  // DL Export format split button
+  const btnDlExportFormat = document.getElementById('dl-btn-export-format');
+  const dlExportFormatMenu = document.getElementById('dl-export-format-menu');
+
+  btnDlExportFormat?.addEventListener('click', (e: Event) => {
+    e.stopPropagation();
+    const opening = !dlExportFormatMenu?.classList.contains('visible');
+    closeAllPopovers();
+    if (opening) {
+      dlExportFormatMenu?.classList.add('visible');
+    }
+  });
+
+  dlExportFormatMenu?.addEventListener('click', (e: Event) => {
+    const target = (e.target as HTMLElement).closest('.export-format-option') as HTMLElement;
+    if (!target) return;
+    const format = target.dataset.format as 'json' | 'csv';
+    if (format) {
+      state.updateConfig('exportFormat', format);
+      syncExportTooltip();
+    }
+    dlExportFormatMenu?.classList.remove('visible');
+  });
+
+  // Network Reload page button (shown in empty state)
+  document.getElementById('btn-reload-page')?.addEventListener('click', () => {
+    try {
+      chrome.devtools.inspectedWindow.reload({});
+    } catch {
+      // fallback — should not happen in DevTools context
+    }
+  });
+
   // DL Re-inject button (shown in empty state)
   document.getElementById('dl-btn-reinject')?.addEventListener('click', () => {
     if (window.triggerReinject) {
@@ -1382,7 +1452,7 @@ async function initDatalayerHandlers(): Promise<void> {
   const $dlSortBtn = document.getElementById('dl-btn-sort');
   $dlSortBtn?.addEventListener('click', () => {
     const newOrder = toggleDlSortOrder();
-    $dlSortBtn.classList.toggle('active', newOrder === 'desc');
+    syncDlQuickButtons();
     renderDlPushListFull();
     syncSettingsControl('cfg-dl-sort-order', newOrder);
   });
@@ -1519,9 +1589,8 @@ async function init(): Promise<void> {
   // Initialize DataLayer sort state from persisted config
   initDlSortState();
 
-  // Sync DataLayer sort button visual state
-  const $dlSortBtn = document.getElementById('dl-btn-sort');
-  $dlSortBtn?.classList.toggle('active', getDlSortOrder() === 'desc');
+  // Sync DataLayer quick buttons visual state
+  syncDlQuickButtons();
 
   // Initialize all handlers
   initTabHandlers();
@@ -1555,6 +1624,7 @@ async function init(): Promise<void> {
     doApplyFilters,
     doUpdateActiveFilters,
     syncQuickButtons,
+    syncDlQuickButtons,
     applyWrapValuesClass,
     applyCompactRowsClass,
   });
