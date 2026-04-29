@@ -19,7 +19,7 @@ import {
   syncHiddenProviders,
   resetFilters,
 } from '../state';
-import { updateFilterBarVisibility } from './provider-bar';
+import { updateFilterBarVisibility } from './provider-filter';
 import { getCachedIcon } from '../utils/icon-builder';
 
 type FilterPill = {

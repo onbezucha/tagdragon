@@ -1,7 +1,7 @@
 // ─── DETAIL PANE COMPONENT ───────────────────────────────────────────────────
 
 import type { ParsedRequest, TabName } from '@/types/request';
-import { DOM, qsa } from '../utils/dom';
+import { DOM, qsa, flashCopyFeedback } from '../utils/dom';
 import { categorizeParams } from '../utils/categorize';
 import { renderCategorizedParams } from '../detail-tabs/decoded';
 import { renderParamTable } from '../detail-tabs/query';
@@ -25,6 +25,7 @@ import {
 } from '../datalayer/utils/reverse-correlation';
 import { getAllDlPushes } from '../datalayer/state';
 import { buildGroupIcon } from '../utils/icon-builder';
+import { SLOW_REQUEST_THRESHOLD_MS } from '@/shared/constants';
 
 // Currently displayed request — used by copy action buttons
 let _currentRequest: ParsedRequest | null = null;
@@ -126,7 +127,7 @@ export function selectRequest(data: ParsedRequest, row: HTMLElement): void {
   if (durEl) {
     durEl.textContent = data.duration ? data.duration + 'ms' : '—';
     durEl.className = 'summary-duration';
-    if (data.duration && data.duration > 1000) durEl.classList.add('slow');
+    if (data.duration && data.duration > SLOW_REQUEST_THRESHOLD_MS) durEl.classList.add('slow');
   }
 
   // Time
@@ -185,7 +186,7 @@ export function selectRequest(data: ParsedRequest, row: HTMLElement): void {
  * @param data Request data
  * @returns Array of available tab names
  */
-export function getAvailableTabs(data: ParsedRequest): TabName[] {
+function getAvailableTabs(data: ParsedRequest): TabName[] {
   const tabs: TabName[] = [];
   if (Object.keys(data._categorized || {}).length > 0) tabs.push('decoded');
   if (Object.keys(data.allParams || {}).length > 0) tabs.push('query');
@@ -206,7 +207,7 @@ export function getAvailableTabs(data: ParsedRequest): TabName[] {
  * Update tab button states.
  * @param availableTabs Available tab names
  */
-export function updateTabStates(availableTabs: TabName[]): void {
+function updateTabStates(availableTabs: TabName[]): void {
   const currentTab = getActiveTab();
   qsa('.dtab').forEach((tab) => {
     const tabName = (tab as HTMLElement).dataset.tab as TabName;
@@ -221,7 +222,7 @@ export function updateTabStates(availableTabs: TabName[]): void {
  * @param tab Tab name
  * @param data Request data
  */
-export function renderTab(tab: TabName, data: ParsedRequest): void {
+function renderTab(tab: TabName, data: ParsedRequest): void {
   const $detailContent = DOM.detailContent;
   if (!$detailContent) return;
   const id = String(data.id);
@@ -344,20 +345,23 @@ export function initDetailCopyHandlers(): void {
   document.getElementById('btn-copy-url')?.addEventListener('click', () => {
     if (!_currentRequest) return;
     navigator.clipboard.writeText(_currentRequest.url).catch(() => {});
-    flashCopyBtn('btn-copy-url');
+    const btn = document.getElementById('btn-copy-url');
+    if (btn) flashCopyFeedback(btn);
   });
 
   document.getElementById('btn-copy-curl')?.addEventListener('click', () => {
     if (!_currentRequest) return;
     navigator.clipboard.writeText(buildCurl(_currentRequest)).catch(() => {});
-    flashCopyBtn('btn-copy-curl');
+    const btn = document.getElementById('btn-copy-curl');
+    if (btn) flashCopyFeedback(btn);
   });
 
   document.getElementById('btn-copy-params')?.addEventListener('click', () => {
     if (!_currentRequest) return;
     const params = { ...(_currentRequest.decoded || {}) };
     navigator.clipboard.writeText(JSON.stringify(params, null, 2)).catch(() => {});
-    flashCopyBtn('btn-copy-params');
+    const btn = document.getElementById('btn-copy-params');
+    if (btn) flashCopyFeedback(btn);
   });
 }
 
@@ -373,11 +377,4 @@ function buildCurl(data: ParsedRequest): string {
     curl += ` \\\n  --data-raw '${JSON.stringify(data.postBody).replace(/'/g, "'\\''")}'`;
   }
   return curl;
-}
-
-function flashCopyBtn(id: string): void {
-  const btn = document.getElementById(id);
-  if (!btn) return;
-  btn.classList.add('copied');
-  setTimeout(() => btn?.classList.remove('copied'), 800);
 }

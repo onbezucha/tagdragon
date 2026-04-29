@@ -1,0 +1,82 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   DATALAYER LAYOUT — #datalayer-view, #dl-main, panes, scrollbar
+   Extracted from public/panel.html inline <style>
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* === MAIN AREA === */
+#main, #datalayer-view {
+  grid-row: 4;
+  grid-column: 1;
+  overflow: hidden;
+}
+
+#main {
+  display: grid;
+  grid-template-columns: minmax(280px, var(--list-width, 340px)) 6px 1fr;
+  gap: 0;
+  position: relative;
+}
+
+/* === DATALAYER VIEW === */
+#datalayer-view {
+  display: none;
+}
+
+#dl-main {
+  display: grid;
+  grid-template-columns: minmax(280px, var(--list-width, 340px)) 6px 1fr;
+  gap: 0;
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+}
+
+#dl-list-pane {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-0);
+  border-right: 1px solid var(--border);
+  overflow: hidden;
+}
+
+#dl-push-list {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+#dl-push-list::-webkit-scrollbar { width: 8px; }
+#dl-push-list::-webkit-scrollbar-track { background: var(--bg-0); }
+#dl-push-list::-webkit-scrollbar-thumb { background: var(--bg-2); border-radius: 4px; }
+
+#dl-status-text {
+  padding: 3px 8px;
+  font-size: 11px;
+  color: var(--text-2);
+  border-top: 1px solid var(--border);
+  background-color: var(--bg-0);
+  flex-shrink: 0;
+}
+
+#dl-splitter {
+  width: 6px;
+  background-color: var(--border);
+  cursor: col-resize;
+  transition: background-color 150ms;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#dl-splitter:hover { background-color: var(--accent); }
+
+#dl-detail-pane {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-0);
+  overflow: hidden;
+}
+
+#dl-detail-pane.hidden { display: none; }

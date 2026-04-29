@@ -1,0 +1,104 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   DATALAYER PUSH LIST — .dl-push-row, badges, source pills, preview
+   Extracted from public/panel.html inline <style>
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* === DL PUSH ROW === */
+.dl-push-row {
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border-subtle, var(--border));
+  cursor: pointer;
+  transition: background-color 80ms;
+}
+
+.dl-push-row:hover { background-color: var(--bg-1); }
+.dl-push-row.active { background-color: var(--accent-muted); }
+
+body.compact-rows .dl-push-row { padding: 2px 10px; }
+body.compact-rows .dl-push-preview { display: none; }
+
+.dl-push-primary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  flex-wrap: wrap;
+}
+
+.dl-push-index {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-2);
+  min-width: 32px;
+  flex-shrink: 0;
+}
+
+.dl-push-badge {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  flex-shrink: 0;
+}
+
+.dl-source-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 7px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  background: color-mix(in srgb, var(--pill-color) 15%, transparent);
+  color: var(--pill-color);
+  border: 1px solid color-mix(in srgb, var(--pill-color) 35%, transparent);
+  white-space: nowrap;
+}
+
+.dl-push-event {
+  font-weight: 600;
+  color: var(--text-0);
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dl-push-keycount {
+  font-size: 11px;
+  color: var(--text-2);
+  flex-shrink: 0;
+}
+
+.dl-push-time {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-2);
+  flex-shrink: 0;
+}
+
+.dl-push-preview {
+  font-size: 11px;
+  color: var(--text-2);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: var(--font-mono);
+}
+
+.dl-ec-badge {
+  padding: 1px 5px;
+  background: rgba(72, 187, 120, 0.15);
+  color: #48bb78;
+  border: 1px solid rgba(72, 187, 120, 0.4);
+  border-radius: 3px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  flex-shrink: 0;
+}

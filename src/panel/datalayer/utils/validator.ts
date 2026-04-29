@@ -3,8 +3,28 @@
 
 import type { DataLayerPush } from '@/types/datalayer';
 import type { ValidationRule, ValidationResult, ValidationCheck } from '@/types/datalayer';
-import { getNestedValue } from '@/shared/object-utils';
-// ─── STORAGE ───────────────────────────────────────────────────────────────
+
+// ─── PRIVATE HELPERS ───────────────────────────────────────────────────────
+
+/**
+ * Get a nested value from an object using dot-notation path.
+ * Supports bracket notation for arrays: "items[0].name"
+ */
+function getNestedValue(obj: Record<string, unknown>, path: string): unknown {
+  const parts = path.replace(/\[(\d+)\]/g, '.$1').split('.');
+  let current: unknown = obj;
+  for (const part of parts) {
+    if (current === null || current === undefined) return undefined;
+    if (typeof current === 'object') {
+      current = (current as Record<string, unknown>)[part];
+    } else {
+      return undefined;
+    }
+  }
+  return current;
+}
+
+// ─── STORAGE ────────────────────────────────────────────────────────────────
 
 const STORAGE_KEY = 'rt_dl_validation_rules';
 

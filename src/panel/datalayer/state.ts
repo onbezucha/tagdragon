@@ -8,7 +8,7 @@ import type {
   ValidationResult,
   ValidationRule,
 } from '@/types/datalayer';
-import { getAppConfig, updateConfigImmediate } from '@/panel/state';
+import { getConfig, updateConfigImmediate } from '@/panel/state';
 
 // ─── STATE CONTAINERS ────────────────────────────────────────────────────────
 
@@ -44,6 +44,13 @@ const dlFilterState: DlFilterState = {
 
 let watchedPaths: string[] = [];
 
+// ─── CUMULATIVE STATE CACHE ───────────────────────────────────────────────────
+// Index → cumulative state snapshot. Avoids O(n) recomputation per push.
+// Invalidated on any structural change (prune, clear).
+
+const _cumulativeCache = new Map<number, Record<string, unknown>>();
+const MAX_CUMULATIVE_CACHE = 50;
+
 // ─── PUSH OPERATIONS ─────────────────────────────────────────────────────────
 
 export function addDlPush(push: DataLayerPush): boolean {
@@ -56,24 +63,33 @@ export function addDlPush(push: DataLayerPush): boolean {
   dlState._sourceCountMap = sourceCountMap;
 
   // Auto-prune if limit exceeded (mirrors network request pruning)
-  const maxPushes = getAppConfig().maxDlPushes || 1000;
-  if (dlState.all.length > maxPushes) {
+  const maxPushes = getConfig().maxDlPushes;
+  if (maxPushes > 0 && dlState.all.length > maxPushes) {
     const pruneTo = Math.floor(maxPushes * 0.75);
-    const removed = dlState.all.splice(0, dlState.all.length - pruneTo);
+    const removeCount = dlState.all.length - pruneTo;
+
+    // Before splicing, decrement source counts for removed pushes
+    for (let i = 0; i < removeCount; i++) {
+      const source = dlState.all[i].source;
+      if (source) {
+        const current = dlState._sourceCountMap.get(source) ?? 0;
+        if (current <= 1) {
+          dlState._sourceCountMap.delete(source);
+        } else {
+          dlState._sourceCountMap.set(source, current - 1);
+        }
+      }
+    }
+
+    const removed = dlState.all.splice(0, removeCount);
     removed.forEach((p) => dlState.map.delete(p.id));
-    // Rebuild source count map after prune
-    _rebuildSourceCountMap();
+    // Invalidate cache — all indices have shifted
+    _cumulativeCache.clear();
+    // Clean validation errors for pruned pushes
+    clearValidationErrors();
     return true; // signal prune
   }
   return false;
-}
-
-function _rebuildSourceCountMap(): void {
-  const counts = new Map<DataLayerSource, number>();
-  for (const push of dlState.all) {
-    counts.set(push.source, (counts.get(push.source) ?? 0) + 1);
-  }
-  dlState._sourceCountMap = counts;
 }
 
 export function clearDlPushes(): void {
@@ -84,6 +100,7 @@ export function clearDlPushes(): void {
   dlState.sourceLabels.clear();
   dlState.selectedId = null;
   dlState._sourceCountMap = new Map();
+  _cumulativeCache.clear();
 }
 
 export function getAllDlPushes(): DataLayerPush[] {
@@ -210,21 +227,63 @@ export function getDlTotalCount(): number {
 
 export function computeCumulativeState(upToIndex: number): Record<string, unknown> {
   const all = dlState.all;
-  if (upToIndex >= 0 && upToIndex < all.length) {
-    const push = all[upToIndex];
-    // Use pre-computed cumulative state if available (pushed after optimization)
-    if (push.cumulativeState && Object.keys(push.cumulativeState).length > 0) {
-      return push.cumulativeState;
+  if (upToIndex < 0 || upToIndex >= all.length) return {};
+
+  // Cache hit — returns the stored snapshot without recomputation
+  const cached = _cumulativeCache.get(upToIndex);
+  if (cached !== undefined) return cached;
+
+  const push = all[upToIndex];
+
+  // Prefer pre-computed cumulative state from legacy pushes (before this optimization)
+  if (push.cumulativeState && Object.keys(push.cumulativeState).length > 0) {
+    _cumulativeCache.set(upToIndex, push.cumulativeState);
+    return push.cumulativeState;
+  }
+
+  // Incremental build: use cached previous state if available, otherwise find nearest cache entry
+  let result: Record<string, unknown>;
+  let startIndex: number;
+
+  // Try to build incrementally from the previous index
+  const prevCached = _cumulativeCache.get(upToIndex - 1);
+  if (prevCached !== undefined) {
+    // O(1): Copy previous state and merge only the current push
+    result = { ...prevCached };
+    startIndex = upToIndex;
+  } else {
+    // Find nearest cached entry below upToIndex for partial incremental build
+    let nearestIndex = -1;
+    for (let i = upToIndex - 1; i >= 0; i--) {
+      if (_cumulativeCache.has(i)) {
+        nearestIndex = i;
+        break;
+      }
+    }
+    if (nearestIndex >= 0) {
+      result = { ..._cumulativeCache.get(nearestIndex)! };
+      startIndex = nearestIndex + 1;
+    } else {
+      result = {};
+      startIndex = 0;
     }
   }
-  // Fallback: compute from scratch for legacy pushes without cumulativeState
-  const result: Record<string, unknown> = {};
-  for (let i = 0; i <= upToIndex && i < all.length; i++) {
+
+  // Merge remaining pushes
+  for (let i = startIndex; i <= upToIndex; i++) {
     const data = all[i].data;
     for (const key of Object.keys(data)) {
       result[key] = data[key];
     }
   }
+
+  // Evict oldest cache entry if at capacity
+  if (_cumulativeCache.size >= MAX_CUMULATIVE_CACHE) {
+    const oldestKey = _cumulativeCache.keys().next().value;
+    if (oldestKey !== undefined) _cumulativeCache.delete(oldestKey);
+  }
+
+  _cumulativeCache.set(upToIndex, result);
   return result;
 }
 
@@ -289,7 +348,7 @@ export function setValidationLoaded(loaded: boolean): void {
 const correlationLookbackMs: number = 500;
 
 export function getCorrelationWindow(): number {
-  return getAppConfig().correlationWindowMs ?? 2000;
+  return getConfig().correlationWindowMs ?? 2000;
 }
 
 export function setCorrelationWindow(ms: number): void {
@@ -313,7 +372,7 @@ let dlSortOrder: DlSortOrder = 'asc'; // Default: oldest first
  * Called after loadConfig() in the panel init sequence.
  */
 export function initDlSortState(): void {
-  const cfg = getAppConfig();
+  const cfg = getConfig();
   dlSortField = cfg.dlSortField;
   dlSortOrder = cfg.dlSortOrder;
   dlGroupBySource = cfg.dlGroupBySource;
@@ -379,56 +438,4 @@ export function getDlRafId(): number | null {
 
 export function setDlRafId(id: number | null): void {
   dlRafId = id;
-}
-
-// ─── SHARED CUMULATIVE STATE ─────────────────────────────────────────────
-// Single mutable object that grows with each push.
-// Avoids N shallow copies per session.
-
-let sharedCumulativeState: Record<string, unknown> = {};
-
-/**
- * Get the current shared cumulative state reference.
- * Mutating this directly is safe ONLY inside receiveDataLayerPush.
- */
-export function getSharedCumulativeState(): Record<string, unknown> {
-  return sharedCumulativeState;
-}
-
-/**
- * Create a lightweight snapshot of the current cumulative state.
- * Uses structuredClone for true copy (available in modern Chrome).
- */
-export function snapshotCumulativeState(): Record<string, unknown> {
-  try {
-    return structuredClone(sharedCumulativeState);
-  } catch {
-    return JSON.parse(JSON.stringify(sharedCumulativeState));
-  }
-}
-
-/**
- * Reset cumulative state (on clear).
- */
-export function resetCumulativeState(): void {
-  sharedCumulativeState = {};
-}
-
-/**
- * Trim cumulative state to only contain keys present in the remaining pushes.
- * Called after a prune to prevent unbounded memory growth.
- */
-export function trimCumulativeState(): void {
-  const keys = new Set<string>();
-  for (const push of dlState.all) {
-    for (const k of Object.keys(push.data)) {
-      keys.add(k);
-    }
-  }
-  // Remove keys not present in any remaining push
-  for (const k of Object.keys(sharedCumulativeState)) {
-    if (!keys.has(k)) {
-      delete sharedCumulativeState[k];
-    }
-  }
 }

@@ -1,0 +1,78 @@
+import type { ProviderCategories } from '@/types/categories';
+
+export const ANALYTICS_SERVER_CATEGORIES: ProviderCategories = {
+  hit: {
+    label: 'Hit Info',
+    icon: '📊',
+    order: 1,
+    defaultExpanded: true,
+    patterns: [/^Event type$/, /^Datastream ID$/, /^Request type$/],
+  },
+  analytics: {
+    label: 'Adobe Analytics',
+    icon: '📈',
+    order: 2,
+    defaultExpanded: true,
+    patterns: [
+      /^Page name$/,
+      /^Page URL$/,
+      /^Channel$/,
+      /^Server$/,
+      /^Campaign$/,
+      /^Referrer$/,
+      /^Link name$/,
+      /^Link type$/,
+    ],
+  },
+  events: {
+    label: 'Events',
+    icon: '⚡',
+    order: 3,
+    defaultExpanded: true,
+    patterns: [/^Events$/, /^events?$/],
+    specialRenderer: 'adobeEvents',
+  },
+  eVars: {
+    label: 'eVars',
+    icon: '🔢',
+    order: 4,
+    defaultExpanded: true,
+    patterns: [/^eVar\d+$/],
+  },
+  props: {
+    label: 'Props',
+    icon: '📌',
+    order: 5,
+    defaultExpanded: true,
+    patterns: [/^prop\d+$/],
+  },
+  products: {
+    label: 'Products',
+    icon: '🛍️',
+    order: 6,
+    defaultExpanded: true,
+    patterns: [/^Products$/, /^products?$/],
+    specialRenderer: 'adobeProducts',
+  },
+  listVars: {
+    label: 'List Variables',
+    icon: '📋',
+    order: 7,
+    defaultExpanded: false,
+    patterns: [/^list\d+$/],
+  },
+  identity: {
+    label: 'Identity',
+    icon: '👤',
+    order: 8,
+    defaultExpanded: true,
+    patterns: [/^ECID$/],
+  },
+  device: {
+    label: 'Device',
+    icon: '💻',
+    order: 9,
+    defaultExpanded: false,
+    patterns: [/^Screen$/, /^Screen orient$/],
+  },
+};

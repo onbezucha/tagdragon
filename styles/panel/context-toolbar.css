@@ -1,0 +1,212 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   CONTEXT TOOLBAR — .context-toolbar, buttons, filter-wrap, quick-btn, ctx-*
+   Extracted from public/panel.html inline <style>
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* === ROW 2 — CONTEXT TOOLBAR (34px) === */
+.context-toolbar {
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  background-color: var(--bg-0);
+  border-bottom: 3px solid var(--border-strong);
+  gap: 8px;
+  height: 34px;
+  grid-row: 2;
+}
+
+.toolbar-separator {
+  width: 1px;
+  height: 20px;
+  background-color: var(--border);
+}
+
+button {
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  color: var(--text-0);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 3px;
+  transition: background-color 150ms;
+}
+
+button:hover {
+  background-color: var(--bg-2);
+}
+
+button svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Lucide icon sizing — override default 24×24 inline attributes */
+.tab-btn svg.lucide { width: 13px; height: 13px; }
+#btn-theme-toggle svg.lucide { width: 14px; height: 14px; }
+#btn-theme-toggle .theme-icon-sun svg.lucide,
+#btn-theme-toggle .theme-icon-moon svg.lucide { width: 14px; height: 14px; }
+#adobe-env-badge svg.lucide { width: 8px; height: 8px; }
+#btn-export svg.lucide, #dl-btn-export svg.lucide { width: 12px; height: 12px; }
+#btn-clear-filter svg.lucide { width: 12px; height: 12px; }
+#dl-clear-filter svg.lucide { width: 10px; height: 10px; }
+#btn-clear-network svg.lucide, #dl-btn-clear svg.lucide { width: 14px; height: 14px; }
+
+/* Theme toggle button */
+#btn-theme-toggle {
+  position: relative;
+}
+
+#btn-theme-toggle .theme-icon-sun {
+  display: var(--theme-icon-sun, block);
+}
+
+#btn-theme-toggle .theme-icon-moon {
+  display: var(--theme-icon-moon, none);
+}
+
+/* Clear button in global toolbar */
+#btn-clear-all {
+  padding: 4px 6px;
+}
+
+/* Pause button */
+.pause-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+  cursor: pointer;
+  border: none;
+  background: none;
+  border-radius: 3px;
+  transition: background-color 150ms;
+  user-select: none;
+  font-size: 12px;
+  color: var(--text-1);
+}
+
+.pause-btn:hover {
+  background-color: var(--bg-2);
+}
+
+.pause-btn svg {
+  width: 12px;
+  height: 14px;
+}
+
+.pause-btn .play-icon {
+  display: none;
+}
+
+.pause-btn .play-text {
+  display: none;
+}
+
+.pause-btn.active {
+  background-color: var(--accent);
+  color: #fff;
+}
+
+.pause-btn.active .pause-icon {
+  display: none;
+}
+
+.pause-btn.active .play-icon {
+  display: block;
+}
+
+.pause-btn.active .pause-text {
+  display: none;
+}
+
+.pause-btn.active .play-text {
+  display: inline;
+}
+
+/* Filter wrap (search input section) */
+.filter-wrap {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background-color: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 3px 6px;
+  min-width: 200px;
+}
+
+.filter-wrap svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+#filter-input {
+  flex: 1;
+  border: none;
+  background: none;
+  color: var(--text-0);
+  font-size: 12px;
+  outline: none;
+  padding: 0;
+  font-family: inherit;
+}
+
+#filter-input::placeholder {
+  color: var(--text-2);
+}
+
+#btn-clear-filter {
+  padding: 2px;
+  opacity: 0.5;
+  transition: opacity 150ms;
+}
+
+#btn-clear-filter:hover {
+  opacity: 1;
+  background-color: transparent;
+}
+
+/* Export button */
+#btn-export {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  font-size: 12px;
+}
+
+#btn-export svg {
+  width: 12px;
+  height: 12px;
+}
+
+/* Quick toolbar button */
+.quick-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: var(--text-2);
+  cursor: pointer;
+  transition: all 150ms;
+}
+
+.quick-btn:hover {
+  background: var(--bg-2);
+  color: var(--text-1);
+}
+
+.quick-btn.active {
+  background: var(--accent-muted);
+  border-color: var(--accent);
+  color: var(--accent);
+}

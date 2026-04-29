@@ -1,0 +1,446 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   POPOVER COMMON — .popover-header/body/footer/tabs/sections/rows/controls
+   Shared styles for all popovers (settings, provider, DL filter, etc.)
+   Extracted from public/panel.html inline <style>
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.popover-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  background-color: var(--bg-0);
+  flex-shrink: 0;
+  gap: 8px;
+}
+
+.popover-title {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--text-0);
+  white-space: nowrap;
+}
+
+.popover-search-input {
+  flex: 1;
+  min-width: 0;
+  padding: 3px 6px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: var(--bg-2);
+  color: var(--text-0);
+  font-size: 11px;
+  outline: none;
+  font-family: inherit;
+}
+
+.popover-search-input::placeholder {
+  color: var(--text-2);
+}
+
+.popover-search-input:focus {
+  border-color: var(--accent);
+}
+
+.popover-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  background-color: var(--bg-0);
+  flex-shrink: 0;
+  padding: 0 8px;
+}
+
+.popover-tab {
+  padding: 6px 12px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-2);
+  border: none;
+  background: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: color 150ms, border-color 150ms;
+  margin-bottom: -1px;
+}
+
+.popover-tab:hover {
+  color: var(--text-1);
+  background: none;
+}
+
+.popover-tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+.popover-body {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  max-height: 420px;
+}
+
+.popover-footer {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  border-top: 1px solid var(--border);
+  background-color: var(--bg-0);
+  flex-shrink: 0;
+}
+
+.popover-footer button {
+  padding: 3px 8px;
+  font-size: 11px;
+  color: var(--text-2);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: var(--bg-2);
+  cursor: pointer;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.popover-footer button:hover {
+  background: var(--bg-3);
+  color: var(--text-1);
+  border-color: var(--text-3);
+}
+
+/* ─── Popover Sections (Accordions) ─────────────────────────────────── */
+
+.popover-section {
+  border-bottom: 1px solid var(--border);
+  transition: opacity 150ms;
+}
+
+.popover-section[data-accent="filters"] { border-left: 3px solid var(--blue, #58a6ff); }
+.popover-section[data-accent="display"] { border-left: 3px solid var(--green, #3ecf8e); }
+.popover-section[data-accent="dl-display"] { border-left: 3px solid var(--purple, #ab47bc); }
+.popover-section[data-accent="dl-tools"] { border-left: 3px solid var(--orange, #ffa726); }
+.popover-section[data-accent="performance"] { border-left: 3px solid var(--cyan, #22d3ee); }
+
+.popover-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-1);
+  cursor: pointer;
+  user-select: none;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  gap: 6px;
+}
+
+.popover-section-header:hover {
+  background-color: var(--bg-2);
+}
+
+.popover-section-header.collapsed .popover-chevron {
+  transform: rotate(-90deg);
+}
+
+.popover-section-count {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--accent);
+  margin-left: auto;
+}
+
+.popover-chevron {
+  flex-shrink: 0;
+  transition: transform 150ms var(--ease, ease);
+  color: var(--text-3);
+}
+
+.popover-section-body {
+  padding: 0;
+}
+
+/* ─── Popover Rows ──────────────────────────────────────────────────── */
+
+.popover-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px;
+  gap: 8px;
+}
+
+.popover-row:hover {
+  background-color: var(--bg-2);
+}
+
+.popover-label {
+  font-size: 12px;
+  color: var(--text-1);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+.popover-label-icon {
+  width: 14px;
+  height: 14px;
+  color: var(--text-3);
+  flex-shrink: 0;
+}
+
+.popover-non-default {
+  position: relative;
+}
+
+.popover-non-default::before {
+  content: '';
+  position: absolute;
+  left: -6px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background-color: var(--accent);
+}
+
+/* ─── Popover Form Controls ─────────────────────────────────────────── */
+
+.popover-select {
+  padding: 2px 4px;
+  font-size: 11px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: var(--bg-2);
+  color: var(--text-0);
+  font-family: inherit;
+  cursor: pointer;
+  outline: none;
+  max-width: 140px;
+}
+
+.popover-select:focus {
+  border-color: var(--accent);
+}
+
+.popover-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-1);
+  cursor: pointer;
+  padding: 6px 12px;
+}
+
+.popover-checkbox-label:hover {
+  background-color: var(--bg-2);
+}
+
+.popover-checkbox {
+  width: 14px;
+  height: 14px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.popover-number-input {
+  padding: 2px 4px;
+  font-size: 11px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: var(--bg-2);
+  color: var(--text-0);
+  font-family: inherit;
+  width: 60px;
+  outline: none;
+  text-align: center;
+}
+
+.popover-number-input:focus {
+  border-color: var(--accent);
+}
+
+/* ─── Popover Filter Items ──────────────────────────────────────────── */
+
+.popover-filter-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 12px;
+  cursor: pointer;
+  user-select: none;
+  gap: 6px;
+}
+
+.popover-filter-item:hover {
+  background-color: var(--bg-2);
+}
+
+.popover-filter-value {
+  font-size: 11px;
+  color: var(--text-2);
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.popover-filter-expand {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 200ms ease;
+  background-color: var(--bg-0);
+  border-top: 1px solid var(--border);
+}
+
+.popover-filter-expand.open {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.popover-filter-search {
+  width: calc(100% - 16px);
+  margin: 6px 8px;
+  padding: 3px 6px;
+  font-size: 11px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: var(--bg-2);
+  color: var(--text-0);
+  font-family: inherit;
+  outline: none;
+}
+
+.popover-filter-search::placeholder {
+  color: var(--text-2);
+}
+
+.popover-filter-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 12px;
+  font-size: 11px;
+  color: var(--text-1);
+  cursor: pointer;
+}
+
+.popover-filter-option:hover {
+  background-color: var(--bg-2);
+}
+
+.popover-filter-option.selected {
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.popover-filter-option.disabled {
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+.popover-filter-option-count {
+  font-size: 10px;
+  color: var(--text-2);
+}
+
+.popover-filter-option.selected .popover-filter-option-count {
+  color: var(--accent);
+}
+
+.popover-provider-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 4px 12px;
+}
+
+/* ─── Popover Validation ────────────────────────────────────────────── */
+
+.popover-validation-summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  font-size: 11px;
+  color: var(--text-2);
+}
+
+.popover-val-error-count {
+  font-weight: 600;
+  color: var(--red, #ef5350);
+}
+
+.popover-val-section {
+  padding: 6px 12px;
+}
+
+.popover-val-section-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-2);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  margin-bottom: 4px;
+}
+
+.popover-val-add-btn {
+  width: calc(100% - 24px);
+  margin: 4px 12px 8px;
+  padding: 4px 8px;
+  font-size: 11px;
+  color: var(--text-2);
+  border: 1px dashed var(--border);
+  border-radius: 3px;
+  background: none;
+  cursor: pointer;
+  text-align: center;
+}
+
+.popover-val-add-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: none;
+}
+
+/* ─── Popover Utilities ─────────────────────────────────────────────── */
+
+.popover-hidden {
+  display: none !important;
+}
+
+.popover-empty-state {
+  padding: 16px 12px;
+  text-align: center;
+  font-size: 11px;
+  color: var(--text-2);
+}
+
+.popover-footer-btn {
+  padding: 3px 8px;
+  font-size: 11px;
+  color: var(--text-2);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: var(--bg-2);
+  cursor: pointer;
+}
+
+.popover-footer-btn:hover {
+  background: var(--bg-3);
+  color: var(--text-1);
+  border-color: var(--text-3);
+}
+
+.popover-footer-btn.active {
+  background: var(--accent-muted);
+  border-color: var(--accent);
+  color: var(--accent);
+}

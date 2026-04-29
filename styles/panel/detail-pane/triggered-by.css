@@ -1,0 +1,82 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   TRIGGERED BY BANNER — #triggered-by-banner, .trigger-*
+   Reverse correlation banner in Network detail pane
+   Extracted from public/panel.html inline <style>
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+#triggered-by-banner {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  background-color: var(--bg-0);
+  border-bottom: 1px solid var(--border);
+  border-left: 3px solid var(--border);
+  font-size: 11px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background-color 150ms;
+}
+
+#triggered-by-banner.visible {
+  display: flex;
+}
+
+#triggered-by-banner:hover {
+  background-color: var(--bg-1);
+}
+
+.trigger-icon {
+  flex-shrink: 0;
+  color: var(--text-2);
+}
+
+.trigger-source-badge {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.trigger-event-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-0);
+  font-size: 11px;
+  min-width: 0;
+}
+
+.trigger-delay {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-2);
+  flex-shrink: 0;
+}
+
+.trigger-goto-btn {
+  padding: 2px 8px;
+  font-size: 11px;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+  flex-shrink: 0;
+  color: var(--accent);
+  white-space: nowrap;
+  transition: background-color 150ms;
+}
+
+.trigger-goto-btn:hover {
+  background: var(--accent-muted);
+}
+
+.trigger-confidence-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}

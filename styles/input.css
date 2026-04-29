@@ -1,3 +1,52 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   PANEL STYLES — extracted from public/panel.html inline <style>
+   
+   These styles were previously embedded as inline CSS in panel.html.
+   They are imported here and processed through the Tailwind build pipeline.
+   Output: dist/panel.css (single merged stylesheet)
+   
+   ⚠️  @import directives MUST remain at the top of this file (before @tailwind).
+   postcss-import enforces the CSS spec: @import must precede all other statements.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@import './panel/base.css';
+@import './panel/global-tab-bar.css';
+@import './panel/context-toolbar.css';
+
+/* Popovers */
+@import './panel/popovers/common.css';
+@import './panel/popovers/settings.css';
+@import './panel/popovers/provider.css';
+@import './panel/popovers/dl-filter.css';
+@import './panel/popovers/consent.css';
+@import './panel/popovers/info.css';
+
+/* Bars & switches */
+@import './panel/filter-bar.css';
+@import './panel/tab-switcher.css';
+
+/* Network view */
+@import './panel/request-list.css';
+@import './panel/empty-state.css';
+@import './panel/splitter.css';
+@import './panel/detail-pane/summary.css';
+@import './panel/detail-pane/tabs.css';
+@import './panel/detail-pane/triggered-by.css';
+
+/* Status & memory */
+@import './panel/status-bar.css';
+@import './panel/memory-bar.css';
+
+/* DataLayer view */
+@import './panel/datalayer/layout.css';
+@import './panel/datalayer/push-list.css';
+@import './panel/datalayer/detail.css';
+@import './panel/datalayer/diff.css';
+@import './panel/datalayer/live-inspector.css';
+@import './panel/datalayer/correlation.css';
+@import './panel/datalayer/ecommerce.css';
+@import './panel/datalayer/filter-bar.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -121,11 +170,11 @@
     --border-subtle: rgba(194, 65, 12, 0.08);
     --border-strong: rgba(232, 113, 10, 0.25);
 
-    /* ─── TEXT (inspirováno zornicí z loga) ──────────────────────────────────── */
+    /* ─── TEXT (inspirováno zornicí z loga) ─────────────────────────────────── */
     --text-0: #1F2937;        /* Primární — tmavá z loga */
     --text-1: #4B5563;        /* Sekundární */
     --text-2: #6B7280;        /* Terciární */
-    --text-3: #9CA3AF;        /* Disabled */
+    --text-3: #9CAFBF;        /* Disabled */
 
     /* ─── AKCENT (výrazně tmavší pro kontrast na světlém pozadí) ─────────────── */
     --accent: #92400E;
@@ -1243,12 +1292,6 @@
   font-weight: 500;
 }
 
-/* ─── Copy Feedback ──────────────────────────────────────────────────────── */
-
-.copy-action-btn.copied {
-  color: #22c55e;
-}
-
 /* ─── Export Split Button ───────────────────────────────────────────────── */
 
 #export-split-btn {
@@ -1367,12 +1410,4 @@
   gap: 2px;
 }
 
-/* ─── DataLayer Live Inspector ──────────────────────────────────────────── */
 
-.dl-watch-empty {
-  font-size: 11px;
-  color: var(--text-3);
-  font-style: italic;
-  opacity: 0.8;
-  padding: 2px 0;
-}

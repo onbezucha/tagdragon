@@ -1,0 +1,57 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   MEMORY BAR — #memory-bar, #memory-bar-fill, memory-pulse animation
+   Extracted from public/panel.html inline <style>
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+#memory-bar {
+  height: 2px;
+  background-color: var(--bg-3);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+#memory-bar-fill {
+  height: 100%;
+  width: 0%;
+  background-color: var(--accent);
+  transition: width 0.3s ease, background-color 0.3s ease;
+}
+
+#memory-bar-fill.warning {
+  background-color: var(--orange);
+}
+
+#memory-bar-fill.critical {
+  background-color: var(--red);
+  animation: memory-pulse 1.5s ease-in-out infinite;
+}
+
+/* ─── Memory Bar Top Indicator ──────────────────────────────────────────── */
+
+#memory-bar-top {
+  height: 2px;
+  background-color: var(--bg-3);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+#memory-bar-top-fill {
+  height: 100%;
+  width: 0%;
+  background-color: var(--accent);
+  transition: width 0.3s ease, background-color 0.3s ease;
+}
+
+#memory-bar-top-fill.warning {
+  background-color: var(--orange);
+}
+
+#memory-bar-top-fill.critical {
+  background-color: var(--red);
+  animation: memory-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes memory-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}

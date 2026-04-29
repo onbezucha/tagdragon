@@ -107,49 +107,29 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   }
 
   // ─── DATALAYER RELAY ───────────────────────────────────────────────────────
-  // tabId comes from sender.tab.id, NOT from message body
-  if (message.type === 'DATALAYER_PUSH') {
-    const tabId = _sender.tab?.id;
-    if (tabId != null) {
-      const port = devToolsPorts.get(tabId);
-      if (port) {
-        try {
-          port.postMessage({ type: 'DATALAYER_PUSH', tabId, ...message });
-        } catch {
-          /* port may be closed */
-        }
-      }
+  // Helper: relay a message to the DevTools panel for the sender's tab
+  function relayToDevTools(
+    msg: { type: string; [key: string]: unknown },
+    sender: chrome.runtime.MessageSender
+  ) {
+    const tabId = sender.tab?.id;
+    if (tabId == null) return;
+    const port = devToolsPorts.get(tabId);
+    if (!port) return;
+    try {
+      port.postMessage({ type: msg.type, tabId, ...msg });
+    } catch {
+      /* port may be closed */
     }
-    return;
   }
 
-  if (message.type === 'DATALAYER_SOURCES') {
-    const tabId = _sender.tab?.id;
-    if (tabId != null) {
-      const port = devToolsPorts.get(tabId);
-      if (port) {
-        try {
-          port.postMessage({ type: 'DATALAYER_SOURCES', tabId, ...message });
-        } catch {
-          /* port may be closed */
-        }
-      }
-    }
-    return;
-  }
-
-  if (message.type === 'DATALAYER_SNAPSHOT_RESPONSE') {
-    const tabId = _sender.tab?.id;
-    if (tabId != null) {
-      const port = devToolsPorts.get(tabId);
-      if (port) {
-        try {
-          port.postMessage({ type: 'DATALAYER_SNAPSHOT_RESPONSE', tabId, ...message });
-        } catch {
-          /* port may be closed */
-        }
-      }
-    }
+  // Relay PUSH, SOURCES, and SNAPSHOT_RESPONSE to the DevTools panel
+  if (
+    message.type === 'DATALAYER_PUSH' ||
+    message.type === 'DATALAYER_SOURCES' ||
+    message.type === 'DATALAYER_SNAPSHOT_RESPONSE'
+  ) {
+    relayToDevTools(message, _sender);
     return;
   }
 
@@ -223,13 +203,14 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
   if (message.type === 'CLEAR_COOKIES') {
     const { url } = message;
+    let urlObj: URL;
 
     // Validate that the URL's origin matches the sender's tab origin
     if (_sender.tab?.url) {
       try {
         const senderOrigin = new URL(_sender.tab.url).origin;
-        const targetOrigin = new URL(url).origin;
-        if (senderOrigin !== targetOrigin) {
+        urlObj = new URL(url);
+        if (senderOrigin !== urlObj.origin) {
           sendResponse({ deleted: 0 });
           return;
         }
@@ -241,12 +222,9 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
     (async () => {
       try {
-        let urlObj: URL;
-        try {
+        // Ensure urlObj is defined (if tab URL validation passed, this is guaranteed)
+        if (!urlObj) {
           urlObj = new URL(url);
-        } catch {
-          sendResponse({ deleted: 0 });
-          return;
         }
 
         const [byCookies, byDomain] = await Promise.all([
@@ -262,21 +240,19 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
           return true;
         });
 
-        let deleted = 0;
-        for (const cookie of all) {
-          const domain = cookie.domain.startsWith('.') ? cookie.domain.slice(1) : cookie.domain;
-          const cookieUrl = `${cookie.secure ? 'https' : 'http'}://${domain}${cookie.path}`;
-          try {
-            await chrome.cookies.remove({
+        const results = await Promise.allSettled(
+          all.map((cookie) => {
+            const domain = cookie.domain.startsWith('.') ? cookie.domain.slice(1) : cookie.domain;
+            const cookieUrl = `${cookie.secure ? 'https' : 'http'}://${domain}${cookie.path}`;
+            return chrome.cookies.remove({
               url: cookieUrl,
               name: cookie.name,
               storeId: cookie.storeId,
             });
-            deleted++;
-          } catch {
-            /* continue */
-          }
-        }
+          })
+        );
+
+        const deleted = results.filter((r) => r.status === 'fulfilled').length;
         sendResponse({ deleted });
       } catch (e) {
         sendResponse({ deleted: 0, error: String(e) });

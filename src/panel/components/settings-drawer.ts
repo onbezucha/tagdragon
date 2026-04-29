@@ -69,7 +69,7 @@ export function initSettingsDrawer(context: DrawerContext): void {
   renderTabContent(activeTab);
 }
 
-export function openSettings(tab?: DrawerTab): void {
+function openSettings(tab?: DrawerTab): void {
   if (!ctx) return;
   closeAllPopovers();
   if (tab) activeTab = tab;
@@ -95,7 +95,7 @@ export function isOpen(): boolean {
   return settingsOpen;
 }
 
-export function refreshContent(): void {
+function refreshContent(): void {
   if (!settingsOpen) return;
   if ((activeTab as string) === 'general') activeTab = 'network'; // safety migration
   renderTabContent(activeTab);
@@ -157,7 +157,7 @@ function updateAccordionState(): void {
 /**
  * Expand a section (open accordion, used when toolbar buttons open settings).
  */
-export function expandSection(sectionId: string): void {
+function expandSection(sectionId: string): void {
   collapsedSections.delete(sectionId);
   const header = document.querySelector(`[data-section-toggle="${sectionId}"]`);
   const body = document.querySelector(`[data-section="${sectionId}"] > .popover-section-body`);
@@ -527,11 +527,31 @@ function wireFooterButtons(): void {
       reader.onload = () => {
         try {
           const imported = JSON.parse(reader.result as string);
-          const newConfig = { ...DEFAULT_CONFIG, ...imported };
+          if (typeof imported !== 'object' || imported === null) {
+            console.warn('TagDragon: Invalid config file — not an object');
+            return;
+          }
+
+          // Only apply keys that exist in DEFAULT_CONFIG with matching types
+          const safeConfig: Partial<AppConfig> = {};
+          for (const key of Object.keys(DEFAULT_CONFIG) as (keyof AppConfig)[]) {
+            if (key in imported) {
+              const importedVal = imported[key];
+              const defaultVal = DEFAULT_CONFIG[key];
+
+              // Type check: imported value must match default's type
+              if (typeof importedVal === typeof defaultVal) {
+                (safeConfig as Record<string, unknown>)[key] = importedVal;
+              }
+            }
+          }
+
+          const newConfig = { ...DEFAULT_CONFIG, ...safeConfig };
           for (const [key, value] of Object.entries(newConfig)) {
             const cfgKey = key as keyof AppConfig;
             state.updateConfig(cfgKey, value as AppConfig[typeof cfgKey]);
           }
+
           dlState.initDlSortState();
           refreshContent();
           ctx?.syncQuickButtons();

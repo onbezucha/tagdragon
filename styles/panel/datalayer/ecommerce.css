@@ -1,0 +1,41 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   DATALAYER ECOMMERCE — .dl-ecommerce-products, table
+   Extracted from public/panel.html inline <style>
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* === ECOMMERCE TABLE === */
+.dl-ecommerce-products {
+  overflow-x: auto;
+  margin: 8px 0;
+}
+
+.dl-ecommerce-products table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+
+.dl-ecommerce-products th {
+  text-align: left;
+  padding: 4px 8px;
+  background: var(--bg-2);
+  border-bottom: 1px solid var(--border);
+  color: var(--text-2);
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 10px;
+  letter-spacing: 0.3px;
+}
+
+.dl-ecommerce-products td {
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--border-subtle, var(--border));
+  color: var(--text-0);
+}
+
+.dl-ecommerce-products .mono { font-family: var(--font-mono); }
+
+.dl-total-row td {
+  font-weight: 600;
+  background: var(--bg-1);
+}

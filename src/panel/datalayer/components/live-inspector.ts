@@ -4,7 +4,6 @@
 
 import { DOM } from '../../utils/dom';
 import { getWatchedPaths, addWatchedPath, removeWatchedPath, clearWatchedPaths } from '../state';
-import { getNestedValue } from '@/shared/object-utils';
 
 // ─── TYPES ─────────────────────────────────────────────────────────────────
 
@@ -22,6 +21,7 @@ interface TreeNodeData {
 
 // ─── STATE ─────────────────────────────────────────────────────────────────
 
+const _toastTimers = new Set<ReturnType<typeof setTimeout>>();
 let pendingHighlights: Map<string, ChangeType> = new Map();
 let highlightTimeoutId: ReturnType<typeof setTimeout> | null = null;
 const HIGHLIGHT_DURATION = 1500;
@@ -159,6 +159,8 @@ export function checkWatchPaths(
  * Clear all state (called on Clear).
  */
 export function clearLiveState(): void {
+  _toastTimers.forEach((t) => clearTimeout(t));
+  _toastTimers.clear();
   pendingHighlights.clear();
   liveTabRendered = false;
   if (highlightTimeoutId) {
@@ -570,11 +572,12 @@ function showWatchToast(
   container.appendChild(toast);
 
   // Auto-dismiss after 3s
-  setTimeout(() => {
+  const timer = setTimeout(() => {
     toast.style.opacity = '0';
     toast.style.transition = 'opacity 0.3s';
     setTimeout(() => toast.remove(), 300);
   }, 3000);
+  _toastTimers.add(timer);
 
   // Limit toasts (keep max 5)
   const toasts = container.querySelectorAll('.dl-watch-toast');
@@ -584,6 +587,24 @@ function showWatchToast(
 }
 
 // ─── UTILITIES ─────────────────────────────────────────────────────────────
+
+/**
+ * Get a nested value from an object using dot-notation path.
+ * Supports bracket notation for arrays: "items[0].name"
+ */
+function getNestedValue(obj: Record<string, unknown>, path: string): unknown {
+  const parts = path.replace(/\[(\d+)\]/g, '.$1').split('.');
+  let current: unknown = obj;
+  for (const part of parts) {
+    if (current === null || current === undefined) return undefined;
+    if (typeof current === 'object') {
+      current = (current as Record<string, unknown>)[part];
+    } else {
+      return undefined;
+    }
+  }
+  return current;
+}
 
 function isExpandable(val: unknown): boolean {
   return val !== null && typeof val === 'object';

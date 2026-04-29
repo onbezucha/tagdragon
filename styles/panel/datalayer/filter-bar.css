@@ -1,0 +1,124 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   DATALAYER FILTER BAR — #dl-filter-bar, DL filter chips, inputs
+   Extracted from public/panel.html inline <style>
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* === DL STATE DISPLAY === */
+.dl-state-header {
+  font-size: 12px;
+  color: var(--text-2);
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+}
+
+.dl-state-empty {
+  font-size: 12px;
+  color: var(--text-2);
+  padding: 8px 0;
+}
+
+/* === DL FILTER BAR === */
+#dl-filter-bar {
+  display: none;
+  align-items: center;
+  padding: 0 8px;
+  background-color: var(--bg-0);
+  border-bottom: 1px solid var(--border);
+  gap: 6px;
+  min-height: 28px;
+}
+
+#dl-filter-bar.visible {
+  display: flex;
+}
+
+/* === DL FILTER CHIPS === */
+#dl-filter-bar .filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 4px 2px 8px;
+  background: var(--accent-muted);
+  border: 1px solid var(--accent-glow);
+  border-radius: 10px;
+  font-size: 10px;
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+#dl-filter-bar .filter-chip .chip-label {
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+#dl-filter-bar .filter-chip .chip-value {
+  font-family: var(--font-mono);
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#dl-filter-bar .filter-chip .chip-remove {
+  padding: 0 2px;
+  font-size: 12px;
+  line-height: 1;
+  background: none;
+  border: none;
+  color: var(--accent);
+  cursor: pointer;
+  opacity: 0.6;
+}
+
+#dl-filter-bar .filter-chip .chip-remove:hover {
+  opacity: 1;
+}
+
+/* === DL FILTER EVENT SELECT === */
+#dl-filter-event {
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: var(--bg-2);
+  color: var(--text-0);
+  font-size: 11px;
+  padding: 2px 4px;
+  cursor: pointer;
+  max-width: 130px;
+}
+
+#dl-filter-input {
+  flex: 1;
+  border: none;
+  background: none;
+  color: var(--text-0);
+  font-size: 12px;
+  outline: none;
+  padding: 0;
+  font-family: inherit;
+}
+
+#dl-filter-input::placeholder { color: var(--text-2); }
+
+#dl-filter-source {
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: var(--bg-2);
+  color: var(--text-0);
+  font-size: 11px;
+  padding: 2px 4px;
+  cursor: pointer;
+  max-width: 100px;
+}
+
+#dl-clear-filter {
+  padding: 2px;
+  opacity: 0.5;
+  transition: opacity 150ms;
+  display: none;
+}
+
+#dl-clear-filter:hover {
+  opacity: 1;
+  background-color: transparent;
+}

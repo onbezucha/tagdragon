@@ -1,0 +1,25 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   DL FILTER POPOVER — #dl-filter-popover
+   Extracted from public/panel.html inline <style>
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ─── DL Filter Popover ───────────────────────────────────────────── */
+
+#dl-filter-popover {
+  display: none;
+  position: absolute;
+  top: 60px;
+  right: 8px;
+  width: 300px;
+  background: var(--bg-1);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+  z-index: 300;
+  font-size: 12px;
+  overflow: hidden;
+}
+
+#dl-filter-popover.visible {
+  display: block;
+}

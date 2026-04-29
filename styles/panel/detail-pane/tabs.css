@@ -1,0 +1,76 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   DETAIL TABS — #detail-tabs, .dtab, #detail-content, .tab-pane
+   Extracted from public/panel.html inline <style>
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Detail tabs */
+#detail-tabs {
+  display: flex;
+  gap: 0;
+  padding: 0;
+  background-color: var(--bg-1);
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+  flex-shrink: 0;
+}
+
+.dtab {
+  padding: 8px 12px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-2);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 150ms;
+}
+
+.dtab:hover {
+  color: var(--text-0);
+  background-color: var(--bg-2);
+}
+
+.dtab.active {
+  color: var(--text-0);
+  border-bottom-color: var(--accent);
+}
+
+.dtab.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Detail content area */
+#detail-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 12px;
+}
+
+#detail-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+#detail-content::-webkit-scrollbar-track {
+  background: var(--bg-0);
+}
+
+#detail-content::-webkit-scrollbar-thumb {
+  background: var(--bg-2);
+  border-radius: 4px;
+}
+
+#detail-content::-webkit-scrollbar-thumb:hover {
+  background: var(--bg-3);
+}
+
+.tab-pane {
+  display: none;
+}
+
+.tab-pane.active {
+  display: block;
+}

@@ -1,0 +1,38 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   SPLITTER — #splitter, .splitter-handle
+   Extracted from public/panel.html inline <style>
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+#splitter {
+  width: 6px;
+  background-color: var(--border);
+  cursor: col-resize;
+  transition: background-color 150ms;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+#splitter:hover {
+  background-color: var(--accent);
+}
+
+#splitter:hover .splitter-handle span {
+  background-color: var(--text-0);
+}
+
+.splitter-handle {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  pointer-events: none;
+}
+
+.splitter-handle span {
+  width: 2px;
+  height: 2px;
+  border-radius: 50%;
+  background-color: var(--text-3);
+  transition: background-color 150ms;
+}

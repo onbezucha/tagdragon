@@ -13,19 +13,35 @@ function getSessionKey(): string {
   }
 }
 const SAVE_DEBOUNCE_MS = 1500;
+const SAVE_MAX_WAIT_MS = 5000;
 
-let saveTimer: ReturnType<typeof setTimeout> | null = null;
+let _saveTimeout: ReturnType<typeof setTimeout> | null = null;
+let _maxWaitTimeout: ReturnType<typeof setTimeout> | null = null;
+let _latestRequests: ParsedRequest[] = [];
 
 /**
  * Schedule a debounced save of all requests to sessionStorage.
- * Called after each new request to keep storage in sync.
+ * Max-wait ensures save fires at least every SAVE_MAX_WAIT_MS regardless of activity.
  */
 export function scheduleSaveRequests(requests: ParsedRequest[]): void {
-  if (saveTimer) clearTimeout(saveTimer);
-  saveTimer = setTimeout(() => {
-    saveTimer = null;
-    persistRequests(requests);
+  _latestRequests = requests;
+
+  if (_saveTimeout) clearTimeout(_saveTimeout);
+  _saveTimeout = setTimeout(() => {
+    _saveTimeout = null;
+    persistRequests(_latestRequests);
   }, SAVE_DEBOUNCE_MS);
+
+  if (!_maxWaitTimeout) {
+    _maxWaitTimeout = setTimeout(() => {
+      _maxWaitTimeout = null;
+      if (_saveTimeout) {
+        clearTimeout(_saveTimeout);
+        _saveTimeout = null;
+      }
+      persistRequests(_latestRequests);
+    }, SAVE_MAX_WAIT_MS);
+  }
 }
 
 function stripHeavyFields(r: ParsedRequest): Record<string, unknown> {
@@ -84,9 +100,14 @@ export function loadPersistedRequests(): ParsedRequest[] {
  * Call this when the user explicitly clears the request list.
  */
 export function clearPersistedRequests(): void {
-  if (saveTimer) {
-    clearTimeout(saveTimer);
-    saveTimer = null;
+  if (_saveTimeout) {
+    clearTimeout(_saveTimeout);
+    _saveTimeout = null;
   }
+  if (_maxWaitTimeout) {
+    clearTimeout(_maxWaitTimeout);
+    _maxWaitTimeout = null;
+  }
+  _latestRequests = [];
   sessionStorage.removeItem(getSessionKey());
 }

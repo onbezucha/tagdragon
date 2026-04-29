@@ -2,6 +2,17 @@
 
 import type { ParsedRequest } from '@/types/request';
 
+// ─── HTML ESCAPE MAP ─────────────────────────────────────────────────────────
+const ESCAPE_MAP: Record<string, string> = {
+  '&': '&amp;',
+  '<': '&lt;',
+  '>': '&gt;',
+  '"': '&quot;',
+  "'": '&#39;',
+  '`': '&#96;',
+  $: '&#36;',
+};
+
 /**
  * Format bytes to human readable string.
  */
@@ -17,14 +28,7 @@ export function formatBytes(bytes: number): string {
  * HTML escape string to prevent XSS.
  */
 export function esc(str: unknown): string {
-  return String(str ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
-    .replace(/`/g, '&#96;')
-    .replace(/\$/g, '&#36;');
+  return String(str ?? '').replace(/[&<>"'`$]/g, (m) => ESCAPE_MAP[m] ?? m);
 }
 
 /**

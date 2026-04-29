@@ -47,5 +47,14 @@ export const DEFAULT_CONFIG: AppConfig = {
 /** Max buffered messages before dropping oldest (panel-bridge, data-layer-relay) */
 export const MAX_BUFFER = 500;
 
+/** Debounce delay for filter input (ms) */
+export const FILTER_DEBOUNCE_MS = 150;
+
+/** Flash animation duration for copy confirmation (ms) */
+export const COPY_FLASH_MS = 800;
+
+/** Slow request threshold duration (ms) */
+export const SLOW_REQUEST_THRESHOLD_MS = 1000;
+
 /** Parameter keys that indicate a user ID is present in a request */
 export const USER_ID_PARAM_KEYS = ['client_id', 'Client ID', 'cid', 'uid', 'user_id'] as const;

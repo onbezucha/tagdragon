@@ -1,0 +1,37 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   REQUEST LIST — #list-pane, #request-list, scrollbar
+   Extracted from public/panel.html inline <style>
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+#list-pane {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-0);
+  border-right: 1px solid var(--border);
+  overflow: hidden;
+}
+
+#request-list {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+#request-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+#request-list::-webkit-scrollbar-track {
+  background: var(--bg-0);
+}
+
+#request-list::-webkit-scrollbar-thumb {
+  background: var(--bg-2);
+  border-radius: 4px;
+}
+
+#request-list::-webkit-scrollbar-thumb:hover {
+  background: var(--bg-3);
+}

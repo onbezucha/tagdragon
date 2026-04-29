@@ -181,6 +181,26 @@ Providers are defined as objects with `name`, `color`, `pattern` (RegExp), and `
 - `comscore` before `scorecard` (same domain `scorecardresearch.com`, different paths)
 - `googleAds` before `doubleclick`
 
+**To add provider categories:** create the category file in the matching subfolder
+under `src/shared/categories/` → import in `src/shared/categories/index.ts` →
+add to `PROVIDER_CATEGORIES` object with the exact provider name as key.
+
+**File/folder convention loosely mirrors `src/providers/`** (same subfolders, but
+file names may differ — e.g. `src/providers/adobe/aep-websdk.ts` →
+`src/shared/categories/adobe/analytics-server.ts`):
+
+Examples (name matches):
+- `src/providers/google/ga4.ts` ↔ `src/shared/categories/google/ga4.ts`
+- `src/providers/marketing/adform.ts` ↔ `src/shared/categories/marketing/adform.ts`
+
+Examples (name differs):
+- `src/providers/adobe/aep-websdk.ts` ↔ `src/shared/categories/adobe/analytics-server.ts`
+- `src/providers/adobe/analytics.ts` ↔ `src/shared/categories/adobe/analytics-client.ts`
+
+**Not every provider needs categories** — detection-only providers like
+`Microsoft Clarity Tag` have no `PROVIDER_CATEGORIES` entry. The fallback
+`PROVIDER_CATEGORIES[providerName] || {}` in `categorize.ts` handles this safely.
+
 ### State Management
 
 **Network requests** (`src/panel/state.ts`):
@@ -350,7 +370,18 @@ Hidden providers are persisted in `AppConfig.hiddenProviders` (restored on load 
 | `src/providers/microsoft/clarity-event-types.ts` | Clarity event type constants |
 | `src/providers/microsoft/clarity-tag.ts` | Microsoft Clarity library load provider (detection only) |
 | `src/shared/provider-groups.ts` | PROVIDER_GROUPS — grouping/categorization of providers in the popover |
-| `src/shared/categories.ts` | Per-provider parameter display categories |
+| `src/shared/categories/index.ts` | Barrel — composes PROVIDER_CATEGORIES from individual provider files |
+| `src/shared/categories/google/` | Google provider categories (GA4, Google Ads, GTM) |
+| `src/shared/categories/adobe/` | Adobe provider categories (Analytics CS/SS, Target, AAM, ECID, Heartbeat, DTM, Launch CN) |
+| `src/shared/categories/meta/` | Meta provider categories (Pixel) |
+| `src/shared/categories/microsoft/` | Microsoft provider categories (Clarity, Bing Ads) |
+| `src/shared/categories/marketing/` | Marketing provider categories (22 providers) |
+| `src/shared/categories/analytics/` | Analytics provider categories (16 providers) |
+| `src/shared/categories/tagmanager/` | Tag Manager provider categories (Tealium, Segment, Ensighten, Piwik PRO TM) |
+| `src/shared/categories/abtesting/` | A/B Testing provider categories (Optimizely, Dynamic Yield, Split, Omniconvert) |
+| `src/shared/categories/visitorid/` | Visitor Identification categories (Demandbase, 6Sense, Merkury) |
+| `src/shared/categories/engagement/` | Customer Engagement categories (Braze, Lytics) |
+| `src/shared/categories/cdp/` | CDP categories (mParticle, Tealium EventStream) |
 | `src/shared/cmp-detection.ts` | CMP detection scripts — OneTrust, UserCentrics, Cookiebot, CookieYes, Didomi, iubenda, TCF |
 | `src/types/index.ts` | Barrel re-export of all type modules |
 | `src/types/provider.ts` | Provider and ProviderRegistry type definitions |

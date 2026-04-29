@@ -470,5 +470,8 @@ function renderCorrelationTab(
 // ─── LIVE TAB ──────────────────────────────────────────────────────────────
 
 function renderLiveTab(container: HTMLElement, push: DataLayerPush): void {
-  renderLiveInspector(container, push.cumulativeState);
+  const allPushes = getAllDlPushes();
+  const pushIndex = allPushes.findIndex((p) => p.id === push.id);
+  const state = computeCumulativeState(pushIndex);
+  renderLiveInspector(container, state);
 }

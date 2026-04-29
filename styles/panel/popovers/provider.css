@@ -1,0 +1,417 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   PROVIDER POPOVER — #provider-filter-popover, .ppill, .pgroup, .hpill
+   Provider filter popover and HTTP status/method filter pills
+   Extracted from public/panel.html inline <style>
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+#provider-filter-popover {
+  position: absolute;
+  top: 66px;
+  right: 8px;
+  background-color: var(--bg-1);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 2px 8px rgba(0, 0, 0, 0.2);
+  z-index: 1000;
+  min-width: 340px;
+  max-width: 420px;
+  max-height: calc(100vh - 80px);
+  display: none;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+#provider-filter-popover.visible {
+  display: flex;
+}
+
+/* === PROVIDER POPOVER === */
+#btn-providers {
+  color: var(--text-0);
+}
+
+#btn-providers.active {
+  background: var(--accent-muted);
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  color: var(--accent);
+}
+
+#provider-search-wrap {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 2px 6px;
+}
+
+#provider-search-input {
+  flex: 1;
+  border: none;
+  background: none;
+  color: var(--text-0);
+  font-size: 13px;
+  outline: none;
+  padding: 0;
+  font-family: inherit;
+  min-width: 0;
+}
+
+#provider-search-input::placeholder { color: var(--text-2); }
+
+.provider-bar-btn {
+  padding: 2px 6px;
+  font-size: 12px;
+  color: var(--text-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: 3px;
+  background: var(--bg-2);
+  cursor: pointer;
+  transition: all 100ms;
+}
+
+.provider-bar-btn:hover { color: var(--text-0); background: var(--bg-3); border-color: var(--border); }
+
+#provider-group-list { overflow-y: auto; }
+
+.pgroup.search-empty { display: none; }
+
+.pgroup-header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 6px 3px 4px;
+  border-bottom: 1px solid var(--border-subtle);
+  user-select: none;
+}
+
+.pgroup-toggle { padding: 2px; flex-shrink: 0; color: var(--text-2); background: none; border: none; cursor: pointer; }
+
+.pgroup-chevron { transition: transform 150ms; display: inline-block; }
+
+.pgroup-toggle[aria-expanded="false"] .pgroup-chevron { transform: rotate(-90deg); }
+
+.pgroup-label {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--text-2);
+  flex: 1;
+}
+
+.pgroup-count { font-size: 12px; color: var(--text-3); font-family: var(--font-mono); margin-right: 4px; }
+
+.pgroup-all, .pgroup-none {
+  padding: 1px 5px;
+  font-size: 11px;
+  color: var(--text-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: 3px;
+  background: var(--bg-2);
+  cursor: pointer;
+}
+
+.pgroup-all:hover, .pgroup-none:hover { color: var(--text-0); background: var(--bg-3); }
+
+.pgroup-pills-wrap {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition: grid-template-rows 200ms ease;
+}
+
+.pgroup-pills-wrap.collapsed {
+  grid-template-rows: 0fr;
+}
+
+.pgroup-pills {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 4px 8px 6px 20px;
+  overflow: hidden;
+}
+
+.ppill.search-hidden { display: none; }
+
+/* Pill redesign — brand icon + color accent */
+.ppill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px 3px 6px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  user-select: none;
+  background: var(--bg-2);
+  border: 1px solid var(--border-subtle);
+  border-left: 2px solid var(--pill-color, var(--border-subtle));
+  transition: all 150ms var(--ease);
+  position: relative;
+}
+
+.ppill:hover {
+  background: var(--bg-3);
+  border-color: var(--border);
+  border-left-color: var(--pill-color, var(--accent));
+}
+
+.ppill.active {
+  background: var(--bg-2);
+  border-color: var(--border-subtle);
+  border-left-color: var(--pill-color, var(--accent));
+  color: var(--text-0);
+}
+
+.ppill.inactive {
+  opacity: 1;
+  background: var(--bg-2);
+  border-color: var(--border-subtle);
+  border-left-color: var(--border-subtle);
+  color: var(--text-3);
+}
+
+.ppill.inactive .ppill-name {
+  text-decoration: line-through;
+  text-decoration-color: var(--text-3);
+}
+
+/* Pill brand icon */
+.ppill-icon {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+  transition: filter 150ms var(--ease), opacity 150ms var(--ease);
+}
+
+.ppill-icon svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Active pill — full color icon */
+.ppill.active .ppill-icon {
+  opacity: 1;
+}
+
+/* Inactive pill — grayscale + dimmed icon */
+.ppill.inactive .ppill-icon {
+  filter: grayscale(1);
+  opacity: 0.4;
+}
+
+/* icon-hidden class — toggle target */
+.ppill .ppill-icon.icon-hidden {
+  filter: grayscale(1);
+  opacity: 0.4;
+}
+
+/* Pill toggle animation */
+@keyframes pillToggle {
+  0% { transform: scale(1); }
+  50% { transform: scale(0.92); }
+  100% { transform: scale(1); }
+}
+
+.ppill.toggling {
+  animation: pillToggle 200ms var(--ease);
+}
+
+/* Group header icon */
+.pgroup-icon {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  width: 12px;
+  height: 12px;
+  color: var(--text-2);
+  margin-left: 2px;
+}
+
+.pgroup-icon svg {
+  width: 12px;
+  height: 12px;
+}
+
+/* Group tri-state indicator */
+.pgroup-state {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  border: 1.5px solid var(--text-3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 150ms var(--ease);
+  font-size: 9px;
+  color: var(--accent);
+  background: var(--bg-2);
+}
+
+.pgroup-state.all {
+  background: var(--accent-muted);
+  border-color: var(--accent);
+}
+
+.pgroup-state.none {
+  background: transparent;
+  border-color: var(--text-3);
+  color: transparent;
+}
+
+.pgroup-state.partial {
+  background: var(--accent-muted);
+  border-color: var(--accent);
+}
+
+/* Hidden count badge on toolbar button */
+.provider-hidden-badge {
+  position: absolute;
+  top: -4px;
+  right: -6px;
+  min-width: 14px;
+  height: 14px;
+  padding: 0 3px;
+  border-radius: 7px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 600;
+  font-family: var(--font-mono);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  opacity: 0;
+  transform: scale(0.8);
+  transition: all 150ms var(--ease);
+  pointer-events: none;
+}
+
+.provider-hidden-badge.visible {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Context menu for "Show only" action */
+.ppill-context-menu {
+  position: fixed;
+  z-index: 10001;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  padding: 2px 0;
+  min-width: 160px;
+}
+
+.ppill-context-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  font-size: 11px;
+  color: var(--text-1);
+  cursor: pointer;
+  transition: background 100ms;
+}
+
+.ppill-context-item:hover {
+  background: var(--bg-hover);
+  color: var(--text-0);
+}
+
+.ppill-context-item.danger {
+  color: var(--red);
+}
+
+.ppill-context-item.danger:hover {
+  background: rgba(239, 83, 80, 0.08);
+}
+
+/* HTTP filter sections */
+#http-filter-sections {
+  border-bottom: 1px solid var(--border);
+}
+
+.http-filter-group {
+  padding: 6px 10px 8px;
+}
+
+.http-filter-group + .http-filter-group {
+  border-top: 1px solid var(--border-subtle);
+}
+
+.http-filter-header {
+  margin-bottom: 4px;
+}
+
+.http-filter-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--text-2);
+}
+
+.http-filter-pills {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+/* Individual HTTP filter pill */
+.hpill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: var(--font-mono);
+  cursor: pointer;
+  user-select: none;
+  background: var(--bg-2);
+  border: 1px solid var(--border-subtle);
+  transition: all 150ms var(--ease);
+}
+
+.hpill:hover {
+  background: var(--bg-3);
+  border-color: var(--border);
+}
+
+.hpill-count {
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--text-3);
+  font-family: var(--font-mono);
+}
+
+/* Active state — uses the same color as status badges */
+.hpill.active {
+  border-color: currentColor;
+  outline: 1px solid currentColor;
+  outline-offset: -1px;
+}
+
+/* Status pill color variants */
+.hpill[data-prefix="2xx"] { color: var(--green); }
+.hpill[data-prefix="3xx"] { color: var(--accent); }
+.hpill[data-prefix="4xx"] { color: var(--dragon-orange); }
+.hpill[data-prefix="5xx"] { color: var(--red); }
+
+/* Method pill color variants */
+.hpill[data-method="GET"] { color: var(--green); }
+.hpill[data-method="POST"] { color: var(--accent); }

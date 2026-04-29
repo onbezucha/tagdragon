@@ -118,6 +118,7 @@ export function clearRequests(): void {
   requestState.all = [];
   requestState.map.clear();
   requestState.filteredIds.clear();
+  activeProviders.clear();
 }
 
 /**
@@ -455,13 +456,6 @@ export function setRafId(id: number | null): void {
  * Get a read-only view of the current configuration.
  */
 export function getConfig(): Readonly<AppConfig> {
-  return { ...config };
-}
-
-/**
- * Alias for getConfig() — used by datalayer state for sort persistence.
- */
-export function getAppConfig(): Readonly<AppConfig> {
   return { ...config };
 }
 

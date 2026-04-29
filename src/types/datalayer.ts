@@ -11,7 +11,7 @@ export interface DataLayerPush {
   readonly pushIndex: number; // Index in the dataLayer array
   readonly timestamp: string; // ISO timestamp of the push
   readonly data: Record<string, unknown>; // The pushed data object
-  readonly cumulativeState: Record<string, unknown>; // Full state AFTER this push
+  readonly cumulativeState: Record<string, unknown> | null; // Full state AFTER this push; null = lazy (computed on demand via computeCumulativeState)
   readonly isReplay?: boolean; // Whether this is a replay of existing dataLayer items
 
   // E-commerce detection (computed)

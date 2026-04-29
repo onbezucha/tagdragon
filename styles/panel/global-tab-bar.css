@@ -1,0 +1,29 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   GLOBAL TAB BAR — #global-tab-bar, .gtb-*
+   Extracted from public/panel.html inline <style>
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* === ROW 1 — GLOBAL TAB BAR (32px) === */
+#global-tab-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 10px;
+  background-color: var(--bg-1);
+  border-bottom: 1px solid var(--border);
+  gap: 10px;
+  height: 32px;
+  grid-row: 1;
+}
+
+.gtb-section {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.gtb-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}

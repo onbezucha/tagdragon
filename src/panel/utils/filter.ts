@@ -96,7 +96,7 @@ export function matchesFilter(data: ParsedRequest): boolean {
       data._hasUserId !== undefined
         ? data._hasUserId
         : USER_ID_PARAM_KEYS.some(
-            (key) => !!(data.decoded?.[key as keyof typeof data.decoded] ?? data.allParams?.[key])
+            (key) => !!(data.decoded?.[key as string] ?? data.allParams?.[key])
           );
     if (filterUserId === 'has' && !hasUserId) return false;
     if (filterUserId === 'missing' && hasUserId) return false;

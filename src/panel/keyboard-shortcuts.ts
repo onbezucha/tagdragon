@@ -11,10 +11,7 @@ import * as state from './state';
 import * as dlState from './datalayer/state';
 import { isMac } from './utils/platform';
 import { isOpen as isSettingsOpen, closeSettings } from './components/settings-drawer';
-import {
-  isOpen as isProviderFilterOpen,
-  closeProviderFilter,
-} from './components/provider-filter-popover';
+import { isProviderFilterOpen, closeProviderFilter } from './components/provider-filter';
 import {
   isOpen as isDlFilterPopoverOpen,
   closeDlFilterPopover,
