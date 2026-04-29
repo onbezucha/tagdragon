@@ -5,12 +5,17 @@ All notable changes to TagDragon will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.6.1] - 2025-07-17
+## [1.6.5] - 2026-07-17
+
+### Changed
+- Version bump to 1.6.5
+
+## [1.6.1] - 2026-07-17
 
 ### Fixed
 - Removed unused `tabs` permission (Chrome Web Store violation: Purple Potassium)
 
-## [1.6.0] - 2025-04-08
+## [1.6.0] - 2026-04-08
 
 ### Added
 - ESLint + Prettier — code style enforcement with TypeScript rules; `npm run lint`, `npm run format`, `npm run format:check`
@@ -32,7 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Replaced all `any` type assertions with precise types: `_categorized` field added to `ParsedRequest`, `Window._getHeavyData` declared via `declare global`, Chrome API callbacks typed with `unknown` + type guards
 - `dlGroupBySource` added to `AppConfig` (default `false`)
 
-## [1.5.6] - 2025-07-17
+## [1.5.6] - 2026-07-17
 
 ### Added
 - DataLayer validation engine — rule-based push validation with preset rules (required keys, key types, forbidden keys) and custom rule support
@@ -52,7 +57,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Optimized cumulative state computation — shared mutable state with `structuredClone` snapshots instead of per-push shallow copies
 - Added `dlSortField` and `dlSortOrder` to persisted `AppConfig`
 
-## [1.5.5] - 2025-07-09
+## [1.5.5] - 2026-07-09
 
 ### Added
 - Medallia DXA provider — Session Replay / UX analytics
@@ -66,7 +71,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Microsoft Clarity Tag is now ungrouped (falls into UNGROUPED fallback)
 - Added domain index and `matchProvider()` function to `src/providers/index.ts` for faster URL matching
 
-## [1.5.3] - 2025-04-05
+## [1.5.3] - 2026-04-05
 
 ### Fixed
 - Fixed version display in popup footer (`public/popup.html`) — footer now correctly shows `v1.5.3` instead of stale version string
@@ -74,12 +79,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Removed unused `@providers/*` path alias from TypeScript configuration (`tsconfig.json`) — only the `@/*` → `src/*` alias remains; no imports in the codebase used the removed alias
 
-## [1.5.2] - 2025-04-05
+## [1.5.2] - 2026-04-05
 
 ### Changed
 - Internal improvements and bug fixes
 
-## [1.5.0] - 2025-04-04
+## [1.5.0] - 2026-04-04
 
 ### Added
 - DataLayer Inspector — intercept and inspect data layer pushes from GTM, Tealium, Adobe, Segment, and W3C digitalData
@@ -94,17 +99,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Improved request visualization
 
-## [1.4.1] - 2025-03-23
+## [1.4.1] - 2026-03-23
 
 ### Fixed
 - Bug fixes and stability improvements
 
-## [1.3.4] - 2025-03-20
+## [1.3.4] - 2026-03-20
 
 ### Fixed
 - Bug fixes and stability improvements
 
-## [1.3.3] - 2025-03-20
+## [1.3.3] - 2026-03-20
 
 ### Fixed
 - Bug fixes and stability improvements

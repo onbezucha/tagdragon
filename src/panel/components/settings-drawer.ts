@@ -154,17 +154,6 @@ function updateAccordionState(): void {
   });
 }
 
-/**
- * Expand a section (open accordion, used when toolbar buttons open settings).
- */
-function expandSection(sectionId: string): void {
-  collapsedSections.delete(sectionId);
-  const header = document.querySelector(`[data-section-toggle="${sectionId}"]`);
-  const body = document.querySelector(`[data-section="${sectionId}"] > .popover-section-body`);
-  if (header) header.classList.remove('collapsed');
-  if (body) (body as HTMLElement).style.display = '';
-}
-
 // ─── FILTER EXPAND ────────────────────────────────────────────────────────
 
 function closeAllExpands(): void {

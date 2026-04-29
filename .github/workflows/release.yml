@@ -21,6 +21,8 @@ jobs:
 
       - run: npm ci
 
+      - run: npm test
+
       - run: npm run build
 
       - name: Prepare release zip
@@ -29,11 +31,32 @@ jobs:
           cp manifest.json tagdragon-release/
           cp -r public tagdragon-release/
           cp -r dist tagdragon-release/
+          cp LICENSE tagdragon-release/
           cd tagdragon-release
           zip -r ../TagDragon-${{ github.ref_name }}.zip .
+
+      - name: Extract version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
+
+      - name: Extract changelog for this version
+        id: changelog
+        run: |
+          BODY=$(awk -v tag="$GITHUB_REF_NAME" '
+            /^## \[/ {
+              if (section) exit
+              gsub(/\[|\]|-/,"",$3)
+              if ($3 == tag) section=1
+            }
+            section { print }
+          ' CHANGELOG.md)
+          echo "BODY<<EOF" >> $GITHUB_OUTPUT
+          echo "$BODY" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          name: "TagDragon v${{ steps.version.outputs.VERSION }}"
+          body: "${{ steps.changelog.outputs.BODY }}"
           files: TagDragon-${{ github.ref_name }}.zip
-          generate_release_notes: true

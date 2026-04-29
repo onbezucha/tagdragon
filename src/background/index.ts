@@ -117,7 +117,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     const port = devToolsPorts.get(tabId);
     if (!port) return;
     try {
-      port.postMessage({ type: msg.type, tabId, ...msg });
+      port.postMessage({ tabId, ...msg });
     } catch {
       /* port may be closed */
     }
@@ -203,7 +203,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
   if (message.type === 'CLEAR_COOKIES') {
     const { url } = message;
-    let urlObj: URL;
+    let urlObj: URL | undefined;
 
     // Validate that the URL's origin matches the sender's tab origin
     if (_sender.tab?.url) {

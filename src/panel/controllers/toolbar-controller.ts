@@ -8,10 +8,10 @@ import * as state from '../state';
 import * as dlState from '../datalayer/state';
 import { DOM } from '../utils/dom';
 import { selectRequest, closeDetailPane } from '../components/detail-pane';
-import { updateDlStatusBar } from '../components/status-bar';
+
 import { clearAllCookies, clearConsentOverride } from '../components/consent-panel';
 import { closeInfoPopover } from '../components/info-popover';
-import { toggleSettings, syncSettingsControl } from '../components/settings-drawer';
+import { toggleSettings } from '../components/settings-drawer';
 import { toggleProviderFilter, closeProviderFilter } from '../components/provider-filter';
 import { closeDlFilterPopover } from '../components/dl-filter-popover';
 import { setActiveDlRow } from '../datalayer/components/push-list';
@@ -19,7 +19,7 @@ import { selectDlPush } from '../datalayer/components/push-detail';
 import { dlClearAll } from './datalayer-controller';
 import { clearNetworkData, getExportRequests, exportCsv } from './network-controller';
 import { downloadJson } from '../utils/export';
-import { closeAllPopovers, registerPopover } from '../utils/popover-manager';
+
 import { initExportFormatMenu } from '../utils/export-menu';
 import { doApplyFilters, doUpdateActiveFilters } from './filter-callbacks';
 import { FILTER_DEBOUNCE_MS } from '@/shared/constants';
@@ -37,7 +37,7 @@ function doSelectRequest(data: import('@/types/request').ParsedRequest, row: HTM
 function doSelectPush(push: import('@/types/datalayer').DataLayerPush, row: HTMLElement): void {
   dlState.setDlSelectedId(push.id);
   setActiveDlRow(row);
-  selectDlPush(push, row, gotoNetworkRequest);
+  selectDlPush(push, row, gotoNetworkRequest!);
 }
 
 // Reference to the gotoNetworkRequest function (set via setter before initToolbarHandlers)

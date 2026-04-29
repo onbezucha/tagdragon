@@ -165,7 +165,9 @@ export const aepWebSDK: Provider = {
     }
 
     // Browser details
-    const browser = (xdm.environment?.browserDetails as Record<string, unknown>) ?? {};
+    const browser =
+      ((xdm.environment as Record<string, unknown>)?.browserDetails as Record<string, unknown>) ??
+      {};
     if (browser.browserName) result['Browser'] = str(browser.browserName);
     if (browser.browserVersion) result['Browser Version'] = str(browser.browserVersion);
 

@@ -41,9 +41,9 @@ import {
   getDlSortOrder,
   getDlGroupBySource,
 } from '../datalayer/state';
-import { closeAllPopovers, registerPopover } from '../utils/popover-manager';
+
 import { initExportFormatMenu } from '../utils/export-menu';
-import { savePanelSetting, loadPanelSetting } from '../utils/persistence';
+
 import { SOURCE_DESCRIPTIONS } from '@/shared/datalayer-constants';
 import { updateDlStatusBar as _updateDlStatusBar } from '../components/status-bar';
 import { toggleDlFilterPopover } from '../components/dl-filter-popover';

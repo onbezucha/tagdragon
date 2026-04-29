@@ -2,56 +2,33 @@
 // REQUEST TRACKER v3.0 - PANEL CONTROLLER
 // ═══════════════════════════════════════════════════════════════════════════
 
-import type { ParsedRequest } from '@/types/request';
-
 import * as state from './state';
 import * as dlState from './datalayer/state';
 import { DOM, flashCopyFeedback } from './utils/dom';
-import { updateRowVisibility } from './components/request-list';
-import { selectRequest, initTabHandlers, closeDetailPane } from './components/detail-pane';
+import { selectRequest, initTabHandlers } from './components/detail-pane';
 import {
   updateStatusBar,
   updateDlStatusBar,
   updateNetworkStatusBar,
   initTimestampToggle,
 } from './components/status-bar';
-import {
-  initProviderBar,
-  initProviderFilterPopover,
-  toggleProviderFilter,
-  closeProviderFilter,
-  refreshHttpFilterPillStates,
-} from './components/provider-filter';
-import { updateActiveFilters } from './components/filter-bar';
+import { initProviderBar, initProviderFilterPopover } from './components/provider-filter';
 import { initAdobeEnvSwitcher } from './components/adobe-env-switcher';
-import {
-  initConsentPanel,
-  clearAllCookies,
-  clearConsentOverride,
-} from './components/consent-panel';
-import { initInfoPopover, closeInfoPopover } from './components/info-popover';
+import { initConsentPanel } from './components/consent-panel';
+import { initInfoPopover } from './components/info-popover';
 import {
   initSettingsDrawer,
   toggleSettings,
   syncSettingsControl,
 } from './components/settings-drawer';
-import { applyFilters } from './utils/filter';
-import { downloadJson } from './utils/export';
 import { initTheme } from './theme';
 import { initSplitter } from './splitter';
 import { initKeyboardHandlers } from './keyboard-shortcuts';
 import { initDetailCopyHandlers } from './components/detail-pane';
-import {
-  initNetworkController,
-  clearNetworkData,
-  getExportRequests,
-  exportCsv,
-  restorePersistedRequests,
-} from './controllers/network-controller';
+import { initNetworkController, restorePersistedRequests } from './controllers/network-controller';
 import {
   initDatalayerController,
   setPanelReady,
-  dlClearAll,
   flushEarlyDlPushes,
   updateDlFilterChips,
   dlApplyFilter,
@@ -59,11 +36,7 @@ import {
   setSwitchView,
   setSyncPauseUI,
 } from './controllers/datalayer-controller';
-import {
-  initDlFilterPopover,
-  toggleDlFilterPopover,
-  closeDlFilterPopover,
-} from './components/dl-filter-popover';
+import { initDlFilterPopover } from './components/dl-filter-popover';
 import { init as initTooltip } from './utils/tooltip';
 import { initDlSortState } from './datalayer/state';
 import { loadValidationRules } from './datalayer/utils/validator';
@@ -252,7 +225,7 @@ function initCopyHandler(): void {
     navigator.clipboard
       .writeText(value)
       .then(() => {
-        flashCopyFeedback(copyBtn);
+        flashCopyFeedback(copyBtn as HTMLElement);
       })
       .catch((err) => console.error('Copy failed:', err));
   });

@@ -7,7 +7,7 @@ import type { Provider } from '@/types/provider';
 // This fires once per page load and confirms Clarity is installed.
 
 export const microsoftClarityTag: Provider = {
-  name: 'Microsoft Clarity',
+  name: 'Microsoft Clarity Tag',
   color: '#00BCF2',
   pattern: /clarity\.ms\/tag\//,
 
