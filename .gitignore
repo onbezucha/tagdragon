@@ -18,6 +18,9 @@ ehthumbs.db
 .vscode/
 .fleet/
 
+# Obsidian
+.obsidian/
+
 # AI coding tools
 AGENTS.md
 CLAUDE.md
@@ -48,7 +51,7 @@ yarn-error.log
 .eslintcache
 tsconfig.tsbuildinfo
 
-# Test coverage (future-proofing)
+# Test coverage
 coverage/
 
 # Chrome Extension artifacts
@@ -68,3 +71,9 @@ coverage/
 
 # VS Code Local History
 .history/
+
+# Canvas files
+*.canvas
+
+# LLM Wiki (personal knowledge base for Obsidian + Jean2)
+wiki/

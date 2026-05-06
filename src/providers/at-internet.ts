@@ -42,6 +42,8 @@ export const atInternet: Provider = {
       }
     }
 
+    result._eventName = result['Hit Type'];
+
     return result;
   },
 } as const;

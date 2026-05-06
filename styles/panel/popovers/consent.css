@@ -341,9 +341,39 @@
   cursor: not-allowed;
 }
 
+/* B5: Confirmation before deleting cookies */
+.consent-btn-danger.confirm-pending {
+  background: var(--red, #f56565);
+  color: white;
+  animation: pulse-danger 0.8s ease infinite;
+}
+
+@keyframes pulse-danger {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.consent-btn-danger.confirm-pending:hover:not(:disabled) {
+  background: var(--red, #f56565);
+  border-color: var(--red, #f56565);
+}
+
 .consent-danger-hint {
   font-size: 11px;
   color: var(--text-3);
+}
+
+/* B4: Fade-out transition for status */
+#consent-action-status {
+  transition: opacity 300ms ease;
+}
+
+/* D6: Explanation when consent buttons are disabled */
+.consent-disabled-explanation {
+  font-size: 12px;
+  color: var(--text-3);
+  padding: 8px 0;
+  line-height: 1.5;
 }
 
 /* Scrollbar */

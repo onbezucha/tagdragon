@@ -4,6 +4,7 @@
   --bg-0: #1e1e1e;
   --bg-1: #252526;
   --bg-2: #2d2d30;
+  --bg-3: #3a3a3c;
   --text-0: #cccccc;
   --text-1: #9d9d9d;
   --border: #3c3c3c;
@@ -298,4 +299,34 @@ button:active {
 
 .hidden {
   display: none !important;
+}
+
+/* ─── SKELETON LOADING ───────────────────────────────────────────────────────── */
+
+.skeleton-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 8px;
+}
+
+.skeleton-bar {
+  height: 12px;
+  background: var(--bg-3);
+  border-radius: 4px;
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+/* ─── ERROR STATE ─────────────────────────────────────────────────────────────── */
+
+.error-state {
+  text-align: center;
+  padding: 16px;
+  color: var(--error);
+  font-size: 12px;
 }

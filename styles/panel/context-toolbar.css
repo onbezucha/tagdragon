@@ -53,6 +53,7 @@ button svg {
 #btn-clear-filter svg.lucide { width: 12px; height: 12px; }
 #dl-clear-filter svg.lucide { width: 10px; height: 10px; }
 #btn-clear-network svg.lucide, #dl-btn-clear svg.lucide { width: 14px; height: 14px; }
+#btn-wrap-values svg.lucide, #btn-compact-rows svg.lucide { width: 14px; height: 14px; }
 
 /* Theme toggle button */
 #btn-theme-toggle {
@@ -209,4 +210,29 @@ button svg {
   background: var(--accent-muted);
   border-color: var(--accent);
   color: var(--accent);
+}
+
+/* Filter hint (G1 — regex search helper) */
+.filter-hint {
+  font-size: 11px;
+  color: var(--text-3);
+  padding: 2px 8px 0;
+  opacity: 0;
+  transition: opacity 150ms ease;
+  pointer-events: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 10;
+}
+
+.filter-wrap:focus-within + .filter-hint {
+  opacity: 1;
+}
+
+/* Sort button arrow indicator */
+.sort-arrow {
+  font-size: 10px;
+  margin-left: 2px;
+  opacity: 0.7;
 }

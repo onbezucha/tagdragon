@@ -54,6 +54,7 @@ export const mixpanel: Provider = {
     // Core (always at the beginning)
     const core: Record<string, string | undefined> = {
       Event: eventName,
+      _eventName: eventName,
       'Distinct ID': distinctId,
       Token: token,
     };

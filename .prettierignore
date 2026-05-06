@@ -1,3 +1,20 @@
+# Build output
 dist/
+
+# Dependencies
 node_modules/
+
+# Generated assets
 public/
+
+# Coverage
+coverage/
+
+# Cache
+.eslintcache
+tsconfig.tsbuildinfo
+
+# Config files (not source)
+*.config.js
+*.config.mjs
+*.config.ts

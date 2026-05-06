@@ -63,6 +63,8 @@ import {
   Pause,
   Play,
   SlidersHorizontal,
+  WrapText,
+  AlignJustify,
 } from 'lucide';
 
 // Toolbar controller imports
@@ -217,17 +219,37 @@ function initCategoryToggle(): void {
 function initCopyHandler(): void {
   document.addEventListener('click', (e: Event) => {
     const copyBtn = (e.target as HTMLElement).closest('.param-copy-btn');
-    if (!copyBtn) return;
+    if (copyBtn) {
+      const value = (copyBtn as HTMLElement).dataset.copy;
+      if (!value) return;
 
-    const value = (copyBtn as HTMLElement).dataset.copy;
-    if (!value) return;
+      navigator.clipboard
+        .writeText(value)
+        .then(() => {
+          flashCopyFeedback(copyBtn as HTMLElement);
+        })
+        .catch((err) => console.error('Copy failed:', err));
+      return;
+    }
 
-    navigator.clipboard
-      .writeText(value)
-      .then(() => {
-        flashCopyFeedback(copyBtn as HTMLElement);
-      })
-      .catch((err) => console.error('Copy failed:', err));
+    const target = e.target as HTMLElement;
+    if (target.closest('.param-value') || target.closest('.pv')) {
+      const row = target.closest('.param-row, tr');
+      if (!row) return;
+
+      const rowCopyBtn = row.querySelector('.param-copy-btn');
+      if (!rowCopyBtn) return;
+
+      const value = (rowCopyBtn as HTMLElement).dataset.copy;
+      if (!value) return;
+
+      navigator.clipboard
+        .writeText(value)
+        .then(() => {
+          flashCopyFeedback(rowCopyBtn as HTMLElement);
+        })
+        .catch((err) => console.error('Copy failed:', err));
+    }
   });
 }
 
@@ -275,6 +297,8 @@ async function init(): Promise<void> {
       Play,
       SlidersHorizontal,
       Upload,
+      WrapText,
+      AlignJustify,
     },
   });
 
@@ -330,7 +354,7 @@ async function init(): Promise<void> {
     syncQuickButtons();
     syncSettingsControl('cfg-sort-order', next);
   });
-  syncQuickButtons();
+  syncQuickButtons(); // Initial arrow state
   applyWrapValuesClass();
   initCategoryToggle();
   initCopyHandler();

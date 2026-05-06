@@ -21,7 +21,7 @@ export const seznamSklik: Provider = {
 
     const typeMatch = url.match(/seznam\.cz\/([^?]+)/);
 
-    return {
+    const result: Record<string, string | undefined> = {
       Type: typeMatch?.[1],
       ID: p.id,
       Value: p.value,
@@ -29,5 +29,8 @@ export const seznamSklik: Provider = {
       Consent: p.consent,
       'User ID': udid,
     };
+    result._eventName = result['Type'];
+
+    return result;
   },
 } as const;

@@ -12,11 +12,8 @@ import { googleAds } from './google/google-ads';
 
 // Adobe (most specific first — see ordering note in PROVIDERS below)
 import { aepWebSDK } from './adobe/aep-websdk';
-import { adobeHeartbeat } from './adobe/heartbeat';
 import { adobeTarget } from './adobe/target';
 import { adobeECID } from './adobe/ecid';
-import { adobeAAM } from './adobe/aam';
-import { adobeDTM } from './adobe/dtm';
 import { adobeLaunchChina } from './adobe/launch-china';
 import { adobeAA } from './adobe/analytics';
 
@@ -36,9 +33,7 @@ import { piwikProTm } from './piwik-pro-tm';
 import { piwikPro } from './piwik-pro';
 import { atInternet } from './at-internet';
 import { parsely } from './parsely';
-import { webtrends } from './webtrends';
 import { comscore } from './comscore';
-import { scorecard } from './scorecard';
 
 // Social / Ad pixels
 import { tiktokPixel } from './tiktok';
@@ -65,7 +60,6 @@ import { hubspot } from './hubspot';
 import { outbrain } from './outbrain';
 import { teads } from './teads';
 import { rtbHouse } from './rtb-house';
-import { zemanta } from './zemanta';
 import { sojern } from './sojern';
 import { vibes } from './vibes';
 import { invoca } from './invoca';
@@ -106,10 +100,9 @@ import { merkury } from './merkury';
  * Order matters: first match wins.
  * Key ordering rules:
  *   - tealiumEventstream before tealium (collect.tealiumiq.com/event vs collect.tealiumiq.com)
- *   - piwikProTm before piwikPro (different paths on piwik.pro)
- *   - aepWebSDK → adobeHeartbeat → adobeTarget → adobeECID → adobeAAM → adobeDTM → adobeLaunchChina → adobeAA
+ *   - piwikProTm before piwikPro (different paths on piwik.pro)  *   - aepWebSDK → adobeTarget → adobeECID → adobeLaunchChina → adobeAA
  *     (specific omtrdc/demdex patterns before broad adobeAA)
- *   - comscore before scorecard (scorecardresearch.com/b before /p)
+ *   - comscore handles all scorecardresearch.com endpoints (/b, /p, sb.)
  *   - googleAds before doubleclick
  */
 export const PROVIDERS: ProviderRegistry = [
@@ -143,9 +136,7 @@ export const PROVIDERS: ProviderRegistry = [
   piwikPro,
   atInternet,
   parsely,
-  webtrends,
-  comscore, // before scorecard — scorecardresearch.com/b before /p
-  scorecard,
+  comscore, // handles all scorecardresearch.com endpoints (/b, /p, sb.)
 
   // Session Replay / UX
   hotjar,
@@ -164,11 +155,8 @@ export const PROVIDERS: ProviderRegistry = [
 
   // Adobe (specific → broad)
   aepWebSDK,
-  adobeHeartbeat, // heartbeat.omtrdc.net before adobeTarget
-  adobeTarget, // tt.omtrdc.net before adobeAA
-  adobeECID, // demdex.net/id before adobeAAM and adobeAA
-  adobeAAM, // dpm.demdex.net before adobeAA
-  adobeDTM,
+  adobeTarget, // tt.omtrdc.net
+  adobeECID, // demdex.net/id
   adobeLaunchChina,
   adobeAA, // broadest Adobe pattern — last
 
@@ -181,7 +169,6 @@ export const PROVIDERS: ProviderRegistry = [
   outbrain,
   teads,
   rtbHouse,
-  zemanta,
   sojern,
   vibes,
   invoca,

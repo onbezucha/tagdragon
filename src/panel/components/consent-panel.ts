@@ -2,6 +2,7 @@
 
 import type { ConsentData } from '@/types/consent';
 import { DOM } from '../utils/dom';
+import { copyToClipboard, showCopyFeedback } from '../utils/clipboard';
 import { esc } from '../utils/format';
 import { closeAllPopovers, registerPopover } from '../utils/popover-manager';
 import {
@@ -20,6 +21,8 @@ type ConsentOverride = 'accept_all' | 'reject_all' | null;
 let consentData: ConsentData | null = null;
 let isRefreshing = false;
 let consentOverride: ConsentOverride = null;
+let deleteConfirmPending = false;
+let deleteConfirmTimer: ReturnType<typeof setTimeout> | null = null;
 
 // ─── STORAGE ──────────────────────────────────────────────────────────────
 
@@ -183,9 +186,17 @@ function runConsentAction(
     }
 
     setTimeout(() => {
-      resetActionButton(btn, label);
-      refreshConsentData();
-    }, 1500);
+      // Fade out status message
+      if ($status) $status.style.opacity = '0';
+      setTimeout(() => {
+        resetActionButton(btn, label);
+        refreshConsentData();
+        if ($status) {
+          $status.style.display = 'none';
+          $status.style.opacity = '1';
+        }
+      }, 300);
+    }, 4000);
   });
 }
 
@@ -219,8 +230,25 @@ export async function clearAllCookies(): Promise<number> {
 }
 
 async function runClearCookies(btn: HTMLButtonElement): Promise<void> {
-  btn.disabled = true;
-  btn.textContent = '⏳ Deleting...';
+  if (!deleteConfirmPending) {
+    // First click — ask for confirmation
+    deleteConfirmPending = true;
+    btn.textContent = '⚠ Confirm delete?';
+    btn.classList.add('confirm-pending');
+    deleteConfirmTimer = setTimeout(() => {
+      // Revert after 3 seconds
+      deleteConfirmPending = false;
+      btn.textContent = '🗑 Delete cookies';
+      btn.classList.remove('confirm-pending');
+    }, 3000);
+    return;
+  }
+
+  // Second click — confirmed
+  deleteConfirmPending = false;
+  if (deleteConfirmTimer) clearTimeout(deleteConfirmTimer);
+  btn.textContent = '🗑 Delete cookies';
+  btn.classList.remove('confirm-pending');
 
   const $status = document.getElementById('consent-action-status');
 
@@ -239,8 +267,10 @@ async function runClearCookies(btn: HTMLButtonElement): Promise<void> {
     }
     console.warn('TagDragon: clearAllCookies failed', err);
   } finally {
-    btn.disabled = false;
-    btn.textContent = '🗑 Delete cookies';
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = '🗑 Delete cookies';
+    }
   }
 }
 
@@ -379,6 +409,22 @@ function renderConsentPanel(data: ConsentData): void {
       $rejectBtn.disabled = apiUnavailable;
       $rejectBtn.title = apiUnavailable ? 'CMP API not available' : '';
     }
+
+    // Show explanation when buttons are disabled (CMP API not detected)
+    const actionsContainer = document.getElementById('consent-actions');
+    if (actionsContainer) {
+      let explanation = actionsContainer.querySelector(
+        '.consent-disabled-explanation'
+      ) as HTMLElement | null;
+      if (!explanation) {
+        explanation = document.createElement('div');
+        explanation.className = 'consent-disabled-explanation';
+        explanation.innerHTML =
+          'CMP API not detected on this page.<br>The page may not use a consent management platform, or it loads after TagDragon.';
+        actionsContainer.appendChild(explanation);
+      }
+      explanation.style.display = apiUnavailable ? '' : 'none';
+    }
   }
 
   // Categories
@@ -419,8 +465,10 @@ function renderConsentPanel(data: ConsentData): void {
         const $val = document.getElementById('consent-tcf-value');
         if ($val) $val.style.display = $val.style.display === 'none' ? 'block' : 'none';
       });
-      document.getElementById('consent-copy-tcf')?.addEventListener('click', () => {
-        navigator.clipboard.writeText(data.tcf!.tcString).catch(() => {});
+      document.getElementById('consent-copy-tcf')?.addEventListener('click', async (e) => {
+        const btn = e.target as HTMLButtonElement;
+        const success = await copyToClipboard(data.tcf!.tcString);
+        showCopyFeedback(btn, success);
       });
     } else {
       $tcf.innerHTML = '<span class="consent-no-data-hint">TCF not supported</span>';

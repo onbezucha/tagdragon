@@ -5,6 +5,12 @@ All notable changes to TagDragon will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.0] - 2025-07-24
+
+### Changed
+- Version bump to 1.7.0
+- Documentation overhaul — updated README.md, CONTRIBUTING.md, CHANGELOG.md, JEAN.md, .gitignore, .prettierignore to reflect current project state (67 providers, 83 test files, GitHub Actions CI/CD, 28 CSS modules)
+
 ## [1.6.5] - 2026-07-17
 
 ### Changed
@@ -67,7 +73,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Provider type definitions (`src/types/provider.ts`) — Provider and ProviderRegistry type definitions
 
 ### Changed
-- Provider count increased from 68 to 69
+- Provider count increased from 64 to 67 (note: later consolidated)
 - Microsoft Clarity Tag is now ungrouped (falls into UNGROUPED fallback)
 - Added domain index and `matchProvider()` function to `src/providers/index.ts` for faster URL matching
 

@@ -12,7 +12,7 @@ import { SOURCE_DESCRIPTIONS } from '@/shared/datalayer-constants';
 import { MAX_BUFFER } from '@/shared/constants';
 let dlBuffer: DataLayerPush[] = [];
 
-function buildPush(msg: {
+export function buildPush(msg: {
   source: DataLayerSource;
   sourceLabel?: string;
   pushIndex: number;
@@ -100,7 +100,7 @@ export function sendDataLayerSourcesToPanel(
   }
 }
 
-function extractEventName(data: Record<string, unknown>): string | undefined {
+export function extractEventName(data: Record<string, unknown>): string | undefined {
   if (typeof data['event'] === 'string') return data['event'];
   if (typeof data['eventName'] === 'string') return data['eventName'];
   if (typeof data['event_name'] === 'string') return data['event_name'];

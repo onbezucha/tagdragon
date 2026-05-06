@@ -59,18 +59,18 @@ describe('matchProvider', () => {
       expect(regular?.name).toBe('Tealium');
     });
 
-    it('resolves: Comscore before Scorecard', () => {
+    it('resolves: Comscore matches /b path', () => {
       const cs = matchProvider(
         'https://sb.scorecardresearch.com/b?c1=2&c2=123456'
       );
       expect(cs?.name).toBe('Comscore');
     });
 
-    it('resolves: Scorecard matches /p path', () => {
+    it('resolves: Comscore matches /p path (merged Scorecard)', () => {
       const sc = matchProvider(
         'https://scorecardresearch.com/p?c1=2&c2=123456'
       );
-      expect(sc?.name).toBe('Scorecard');
+      expect(sc?.name).toBe('Comscore');
     });
   });
 

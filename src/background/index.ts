@@ -62,6 +62,12 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       return true;
     }
 
+    // Reject fromUrl containing declarativeNetRequest special characters
+    if (/[*^|]/.test(fromUrl)) {
+      sendResponse({ ok: false, error: 'Source URL contains invalid characters (*, ^, |)' });
+      return true;
+    }
+
     chrome.declarativeNetRequest
       .updateDynamicRules({
         removeRuleIds: [ADOBE_REDIRECT_RULE_ID],
@@ -203,13 +209,19 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
   if (message.type === 'CLEAR_COOKIES') {
     const { url } = message;
-    let urlObj: URL | undefined;
+    let urlObj: URL;
+
+    try {
+      urlObj = new URL(url);
+    } catch {
+      sendResponse({ deleted: 0 });
+      return;
+    }
 
     // Validate that the URL's origin matches the sender's tab origin
     if (_sender.tab?.url) {
       try {
         const senderOrigin = new URL(_sender.tab.url).origin;
-        urlObj = new URL(url);
         if (senderOrigin !== urlObj.origin) {
           sendResponse({ deleted: 0 });
           return;
@@ -218,15 +230,14 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         sendResponse({ deleted: 0 });
         return;
       }
+    } else {
+      // Extension pages (no sender tab) are not allowed to clear cookies
+      sendResponse({ deleted: 0 });
+      return;
     }
 
     (async () => {
       try {
-        // Ensure urlObj is defined (if tab URL validation passed, this is guaranteed)
-        if (!urlObj) {
-          urlObj = new URL(url);
-        }
-
         const [byCookies, byDomain] = await Promise.all([
           chrome.cookies.getAll({ url }),
           chrome.cookies.getAll({ domain: urlObj.hostname }),

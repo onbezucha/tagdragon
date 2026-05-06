@@ -44,25 +44,38 @@ export function scheduleSaveRequests(requests: ParsedRequest[]): void {
   }
 }
 
-function stripHeavyFields(r: ParsedRequest): Record<string, unknown> {
-  const obj: Record<string, unknown> = { ...r };
-  delete obj['responseBody'];
-  delete obj['requestHeaders'];
-  delete obj['responseHeaders'];
-  return obj;
+/** Keys to exclude from persisted requests to keep sessionStorage usage low. */
+const HEAVY_KEYS: ReadonlySet<string> = new Set([
+  'responseBody',
+  'requestHeaders',
+  'responseHeaders',
+]);
+
+/**
+ * Serialize requests to JSON, omitting heavy fields.
+ * Builds filtered entries inline to avoid spread+delete intermediate allocations.
+ */
+function stringifyStripped(requests: ParsedRequest[]): string {
+  const filtered: Array<Record<string, unknown>> = [];
+  for (const req of requests) {
+    const entry: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(req)) {
+      if (!HEAVY_KEYS.has(key)) {
+        entry[key] = value;
+      }
+    }
+    filtered.push(entry);
+  }
+  return JSON.stringify(filtered);
 }
 
 function persistRequests(requests: ParsedRequest[]): void {
   try {
-    const toStore = requests.map(stripHeavyFields);
-    sessionStorage.setItem(getSessionKey(), JSON.stringify(toStore));
+    sessionStorage.setItem(getSessionKey(), stringifyStripped(requests));
   } catch {
     // Quota exceeded — try storing just the last 100 requests
     try {
-      sessionStorage.setItem(
-        getSessionKey(),
-        JSON.stringify(requests.slice(-100).map(stripHeavyFields))
-      );
+      sessionStorage.setItem(getSessionKey(), stringifyStripped(requests.slice(-100)));
     } catch {
       sessionStorage.removeItem(getSessionKey());
     }

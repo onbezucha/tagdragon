@@ -537,10 +537,12 @@ export function resetConfig(): void {
 }
 
 // Flush debounced config save on panel close to prevent data loss
-window.addEventListener('beforeunload', () => {
-  if (saveTimer) {
-    clearTimeout(saveTimer);
-    saveTimer = null;
-    void saveConfig();
-  }
-});
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeunload', () => {
+    if (saveTimer) {
+      clearTimeout(saveTimer);
+      saveTimer = null;
+      void saveConfig();
+    }
+  });
+}

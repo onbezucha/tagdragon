@@ -8,9 +8,10 @@ export const bingAds: Provider = {
 
   parseParams(url: string, postBody: unknown): Record<string, string | undefined> {
     const p = getParams(url, postBody);
-    return {
+    const result: Record<string, string | undefined> = {
       // Event
       Event: p.evt,
+      _eventName: p.evt,
       // Tag Info
       'Tag ID': p.ti,
       'Tag Manager': p.tm,
@@ -38,5 +39,6 @@ export const bingAds: Provider = {
       'Load Time': p.lt ? `${p.lt}ms` : undefined,
       Consent: p.cdb,
     };
+    return result;
   },
 } as const;

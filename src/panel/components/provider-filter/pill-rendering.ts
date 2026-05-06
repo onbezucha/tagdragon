@@ -7,7 +7,6 @@ import { esc } from '../../utils/format';
 import {
   getActiveProviders,
   getHiddenProviders,
-  getAllRequests,
   getFilterText,
   getFilterEventType,
   getFilterUserId,
@@ -16,6 +15,7 @@ import {
   getFilterHasParam,
   syncHiddenProviders,
 } from '../../state';
+import { onProviderPillToggled } from './popover';
 import { getProviderGroup, UNGROUPED_ID, UNGROUPED_LABEL } from '@/shared/provider-groups';
 import { getCachedIcon } from '../../utils/icon-builder';
 import { GROUP_ICONS } from '../../utils/group-icons';
@@ -35,6 +35,9 @@ function getGroupIconSvg(groupId: string): string {
 
 // Cache DOM elements to avoid repeated querySelector calls
 const _groupCache = new Map<string, HTMLElement>();
+
+/** Incremental provider counts — avoids O(N) full-scan on every request. */
+const _providerCounts = new Map<string, number>();
 
 type GroupState = 'all' | 'partial' | 'none';
 
@@ -149,7 +152,7 @@ export function ensureProviderPill(
 ): void {
   const activeProviders = getActiveProviders();
   if (activeProviders.has(data.provider)) {
-    updateProviderCounts();
+    incrementProviderCount(data.provider);
     return;
   }
   activeProviders.add(data.provider);
@@ -200,7 +203,7 @@ export function ensureProviderPill(
   });
   $pillsContainer.appendChild(pill);
 
-  updateProviderCounts();
+  incrementProviderCount(data.provider);
   updateFilterBarVisibility();
   updateGroupStates();
   updateFooterSummary();
@@ -210,17 +213,44 @@ export function ensureProviderPill(
 // ─── COUNTS ───────────────────────────────────────────────────────────────────
 
 /**
- * Update provider counts in pills and group badges.
+ * Increment the cached count for a provider and update its pill + group badge.
+ */
+export function incrementProviderCount(provider: string): void {
+  const newCount = (_providerCounts.get(provider) ?? 0) + 1;
+  _providerCounts.set(provider, newCount);
+
+  // Update the specific pill's count display
+  const pill = document.querySelector(`.ppill[data-provider="${CSS.escape(provider)}"]`);
+  if (pill) {
+    const countEl = pill.querySelector('.ppill-count') as HTMLElement;
+    if (countEl) countEl.textContent = String(newCount);
+  }
+
+  // Update the group badge for this provider
+  const group = getProviderGroup(provider);
+  const groupId = group?.id ?? UNGROUPED_ID;
+  const groupEl = DOM.providerGroupList?.querySelector(
+    `.pgroup[data-group="${CSS.escape(groupId)}"]`
+  );
+  if (groupEl) {
+    const $badge = groupEl.querySelector('.pgroup-count') as HTMLElement;
+    if ($badge) {
+      let total = 0;
+      qsa('.ppill', groupEl).forEach((p) => {
+        total += _providerCounts.get((p as HTMLElement).dataset.provider!) ?? 0;
+      });
+      $badge.textContent = total > 0 ? String(total) : '';
+    }
+  }
+}
+
+/**
+ * Update provider counts in pills and group badges from cache.
  */
 export function updateProviderCounts(): void {
-  const counts: Record<string, number> = {};
-  getAllRequests().forEach((req) => {
-    counts[req.provider] = (counts[req.provider] || 0) + 1;
-  });
-
   qsa('.ppill').forEach((pill) => {
     const provider = (pill as HTMLElement).dataset.provider!;
-    const count = counts[provider] || 0;
+    const count = _providerCounts.get(provider) ?? 0;
     const countEl = pill.querySelector('.ppill-count') as HTMLElement;
     if (countEl) countEl.textContent = String(count);
   });
@@ -234,10 +264,28 @@ export function updateProviderCounts(): void {
     let total = 0;
     qsa('.ppill', group).forEach((pill) => {
       const provider = (pill as HTMLElement).dataset.provider!;
-      total += counts[provider] || 0;
+      total += _providerCounts.get(provider) ?? 0;
     });
     $badge.textContent = total > 0 ? String(total) : '';
   });
+}
+
+/**
+ * Reset the provider count cache (e.g., when requests are cleared).
+ */
+export function resetProviderCounts(): void {
+  _providerCounts.clear();
+}
+
+/**
+ * Bulk-set provider counts from an external source (e.g., after pruning).
+ * Syncs the cache without touching the DOM — call updateProviderCounts() after to refresh display.
+ */
+export function setProviderCounts(counts: Record<string, number>): void {
+  _providerCounts.clear();
+  for (const [provider, count] of Object.entries(counts)) {
+    _providerCounts.set(provider, count);
+  }
 }
 
 // ─── TOGGLE ───────────────────────────────────────────────────────────────────
@@ -275,6 +323,7 @@ function toggleProvider(
   updateGroupStates();
   updateFooterSummary();
   updateHiddenBadge();
+  onProviderPillToggled();
 }
 
 // ─── VISIBILITY ───────────────────────────────────────────────────────────────

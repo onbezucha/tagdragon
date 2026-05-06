@@ -7,6 +7,7 @@ import { formatBytes } from '@/panel/utils/format';
 // ─── DOM REFS ─────────────────────────────────────────────────────────────────
 
 const $devtoolsWarning = document.getElementById('devtools-warning') as HTMLElement;
+const $loadingSkeleton = document.getElementById('loading-skeleton') as HTMLElement;
 const $statusDot = document.getElementById('status-dot') as HTMLElement;
 const $statusText = document.getElementById('status-text') as HTMLElement;
 const $btnPause = document.getElementById('btn-pause') as HTMLButtonElement;
@@ -48,9 +49,6 @@ function formatRelativeTime(isoString: string | null): string {
 // ─── RENDER ───────────────────────────────────────────────────────────────────
 
 function renderStats(stats: PopupStatsResponse): void {
-  // DevTools warning
-  $devtoolsWarning.classList.toggle('hidden', stats.isDevToolsOpen);
-
   // Status bar
   const paused = stats.isPaused;
   $statusDot.className = `dot ${paused ? 'paused' : 'recording'}`;
@@ -119,11 +117,30 @@ async function loadStats(): Promise<void> {
 
     if (response?.ok && response.data) {
       currentStats = response.data;
+
+      // Hide DevTools warning if DevTools is open
+      if (response.data.isDevToolsOpen) {
+        $devtoolsWarning.classList.add('hidden');
+      }
+
+      // Hide skeleton and show content
+      $loadingSkeleton.classList.add('hidden');
       renderStats(response.data);
+    } else {
+      // No data - show error state
+      showErrorState();
     }
   } catch {
-    // Background may not be ready
+    // Background may not be ready - show error state
+    showErrorState();
   }
+}
+
+function showErrorState(): void {
+  $loadingSkeleton.classList.add('hidden');
+  $devtoolsWarning.classList.add('hidden');
+  $providersEmpty.textContent = 'Failed to load stats';
+  $providersEmpty.classList.remove('hidden');
 }
 
 // ─── EVENT HANDLERS ───────────────────────────────────────────────────────────
@@ -188,6 +205,9 @@ async function init(): Promise<void> {
   // Get current tab ID
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   currentTabId = tab?.id ?? null;
+
+  // Show loading skeleton immediately while fetching stats
+  $loadingSkeleton.classList.remove('hidden');
 
   await loadStats();
 }

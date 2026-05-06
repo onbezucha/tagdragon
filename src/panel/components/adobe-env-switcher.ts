@@ -102,6 +102,7 @@ function updateEnvBadge(env: string, isWarning: boolean): void {
   if (!$envBadge) return;
 
   $envBadge.classList.remove('hidden');
+  $envBadge.classList.remove('env-badge--dev', 'env-badge--acc');
   if ($envSeparator) $envSeparator.style.display = '';
 
   const labels: Record<string, string> = { dev: 'DEV', acc: 'ACC', prod: 'PROD' };
@@ -110,6 +111,8 @@ function updateEnvBadge(env: string, isWarning: boolean): void {
   if (isWarning) {
     $envBadge.dataset.env = 'warning';
     if ($envBadgeLabel) $envBadgeLabel.textContent = labels[env] + ' \u26a0';
+    if (env === 'dev') $envBadge.classList.add('env-badge--dev');
+    if (env === 'acc') $envBadge.classList.add('env-badge--acc');
   } else {
     $envBadge.dataset.env = env;
     if ($envBadgeLabel) $envBadgeLabel.textContent = labels[env] || env.toUpperCase();

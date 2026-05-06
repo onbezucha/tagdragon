@@ -200,4 +200,8 @@
   transition: color 0.15s, background 0.15s;
 }
 .copy-action-btn:hover { background: var(--bg-3); color: var(--text-1); }
-.copy-action-btn.copied { color: var(--green); border-color: var(--green); }
+.copy-action-btn.copied {
+  color: var(--green);
+  border-color: var(--green);
+  transition: color 150ms var(--ease), border-color 150ms var(--ease);
+}

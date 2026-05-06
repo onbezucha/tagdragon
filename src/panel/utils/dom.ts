@@ -1,14 +1,27 @@
 // ─── DOM UTILITIES ───────────────────────────────────────────────────────────
 
-import { COPY_FLASH_MS } from '@/shared/constants';
+import { CHECK_SVG, COPY_FLASH_MS } from '@/shared/constants';
 
 /**
- * Apply a copy-flash animation to an element.
- * Adds 'copied' class and removes it after COPY_FLASH_MS.
+ * Apply unified copy-flash animation to an element containing an SVG icon.
+ * Swaps inner SVG to checkmark, adds 'copied' class, reverts after COPY_FLASH_MS.
  */
 export function flashCopyFeedback(el: HTMLElement): void {
+  // Uložit původní SVG (jen první <svg> element)
+  const originalSvg = el.querySelector('svg');
+  const originalHtml = originalSvg?.outerHTML ?? '';
+
+  // Nahradit checkmark SVG
+  el.innerHTML = CHECK_SVG;
+
+  // Aktivovat animaci
   el.classList.add('copied');
-  setTimeout(() => el.classList.remove('copied'), COPY_FLASH_MS);
+
+  setTimeout(() => {
+    // Vrátit původní SVG
+    el.innerHTML = originalHtml;
+    el.classList.remove('copied');
+  }, COPY_FLASH_MS);
 }
 
 /**

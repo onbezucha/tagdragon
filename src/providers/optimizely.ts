@@ -47,6 +47,8 @@ export const optimizely: Provider = {
     result['Client Version'] = str(body.clientVersion);
     result['Visitor ID'] = str(body.visitorId);
 
+    result._eventName = p.eventName;
+
     return result;
   },
 } as const;

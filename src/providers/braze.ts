@@ -1,6 +1,6 @@
 import type { Provider } from '@/types/provider';
 import { getParams } from './url-parser';
-import { formatJsonValue } from './parse-helpers';
+import { parsePostBodyJson, formatJsonValue } from './parse-helpers';
 
 export const braze: Provider = {
   name: 'Braze',
@@ -10,18 +10,14 @@ export const braze: Provider = {
   parseParams(url: string, postBody: unknown): Record<string, string | undefined> {
     const p = getParams(url, postBody);
     let eventName: string | undefined;
-    let body: Record<string, unknown> = {};
+    const body = parsePostBodyJson(postBody);
     try {
-      const har = postBody as { text?: string } | undefined;
-      if (har?.text) {
-        body = JSON.parse(har.text);
-        const events = body.events as Array<Record<string, unknown>> | undefined;
-        if (Array.isArray(events) && events.length > 0) {
-          eventName = events[0].name as string | undefined;
-        }
-        if (!eventName) {
-          eventName = (body.event_name ?? body.name) as string | undefined;
-        }
+      const events = body.events as Array<Record<string, unknown>> | undefined;
+      if (Array.isArray(events) && events.length > 0) {
+        eventName = events[0].name as string | undefined;
+      }
+      if (!eventName) {
+        eventName = (body.event_name ?? body.name) as string | undefined;
       }
     } catch {
       /* ignore */
@@ -40,10 +36,16 @@ export const braze: Provider = {
       const props = body.events[0].properties as Record<string, unknown> | undefined;
       if (props) {
         for (const [key, value] of Object.entries(props)) {
-          result[`ep.${key}`] = formatJsonValue(value);
+          if (key.startsWith('ep_')) {
+            result[`ep.${key.slice(3)}`] = formatJsonValue(value);
+          } else {
+            result[`ep.${key}`] = formatJsonValue(value);
+          }
         }
       }
     }
+
+    result._eventName = eventName ?? p.event_name ?? p.name;
 
     return result;
   },

@@ -14,10 +14,9 @@ import { GTM_CATEGORIES } from './google/gtm';
 import { ANALYTICS_CLIENT_CATEGORIES } from './adobe/analytics-client';
 import { ANALYTICS_SERVER_CATEGORIES } from './adobe/analytics-server';
 import { TARGET_CATEGORIES } from './adobe/target';
-import { AAM_CATEGORIES } from './adobe/aam';
+
 import { ECID_CATEGORIES } from './adobe/ecid';
-import { HEARTBEAT_CATEGORIES } from './adobe/heartbeat';
-import { DTM_CATEGORIES } from './adobe/dtm';
+
 import { LAUNCH_CHINA_CATEGORIES } from './adobe/launch-china';
 
 // Meta
@@ -25,6 +24,7 @@ import { PIXEL_CATEGORIES } from './meta/pixel';
 
 // Microsoft
 import { CLARITY_CATEGORIES } from './microsoft/clarity';
+import { CLARITY_TAG_CATEGORIES } from './microsoft/clarity-tag';
 import { BING_ADS_CATEGORIES } from './microsoft/bing-ads';
 
 // Marketing
@@ -49,7 +49,6 @@ import { THE_TRADE_DESK_CATEGORIES } from './marketing/thetradedesk';
 import { TIKTOK_CATEGORIES } from './marketing/tiktok';
 import { TWITTER_PIXEL_CATEGORIES } from './marketing/twitter-pixel';
 import { VIBES_CATEGORIES } from './marketing/vibes';
-import { ZEMANTA_CATEGORIES } from './marketing/zemanta';
 
 // Analytics
 import { AMPLITUDE_CATEGORIES } from './analytics/amplitude';
@@ -66,8 +65,6 @@ import { MIXPANEL_CATEGORIES } from './analytics/mixpanel';
 import { PARSELY_CATEGORIES } from './analytics/parsely';
 import { PIWIK_PRO_CATEGORIES } from './analytics/piwik-pro';
 import { RUDDERSTACK_CATEGORIES } from './analytics/rudderstack';
-import { SCORECARD_CATEGORIES } from './analytics/scorecard';
-import { WEBTRENDS_CATEGORIES } from './analytics/webtrends';
 
 // Tag Manager
 import { ENSIGHTEN_CATEGORIES } from './tagmanager/ensighten';
@@ -104,10 +101,7 @@ export const PROVIDER_CATEGORIES: AllProviderCategories = {
   'Adobe Client-Side': ANALYTICS_CLIENT_CATEGORIES,
   'Adobe Server-Side': ANALYTICS_SERVER_CATEGORIES,
   'Adobe Target': TARGET_CATEGORIES,
-  'Adobe AAM': AAM_CATEGORIES,
   'Adobe ECID': ECID_CATEGORIES,
-  'Adobe Heartbeat': HEARTBEAT_CATEGORIES,
-  'Adobe DTM': DTM_CATEGORIES,
   'Adobe Launch (CN)': LAUNCH_CHINA_CATEGORIES,
 
   // Meta
@@ -115,6 +109,7 @@ export const PROVIDER_CATEGORIES: AllProviderCategories = {
 
   // Microsoft
   'Microsoft Clarity': CLARITY_CATEGORIES,
+  'Microsoft Clarity Tag': CLARITY_TAG_CATEGORIES,
   'Bing Ads': BING_ADS_CATEGORIES,
 
   // Marketing
@@ -139,8 +134,6 @@ export const PROVIDER_CATEGORIES: AllProviderCategories = {
   'TikTok Pixel': TIKTOK_CATEGORIES,
   'X (Twitter) Pixel': TWITTER_PIXEL_CATEGORIES,
   Vibes: VIBES_CATEGORIES,
-  Zemanta: ZEMANTA_CATEGORIES,
-
   // Analytics
   Amplitude: AMPLITUDE_CATEGORIES,
   'AT Internet': AT_INTERNET_CATEGORIES,
@@ -156,9 +149,6 @@ export const PROVIDER_CATEGORIES: AllProviderCategories = {
   'Parse.ly': PARSELY_CATEGORIES,
   'Piwik PRO': PIWIK_PRO_CATEGORIES,
   RudderStack: RUDDERSTACK_CATEGORIES,
-  Scorecard: SCORECARD_CATEGORIES,
-  Webtrends: WEBTRENDS_CATEGORIES,
-
   // Tag Manager
   Ensighten: ENSIGHTEN_CATEGORIES,
   'Piwik PRO TM': PIWIK_PRO_TM_CATEGORIES,

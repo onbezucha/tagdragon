@@ -4,7 +4,7 @@ import { getParams } from './url-parser';
 export const sixsense: Provider = {
   name: '6Sense',
   color: '#6C63FF',
-  pattern: /j\.6sc\.co|b\.6sc\.co/,
+  pattern: /[jb]\.6sc\.co\b/,
 
   parseParams(url: string, postBody: unknown): Record<string, string | undefined> {
     const p = getParams(url, postBody);

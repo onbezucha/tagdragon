@@ -58,11 +58,11 @@ function normalizeProduct(item: Record<string, unknown>): ProductItem {
  * Currency comes from ecommerce.currency field, never hardcoded.
  */
 export function extractCurrency(ec: Record<string, unknown>): string {
-  if (typeof ec['currency'] === 'string' && ec['currency']) return ec['currency'];
+  if (typeof ec['currency'] === 'string' && ec['currency'].trim()) return ec['currency'];
   const purchase = ec['purchase'] as Record<string, unknown> | undefined;
   if (purchase && typeof purchase['actionField'] === 'object') {
     const af = purchase['actionField'] as Record<string, unknown>;
-    if (typeof af['currency'] === 'string') return af['currency'];
+    if (typeof af['currency'] === 'string' && af['currency'].trim()) return af['currency'];
   }
   return '';
 }

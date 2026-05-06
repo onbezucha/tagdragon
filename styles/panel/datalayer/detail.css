@@ -144,3 +144,17 @@
 }
 
 .dl-copy-btn:hover { background: var(--bg-3); }
+
+.dl-copy-btn.copied {
+    color: var(--green);
+    border-color: var(--green);
+    transition: color 150ms var(--ease), border-color 150ms var(--ease);
+}
+
+/* === VALIDATION ERROR HIGHLIGHTING === */
+.dl-kv-key-invalid {
+  color: var(--red);
+  border-left: 2px solid var(--red);
+  padding-left: 6px;
+  background: rgba(239, 68, 68, 0.08);
+}

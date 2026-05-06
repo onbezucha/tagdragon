@@ -1,7 +1,9 @@
 // ─── DETAIL PANE COMPONENT ───────────────────────────────────────────────────
 
 import type { ParsedRequest, TabName } from '@/types/request';
-import { DOM, qsa, flashCopyFeedback } from '../utils/dom';
+import { DOM, qsa } from '../utils/dom';
+import { copyToClipboard, showCopyFeedback } from '../utils/clipboard';
+import { setupTruncationTooltips } from '../utils/truncation';
 import { categorizeParams } from '../utils/categorize';
 import { renderCategorizedParams } from '../detail-tabs/decoded';
 import { renderParamTable } from '../detail-tabs/query';
@@ -54,6 +56,52 @@ export function clearTabCache(): void {
 }
 
 /**
+ * Re-render the currently selected request's detail pane.
+ * Used when a display setting changes (e.g. showEmptyParams toggle).
+ *
+ * Invalidates _categorized on ALL requests so that switching to another
+ * request after a toggle change always produces a fresh categorization.
+ */
+export function refreshCurrentDetail(): void {
+  // Invalidate _categorized on ALL requests — the filter setting is global
+  for (const req of getRequestMap().values()) {
+    req._categorized = undefined;
+  }
+
+  // Clear entire tab cache — stale HTML for any request would be wrong
+  tabCache.clear();
+
+  const selectedId = getSelectedId();
+  if (!selectedId) return;
+
+  const req = getRequestMap().get(selectedId);
+  if (!req) return;
+
+  // Re-categorize current request immediately
+  const cfg = getConfig();
+  req._categorized = categorizeParams(req.decoded, req.provider, cfg.showEmptyParams);
+
+  // Re-render the current tab
+  const availableTabs = getAvailableTabs(req);
+  const currentTab = getActiveTab();
+  if (availableTabs.includes(currentTab)) {
+    renderTab(currentTab, req);
+    autoExpandSections();
+  } else {
+    // Current tab may have disappeared (e.g. decoded tab removed when all params filtered out)
+    // Fallback to first available tab or defaultTab
+    const cfg2 = getConfig();
+    const fallback = availableTabs.includes(cfg2.defaultTab) ? cfg2.defaultTab : availableTabs[0];
+    if (fallback) {
+      setActiveTab(fallback);
+      updateTabStates(availableTabs);
+      renderTab(fallback, req);
+      autoExpandSections();
+    }
+  }
+}
+
+/**
  * Select and display a request in the detail pane.
  * @param data Request data
  * @param row The clicked row element
@@ -66,7 +114,8 @@ export function selectRequest(data: ParsedRequest, row: HTMLElement): void {
 
   // Lazy categorization – compute only when user actually views the request
   if (!data._categorized) {
-    data._categorized = categorizeParams(data.decoded, data.provider);
+    const cfg = getConfig();
+    data._categorized = categorizeParams(data.decoded, data.provider, cfg.showEmptyParams);
   }
 
   const $detail = DOM.detail;
@@ -287,6 +336,9 @@ function renderTab(tab: TabName, data: ParsedRequest): void {
       $detailContent.innerHTML = renderResponse(data.responseBody);
       break;
   }
+
+  // Set up truncation tooltips after content is in the DOM
+  setupTruncationTooltips($detailContent);
 }
 
 /**
@@ -342,26 +394,29 @@ export function closeDetailPane(): void {
  * Handles Copy URL, Copy as cURL, and Copy decoded params.
  */
 export function initDetailCopyHandlers(): void {
-  document.getElementById('btn-copy-url')?.addEventListener('click', () => {
+  document.getElementById('btn-copy-url')?.addEventListener('click', async () => {
     if (!_currentRequest) return;
-    navigator.clipboard.writeText(_currentRequest.url).catch(() => {});
     const btn = document.getElementById('btn-copy-url');
-    if (btn) flashCopyFeedback(btn);
+    if (!btn) return;
+    const success = await copyToClipboard(_currentRequest.url);
+    if (success) showCopyFeedback(btn, true);
   });
 
-  document.getElementById('btn-copy-curl')?.addEventListener('click', () => {
+  document.getElementById('btn-copy-curl')?.addEventListener('click', async () => {
     if (!_currentRequest) return;
-    navigator.clipboard.writeText(buildCurl(_currentRequest)).catch(() => {});
     const btn = document.getElementById('btn-copy-curl');
-    if (btn) flashCopyFeedback(btn);
+    if (!btn) return;
+    const success = await copyToClipboard(buildCurl(_currentRequest));
+    if (success) showCopyFeedback(btn, true);
   });
 
-  document.getElementById('btn-copy-params')?.addEventListener('click', () => {
+  document.getElementById('btn-copy-params')?.addEventListener('click', async () => {
     if (!_currentRequest) return;
-    const params = { ...(_currentRequest.decoded || {}) };
-    navigator.clipboard.writeText(JSON.stringify(params, null, 2)).catch(() => {});
     const btn = document.getElementById('btn-copy-params');
-    if (btn) flashCopyFeedback(btn);
+    if (!btn) return;
+    const params = { ...(_currentRequest.decoded || {}) };
+    const success = await copyToClipboard(JSON.stringify(params, null, 2));
+    if (success) showCopyFeedback(btn, true);
   });
 }
 

@@ -4,6 +4,10 @@
 export const COPY_SVG =
   '<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="4" y="4" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M10 4V2.5A1.5 1.5 0 008.5 1H2.5A1.5 1.5 0 001 2.5v6A1.5 1.5 0 002.5 10H4" stroke="currentColor" stroke-width="1.2"/></svg>';
 
+/** Checkmark SVG — used for copy confirmation morph */
+export const CHECK_SVG =
+  '<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7.5L5.5 10L11 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
 export interface AppConfig {
   maxRequests: number;
   autoPrune: boolean;
@@ -15,6 +19,7 @@ export interface AppConfig {
   hiddenProviders: string[];
   defaultTab: 'decoded' | 'query' | 'post' | 'headers' | 'response';
   compactRows: boolean;
+  showEmptyParams: boolean;
   timestampFormat: 'absolute' | 'relative' | 'elapsed';
   exportFormat: 'json' | 'csv';
   dlSortField: 'time' | 'keycount' | 'source';
@@ -35,6 +40,7 @@ export const DEFAULT_CONFIG: AppConfig = {
   hiddenProviders: [],
   defaultTab: 'decoded',
   compactRows: false,
+  showEmptyParams: false,
   timestampFormat: 'absolute',
   exportFormat: 'json',
   dlSortField: 'time',

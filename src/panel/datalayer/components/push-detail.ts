@@ -4,6 +4,7 @@
 import type { DataLayerPush } from '@/types/datalayer';
 import type { ParsedRequest } from '@/types/request';
 import { DOM } from '../../utils/dom';
+import { copyToClipboard, showCopyFeedback } from '../../utils/clipboard';
 import { formatTimestamp } from '../../utils/format';
 import { getConfig, getAllRequests } from '../../state';
 import {
@@ -270,18 +271,9 @@ function renderPushDataTab(container: HTMLElement, push: DataLayerPush): void {
   const copyBtn = document.createElement('button');
   copyBtn.className = 'dl-copy-btn';
   copyBtn.textContent = 'Copy as JSON';
-  copyBtn.addEventListener('click', () => {
-    navigator.clipboard
-      .writeText(JSON.stringify(push.data, null, 2))
-      .then(() => {
-        copyBtn.textContent = 'Copied!';
-        setTimeout(() => {
-          copyBtn.textContent = 'Copy as JSON';
-        }, 1500);
-      })
-      .catch(() => {
-        /* ignore */
-      });
+  copyBtn.addEventListener('click', async () => {
+    const success = await copyToClipboard(JSON.stringify(push.data, null, 2));
+    showCopyFeedback(copyBtn, success);
   });
   container.appendChild(copyBtn);
 }
@@ -348,11 +340,10 @@ function renderKvRow(
   // Copy value on click
   valEl.title = 'Click to copy';
   valEl.style.cursor = 'pointer';
-  valEl.addEventListener('click', () => {
+  valEl.addEventListener('click', async () => {
     const text = typeof value === 'object' ? JSON.stringify(value, null, 2) : String(value ?? '');
-    navigator.clipboard.writeText(text).catch(() => {
-      /* ignore */
-    });
+    const success = await copyToClipboard(text);
+    showCopyFeedback(valEl, success);
   });
 
   row.appendChild(keyEl);
@@ -413,13 +404,24 @@ function renderCorrelationTab(
   const allRequests: ParsedRequest[] = getAllRequests();
   const windowMs = getCorrelationWindow();
 
+  // Track the value when tab was opened to detect custom changes
+  const defaultWindowMs = 2000;
+  const initialValue = windowMs;
+
   // Time window controls
   const controls = document.createElement('div');
   controls.className = 'dl-correlation-controls';
 
   const label = document.createElement('label');
-  label.textContent = 'Time window:';
+  label.textContent = 'Per-push time window:';
   controls.appendChild(label);
+
+  // Custom badge (shown when slider differs from global default)
+  const customBadge = document.createElement('span');
+  customBadge.className = 'dl-custom-badge';
+  customBadge.textContent = 'Custom';
+  customBadge.style.cssText = 'display:none;';
+  controls.appendChild(customBadge);
 
   const slider = document.createElement('input');
   slider.type = 'range';
@@ -434,6 +436,20 @@ function renderCorrelationTab(
   valueDisplay.style.cssText = 'font-size:11px;color:var(--text-2);min-width:30px;';
   controls.appendChild(valueDisplay);
 
+  // Reset to default link
+  const resetLink = document.createElement('a');
+  resetLink.href = '#';
+  resetLink.className = 'dl-reset-link';
+  resetLink.textContent = 'Reset to default';
+  resetLink.style.cssText =
+    'display:none;margin-left:8px;font-size:11px;color:var(--accent);cursor:pointer;';
+  resetLink.addEventListener('click', (e) => {
+    e.preventDefault();
+    freshSlider.value = String(defaultWindowMs);
+    freshSlider.dispatchEvent(new Event('input'));
+  });
+  controls.appendChild(resetLink);
+
   const description = document.createElement('div');
   description.style.cssText = 'font-size:10px;color:var(--text-3);margin-top:4px;';
   description.textContent =
@@ -446,12 +462,24 @@ function renderCorrelationTab(
   const correlated = findCorrelatedRequests(push, allRequests, windowMs);
   renderCorrelation(container, correlated, onGotoNetwork, windowMs);
 
+  // Helper to update badge and reset link visibility
+  const updateCustomIndicator = (ms: number) => {
+    if (ms !== defaultWindowMs) {
+      customBadge.style.display = 'inline';
+      resetLink.style.display = 'inline';
+    } else {
+      customBadge.style.display = 'none';
+      resetLink.style.display = 'none';
+    }
+  };
+
   // Slider interaction — clone to reset any previously stacked listeners before attaching
   const freshSlider = slider.cloneNode(true) as HTMLInputElement;
   slider.replaceWith(freshSlider);
   freshSlider.addEventListener('input', () => {
     const ms = Number(freshSlider.value);
     valueDisplay.textContent = `${(ms / 1000).toFixed(1)}s`;
+    updateCustomIndicator(ms);
     setCorrelationWindow(ms);
 
     // Re-render correlation list (keep controls)
@@ -465,6 +493,9 @@ function renderCorrelationTab(
     const newCorrelated = findCorrelatedRequests(push, allRequests, ms);
     renderCorrelation(container, newCorrelated, onGotoNetwork, ms);
   });
+
+  // Show badge if initial value differs from default
+  updateCustomIndicator(initialValue);
 }
 
 // ─── LIVE TAB ──────────────────────────────────────────────────────────────

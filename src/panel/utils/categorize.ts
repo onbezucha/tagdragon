@@ -39,7 +39,8 @@ export interface ParameterValidationResult {
  */
 export function categorizeParams(
   decoded: Record<string, string | undefined>,
-  providerName: string
+  providerName: string,
+  showEmptyParams = false
 ): CategorizedParams {
   const categorized: CategorizedParams = {};
   const providerCats = PROVIDER_CATEGORIES[providerName] || {};
@@ -88,6 +89,20 @@ export function categorizeParams(
     if (!assigned) {
       if (!categorized._other) categorized._other = {};
       categorized._other[param] = value;
+    }
+  }
+
+  // 3.5. Filter out undefined/empty values when showEmptyParams is disabled
+  if (!showEmptyParams) {
+    for (const catKey in categorized) {
+      const bucket = categorized[catKey];
+      const keysToDelete: string[] = [];
+      for (const paramKey in bucket) {
+        if (bucket[paramKey] === undefined || bucket[paramKey] === '') {
+          keysToDelete.push(paramKey);
+        }
+      }
+      for (const k of keysToDelete) delete bucket[k];
     }
   }
 

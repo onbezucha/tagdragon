@@ -415,3 +415,10 @@
 /* Method pill color variants */
 .hpill[data-method="GET"] { color: var(--green); }
 .hpill[data-method="POST"] { color: var(--accent); }
+
+/* Disabled Show/Hide All buttons */
+#btn-show-all-providers.disabled-action,
+#btn-hide-all-providers.disabled-action {
+  opacity: 0.4;
+  pointer-events: none;
+}

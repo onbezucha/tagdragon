@@ -30,7 +30,7 @@ const PNG_TO_PROVIDERS = {
   'BINGADS16x16.png': ['Bing Ads'],
   'BRAZE16x16.png': ['Braze'],
   'BREVO16x16.png': ['Brevo'],
-  'COMSCORE16x16.png': ['Comscore', 'Scorecard'],
+  'COMSCORE16x16.png': ['Comscore'],
   'CRAZYEGG16x16.png': ['Crazy Egg'],
   'CRITEOONETAG16x16.png': ['Criteo'],
   'DEMANDBASEENGAGEMENT16x16.png': ['Demandbase'],

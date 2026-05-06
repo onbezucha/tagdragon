@@ -1,4 +1,5 @@
 import type { Provider } from '@/types/provider';
+import { parsePostBodyJson } from './parse-helpers';
 
 export const splitIo: Provider = {
   name: 'Split',
@@ -6,28 +7,21 @@ export const splitIo: Provider = {
   pattern: /events\.split\.io\/api\/events/,
 
   parseParams(_url: string, postBody: unknown): Record<string, string | undefined> {
-    let eventType: string | undefined;
-    let key: string | undefined;
-    let trafficType: string | undefined;
-    let value: string | undefined;
-    try {
-      const har = postBody as { text?: string } | undefined;
-      if (har?.text) {
-        const body = JSON.parse(har.text) as Array<Record<string, unknown>>;
-        const first = body?.[0];
-        eventType = first?.eventTypeId as string | undefined;
-        key = first?.key as string | undefined;
-        trafficType = first?.trafficTypeName as string | undefined;
-        value = first?.value !== undefined ? String(first.value) : undefined;
-      }
-    } catch {
-      /* ignore */
-    }
-    return {
+    const parsed = parsePostBodyJson(postBody);
+    // Split.io sends an array of events
+    const body = Array.isArray(parsed) ? parsed : [parsed];
+    const first = body[0] as Record<string, unknown> | undefined;
+    const eventType: string | undefined = first?.eventTypeId as string | undefined;
+    const key: string | undefined = first?.key as string | undefined;
+    const trafficType: string | undefined = first?.trafficTypeName as string | undefined;
+    const value: string | undefined = first?.value !== undefined ? String(first.value) : undefined;
+    const result: Record<string, string | undefined> = {
       Event: eventType,
+      _eventName: eventType,
       Key: key,
       'Traffic Type': trafficType,
       Value: value,
     };
+    return result;
   },
 } as const;

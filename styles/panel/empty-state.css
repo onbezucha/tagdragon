@@ -156,6 +156,17 @@
   max-width: 280px;
 }
 
+/* ─── Hint (actionable instructions) ──────────────────────────────────── */
+
+.es-hint {
+  font-size: 13px;
+  text-align: center;
+  color: var(--text-3);
+  margin-top: 12px;
+  max-width: 320px;
+  line-height: 1.5;
+}
+
 /* ─── Paused state (Network only) ─────────────────────────────────────── */
 
 body.paused .es-container .es-brand-subtitle {

@@ -24,6 +24,9 @@ const dlState: DataLayerState = {
   _sourceCountMap: new Map(),
 };
 
+/** Cached event name counts — invalidated on push add/clear/prune. */
+let _eventNameCache: Array<[string, number]> | null = null;
+
 // ─── FILTER STATE ────────────────────────────────────────────────────────────
 
 interface DlFilterState {
@@ -56,6 +59,7 @@ const MAX_CUMULATIVE_CACHE = 50;
 export function addDlPush(push: DataLayerPush): boolean {
   dlState.all.push(push);
   dlState.map.set(push.id, push);
+  _eventNameCache = null;
 
   // Increment source count
   const sourceCountMap = dlState._sourceCountMap ?? new Map();
@@ -100,6 +104,7 @@ export function clearDlPushes(): void {
   dlState.sourceLabels.clear();
   dlState.selectedId = null;
   dlState._sourceCountMap = new Map();
+  _eventNameCache = null;
   _cumulativeCache.clear();
 }
 
@@ -160,6 +165,8 @@ export function getDlSourceCount(source: DataLayerSource): number {
 }
 
 export function getDlEventNames(): Array<[string, number]> {
+  if (_eventNameCache !== null) return _eventNameCache;
+
   const counts: Record<string, number> = {};
   for (const push of dlState.all) {
     const eventName = push.data?.event;
@@ -167,7 +174,8 @@ export function getDlEventNames(): Array<[string, number]> {
       counts[eventName] = (counts[eventName] || 0) + 1;
     }
   }
-  return Object.entries(counts).sort((a, b) => b[1] - a[1]);
+  _eventNameCache = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+  return _eventNameCache;
 }
 
 // ─── FILTER STATE ────────────────────────────────────────────────────────────

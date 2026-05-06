@@ -76,6 +76,90 @@
   opacity: 1;
 }
 
+.dl-watch-add-btn {
+  background: var(--accent);
+  color: var(--bg-0);
+  border: none;
+  border-radius: 3px;
+  width: 18px;
+  height: 18px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+  margin-left: 4px;
+  padding: 0;
+  line-height: 1;
+}
+
+.dl-watch-add-btn:hover {
+  opacity: 0.8;
+}
+
+/* E2: Watch path value display */
+.dl-watch-chip-path {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--accent);
+}
+
+.dl-watch-chip-value {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-1);
+  margin-left: 6px;
+  padding: 1px 4px;
+  background: var(--bg-1);
+  border-radius: 3px;
+}
+
+.dl-watch-value-missing {
+  color: var(--text-3);
+  font-style: italic;
+}
+
+.dl-watch-value-missing::before {
+  content: '⚠ ';
+}
+
+.dl-watch-input {
+  background: var(--bg-0);
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  color: var(--text-1);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  padding: 4px 8px;
+  width: 100%;
+  outline: none;
+}
+
+/* E3: Tree controls */
+.dl-tree-controls {
+  display: flex;
+  gap: 8px;
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.dl-tree-control-btn {
+  background: none;
+  border: none;
+  color: var(--text-3);
+  font-size: 11px;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+
+.dl-tree-control-btn:hover {
+  background: var(--bg-2);
+  color: var(--text-1);
+}
+
 /* === DL TREE VIEW === */
 .dl-tree {
   overflow-y: auto;

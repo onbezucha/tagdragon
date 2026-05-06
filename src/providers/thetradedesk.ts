@@ -9,7 +9,7 @@ export const theTradeDesk: Provider = {
 
   parseParams(url: string, postRaw: unknown): Record<string, string | undefined> {
     const p = getParams(url, postRaw);
-    return {
+    const result: Record<string, string | undefined> = {
       'Advertiser ID': p['adv'],
       'Universal Pixel ID': p['upid'],
       Value: p['v'],
@@ -20,5 +20,7 @@ export const theTradeDesk: Provider = {
       'Custom X': p.tx,
       'Custom Y': p.ty,
     };
+    result._eventName = p.tdu;
+    return result;
   },
 } as const;

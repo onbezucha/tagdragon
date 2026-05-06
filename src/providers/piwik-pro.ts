@@ -48,6 +48,8 @@ export const piwikPro: Provider = {
       }
     }
 
+    result._eventName = p.action_name;
+
     return result;
   },
 } as const;

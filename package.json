@@ -1,7 +1,7 @@
 {
   "name": "tagdragon",
   "type": "module",
-  "version": "1.6.5",
+  "version": "1.7.0",
   "description": "Chrome DevTools extension that captures and decodes network requests from marketing/analytics tracking services",
   "main": "dist/panel.js",
   "scripts": {
@@ -13,6 +13,7 @@
     "build:js": "rollup -c --environment NODE_ENV:production",
     "clean": "rm -rf dist/*",
     "generate-icons": "node scripts/generate-icons.mjs",
+    "generate-provider-icons": "node scripts/generate-provider-icons.mjs",
     "analyze": "ANALYZE=true npm run build:js",
     "lint": "eslint src",
     "format": "prettier --write src",
@@ -50,6 +51,7 @@
     "eslint": "^10.2.0",
     "eslint-config-prettier": "^10.1.8",
     "husky": "^9.1.7",
+    "jsdom": "^26.1.0",
     "lint-staged": "^16.4.0",
     "lucide": "^1.7.0",
     "postcss": "^8.5.8",

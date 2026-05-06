@@ -49,11 +49,12 @@ export const googleAds: Provider = {
       }
     }
 
-    return {
+    const result: Record<string, string | undefined> = {
       'Conversion ID': conversionId,
       'Conversion Label': p.label,
       'Conversion Type': conversionType,
       Event: eventName,
+      _eventName: eventName,
       'Conversion Value': p.value ?? ecommTotalvalue,
       Currency: p.currency_code ?? p.currency,
       'Transaction ID': p.order_id ?? p.transaction_id,
@@ -75,5 +76,6 @@ export const googleAds: Provider = {
       'Product IDs': ecommProdid,
       'E-Commerce Type': ecommPagetype,
     };
+    return result;
   },
 };

@@ -53,6 +53,8 @@ export const tealium: Provider = {
       }
     }
 
+    result._eventName = result['Event'];
+
     return result;
   },
 } as const;

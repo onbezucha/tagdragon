@@ -51,6 +51,8 @@ export const metaPixel: Provider = {
       'Content Category': p['cd[content_category]'],
       'Num Items': p['cd[num_items]'],
       Contents: contentsDisplay,
+      'Predicted LTV': p['cd[predicted_ltv]'],
+      'Delivery Category': p['cd[delivery_category]'],
       // Tracking
       FBP: p.fbp,
       FBC: p.fbc,
@@ -64,6 +66,8 @@ export const metaPixel: Provider = {
       'Consent Flag': p.cf,
       Experiments: experiments.length > 0 ? experiments.join(', ') : undefined,
     };
+
+    result._eventName = p.ev;
 
     // Pass-through of custom cd[*] params not in whitelist
     const knownCd = new Set([

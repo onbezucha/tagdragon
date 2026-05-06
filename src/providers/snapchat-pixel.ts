@@ -11,9 +11,10 @@ export const snapchatPixel: Provider = {
     const body = parsePostBodyJson(postBody);
     const str = (v: unknown) => (v != null ? String(v) : undefined);
 
-    return {
+    const result: Record<string, string | undefined> = {
       // Core
       Event: str(body.event_type) ?? p.event_type,
+      _eventName: body.event_type as string | undefined,
       'Pixel ID': str(body.pixel_id) ?? p.pixel_id,
 
       // Page
@@ -38,5 +39,6 @@ export const snapchatPixel: Provider = {
       'UTM Medium': str(body.utm_medium),
       'UTM Campaign': str(body.utm_campaign),
     };
+    return result;
   },
 } as const;

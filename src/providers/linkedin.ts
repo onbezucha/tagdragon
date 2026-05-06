@@ -10,7 +10,7 @@ export const linkedin: Provider = {
 
   parseParams(url: string, postBody: unknown): Record<string, string | undefined> {
     const p = getParams(url, postBody);
-    return {
+    const result: Record<string, string | undefined> = {
       'Partner ID': p.pid,
       Conversion: p.conversionId,
       'Conversion Hash': p.ch,
@@ -18,5 +18,7 @@ export const linkedin: Provider = {
       'Conversion ID': p._litr,
       Version: p.v,
     };
+    result._eventName = p.conversionId;
+    return result;
   },
 } as const;

@@ -4,10 +4,19 @@ import { DOM, $ } from '../utils/dom';
 import { formatBytes } from '../utils/format';
 import { getAllRequests, getConfig, getStats, updateConfig } from '../state';
 import { getAllDlPushes, getDlVisibleCount, getDlTotalCount } from '../datalayer/state';
+import { renderProviderBreakdown } from './provider-breakdown';
 
 let pruneNotificationTimer: ReturnType<typeof setTimeout> | null = null;
 
 // ─── MEMORY INDICATOR ────────────────────────────────────────────────────────
+
+// Memory thresholds (as ratios 0-1, displayed as percentages in UI)
+// MEMORY_WARN_THRESHOLD: Orange warning state
+// MEMORY_DANGER_THRESHOLD: Red danger state
+// MEMORY_TOP_WARN_THRESHOLD: Top bar warning state
+const MEMORY_WARN_THRESHOLD = 0.8; // 80% — orange warning
+const MEMORY_DANGER_THRESHOLD = 0.95; // 95% — red danger
+const MEMORY_TOP_WARN_THRESHOLD = 0.6; // 60% — top bar warning
 
 /**
  * Update the memory indicator — colors the status bar text and fills the memory bar.
@@ -19,9 +28,9 @@ function updateMemoryIndicator($bar: HTMLElement | null): void {
 
   if (config.maxRequests > 0) {
     const usage = allRequests.length / config.maxRequests;
-    if (usage > 0.95) {
+    if (usage > MEMORY_DANGER_THRESHOLD) {
       $bar.style.color = 'var(--red)';
-    } else if (usage > 0.8) {
+    } else if (usage > MEMORY_WARN_THRESHOLD) {
       $bar.style.color = 'var(--orange)';
     } else {
       $bar.style.color = '';
@@ -35,8 +44,11 @@ function updateMemoryIndicator($bar: HTMLElement | null): void {
   if ($memFill && config.maxRequests > 0) {
     const pct = Math.min(100, (allRequests.length / config.maxRequests) * 100);
     $memFill.style.width = `${pct}%`;
-    $memFill.classList.toggle('critical', pct > 95);
-    $memFill.classList.toggle('warning', pct > 80 && pct <= 95);
+    $memFill.classList.toggle('critical', pct > MEMORY_DANGER_THRESHOLD * 100);
+    $memFill.classList.toggle(
+      'warning',
+      pct > MEMORY_WARN_THRESHOLD * 100 && pct <= MEMORY_DANGER_THRESHOLD * 100
+    );
   }
 
   // Update top memory bar (at top of list area)
@@ -44,8 +56,11 @@ function updateMemoryIndicator($bar: HTMLElement | null): void {
   if ($memFillTop && config.maxRequests > 0) {
     const pct = Math.min(100, (allRequests.length / config.maxRequests) * 100);
     $memFillTop.style.width = `${pct}%`;
-    $memFillTop.classList.toggle('critical', pct > 95);
-    $memFillTop.classList.toggle('warning', pct > 60 && pct <= 95);
+    $memFillTop.classList.toggle('critical', pct > MEMORY_DANGER_THRESHOLD * 100);
+    $memFillTop.classList.toggle(
+      'warning',
+      pct > MEMORY_TOP_WARN_THRESHOLD * 100 && pct <= MEMORY_DANGER_THRESHOLD * 100
+    );
   }
 }
 
@@ -69,7 +84,7 @@ export function updateStatusBar(
     const allRequests = getAllRequests();
     const total = allRequests.length;
     if (visibleCount !== total) {
-      $stats.textContent = `${visibleCount} of ${total} requests · filtered`;
+      $stats.textContent = `Showing ${visibleCount} of ${total}`;
     } else {
       $stats.textContent = `${total} requests`;
     }
@@ -88,6 +103,9 @@ export function updateStatusBar(
 
   // Memory warning — color the status-bar text
   updateMemoryIndicator($bar);
+
+  // Render provider breakdown in status bar
+  renderProviderBreakdown();
 }
 
 // ─── DATALAYER STATUS BAR ────────────────────────────────────────────────────
@@ -108,7 +126,7 @@ export function updateDlStatusBar(): void {
     const pushes = getAllDlPushes();
     const parts: string[] = [];
     if (visible !== total) {
-      parts.push(`${visible} of ${total} pushes · filtered`);
+      parts.push(`Showing ${visible} of ${total} pushes`);
     } else {
       parts.push(`${total} pushes`);
     }
@@ -155,6 +173,7 @@ export function updateNetworkStatusBar(): void {
 /**
  * Show prune notification in status bar.
  * Temporarily shows "(N oldest removed)" with orange flash for 3 seconds.
+ * Text fades smoothly when showing and when restoring.
  */
 export function showPruneNotification(count: number): void {
   const $stats = DOM.statusStats;
@@ -163,15 +182,23 @@ export function showPruneNotification(count: number): void {
   const $bar = $('status-bar');
 
   if ($stats) {
-    const stats = getStats();
-    const visibleCount = stats.visibleCount;
-    const allRequests = getAllRequests();
-    const total = allRequests.length;
-    if (visibleCount !== total) {
-      $stats.textContent = `${visibleCount} of ${total} requests · filtered · (${count} oldest removed)`;
-    } else {
-      $stats.textContent = `${total} requests · (${count} oldest removed)`;
-    }
+    // Fade out, change text, fade in
+    $stats.style.transition = 'opacity 200ms ease';
+    $stats.style.opacity = '0';
+    requestAnimationFrame(() => {
+      const stats = getStats();
+      const visibleCount = stats.visibleCount;
+      const allRequests = getAllRequests();
+      const total = allRequests.length;
+      if (visibleCount !== total) {
+        $stats.textContent = `Showing ${visibleCount} of ${total} requests · (${count} oldest removed)`;
+      } else {
+        $stats.textContent = `${total} requests · (${count} oldest removed)`;
+      }
+      requestAnimationFrame(() => {
+        $stats.style.opacity = '1';
+      });
+    });
   }
 
   if ($size) {
@@ -195,8 +222,18 @@ export function showPruneNotification(count: number): void {
   pruneNotificationTimer = setTimeout(() => {
     pruneNotificationTimer = null;
     if ($bar) $bar.style.color = '';
-    const stats = getStats();
-    updateStatusBar(stats.visibleCount, stats.totalSize, stats.totalDuration);
+    // Fade out, restore text, fade in
+    if ($stats) {
+      $stats.style.opacity = '0';
+      setTimeout(() => {
+        const stats = getStats();
+        updateStatusBar(stats.visibleCount, stats.totalSize, stats.totalDuration);
+        $stats.style.opacity = '1';
+      }, 200);
+    } else {
+      const stats = getStats();
+      updateStatusBar(stats.visibleCount, stats.totalSize, stats.totalDuration);
+    }
   }, 3000);
 }
 

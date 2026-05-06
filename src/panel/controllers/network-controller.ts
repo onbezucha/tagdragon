@@ -16,7 +16,12 @@ import {
   clearPruneTimer,
   resetStatusBar,
 } from '../components/status-bar';
-import { ensureProviderPill, refreshHttpFilterPillStates } from '../components/provider-filter';
+import {
+  ensureProviderPill,
+  refreshHttpFilterPillStates,
+  resetProviderCounts,
+  setProviderCounts,
+} from '../components/provider-filter';
 import { doApplyFilters, doUpdateActiveFilters } from './filter-callbacks';
 import {
   scheduleSaveRequests,
@@ -43,7 +48,7 @@ function indexRequest(data: ParsedRequest): void {
     .join('\0')
     .toLowerCase();
 
-  data._eventName = getEventName(data);
+  if (!data._eventName) data._eventName = getEventName(data);
 
   data._hasUserId = USER_ID_PARAM_KEYS.some(
     (key) => !!(data.decoded?.[key as string] ?? data.allParams?.[key])
@@ -112,6 +117,9 @@ function pruneIfNeeded(): void {
       totalDuration += r.duration || 0;
     }
   }
+
+  // Sync the provider count cache after prune
+  setProviderCounts(counts);
 
   // Update provider pill counts and group badges in DOM
   const groupList = DOM.providerGroupList;
@@ -219,6 +227,8 @@ function clearNetworkData(): void {
   const groupList = DOM.providerGroupList;
   if (groupList) groupList.innerHTML = '';
 
+  resetProviderCounts();
+
   // Reset tab badge
   const $networkBadge = DOM.tabBadgeNetwork;
   if ($networkBadge) $networkBadge.textContent = '0';
@@ -290,35 +300,76 @@ function getExportRequests(): ParsedRequest[] {
   return all.filter((r) => filteredIds.has(String(r.id)));
 }
 
+// ─── EXPORT HELPERS ──────────────────────────────────────────────────────────
+
+/**
+ * Get hostname for export filename.
+ * Extracts from the first request URL, sanitizing special characters.
+ * Falls back to 'unknown' if no requests exist.
+ */
+export function getExportHostname(): string {
+  try {
+    const requests = state.getAllRequests();
+    if (requests.length > 0 && requests[0].url) {
+      const url = new URL(requests[0].url);
+      // Sanitize: remove protocol, keep hostname with dots and hyphens
+      return url.hostname.replace(/[^a-zA-Z0-9.-]/g, '');
+    }
+  } catch {
+    // Ignore URL parsing errors
+  }
+  return 'unknown';
+}
+
 // ─── CSV EXPORT ──────────────────────────────────────────────────────────────
 
-function exportCsv(): void {
-  const requests = getExportRequests();
-  if (requests.length === 0) return;
+function exportCsv(hostname: string, timestamp: number): void {
+  const $statusStats = document.getElementById('status-stats');
+  const originalStatus = $statusStats?.textContent || '';
+  if ($statusStats) $statusStats.textContent = 'Exporting CSV...';
 
-  const allKeys = new Set<string>();
-  requests.forEach((r) => Object.keys(r.allParams || {}).forEach((k) => allKeys.add(k)));
-  const paramKeys = [...allKeys].sort();
+  try {
+    const requests = getExportRequests();
+    if (requests.length === 0) {
+      if ($statusStats) $statusStats.textContent = originalStatus;
+      return;
+    }
 
-  const metaCols = ['id', 'timestamp', 'provider', 'method', 'status', 'url', 'duration', 'size'];
-  const headers = [...metaCols, ...paramKeys];
+    const allKeys = new Set<string>();
+    requests.forEach((r) => Object.keys(r.allParams || {}).forEach((k) => allKeys.add(k)));
+    const paramKeys = [...allKeys].sort();
 
-  const rows = requests.map((r) => {
-    const meta = [
-      String(r.id),
-      String(r.timestamp),
-      r.provider,
-      r.method,
-      String(r.status ?? ''),
-      r.url,
-      String(r.duration ?? ''),
-      String(r.size ?? ''),
-    ];
-    const params = paramKeys.map((k) => String(r.allParams?.[k] ?? ''));
-    return [...meta, ...params];
-  });
+    const metaCols = ['id', 'timestamp', 'provider', 'method', 'status', 'url', 'duration', 'size'];
+    const headers = [...metaCols, ...paramKeys];
 
-  downloadCsv(headers, rows, `requests-${Date.now()}.csv`);
+    const rows = requests.map((r) => {
+      const meta = [
+        String(r.id),
+        String(r.timestamp),
+        r.provider,
+        r.method,
+        String(r.status ?? ''),
+        r.url,
+        String(r.duration ?? ''),
+        String(r.size ?? ''),
+      ];
+      const params = paramKeys.map((k) => String(r.allParams?.[k] ?? ''));
+      return [...meta, ...params];
+    });
+
+    downloadCsv(headers, rows, `tagdragon-${hostname}-${timestamp}.csv`);
+
+    if ($statusStats) $statusStats.textContent = `✓ Exported ${requests.length} requests to CSV`;
+    setTimeout(() => {
+      if ($statusStats) $statusStats.textContent = originalStatus;
+    }, 3000);
+  } catch (err) {
+    if ($statusStats)
+      $statusStats.textContent = `Export failed: ${err instanceof Error ? err.message : 'Unknown error'}`;
+    setTimeout(() => {
+      if ($statusStats) $statusStats.textContent = originalStatus;
+    }, 5000);
+  }
 }
 
 // ─── WINDOW HANDLERS ─────────────────────────────────────────────────────────

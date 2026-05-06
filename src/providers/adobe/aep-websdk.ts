@@ -1,7 +1,6 @@
 import type { Provider } from '../../types/provider';
-import type { HARPostBody } from '../../types/har';
 import { getParams } from '../url-parser';
-import { titleCase, formatJsonValue } from '../parse-helpers';
+import { parsePostBodyJson, titleCase, formatJsonValue } from '../parse-helpers';
 
 export const aepWebSDK: Provider = {
   name: 'Adobe Server-Side',
@@ -16,14 +15,7 @@ export const aepWebSDK: Provider = {
     const urlParams = getParams(url, null);
 
     // Parse POST JSON payload
-    let payload: Record<string, unknown> = {};
-    try {
-      const har = postRaw as HARPostBody | undefined;
-      const bodyStr = har?.text || (har?.raw?.[0]?.bytes ? atob(har.raw[0].bytes) : '');
-      if (bodyStr) payload = JSON.parse(bodyStr) as Record<string, unknown>;
-    } catch {
-      // Parsing failed, continue with empty payload
-    }
+    const payload = parsePostBodyJson(postRaw);
 
     const event0 =
       (((payload.events as unknown[]) || [])[0] as Record<string, unknown> | undefined) || {};
@@ -173,6 +165,8 @@ export const aepWebSDK: Provider = {
 
     // Remove Screen orient (noise)
     delete result['Screen orient'];
+
+    result._eventName = result['Event type'];
 
     return result;
   },

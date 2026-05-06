@@ -8,12 +8,15 @@ export const parsely: Provider = {
 
   parseParams(url: string, postBody: unknown): Record<string, string | undefined> {
     const p = getParams(url, postBody);
-    return {
+    const result: Record<string, string | undefined> = {
       'Page URL': p.url,
       Referrer: p.urlref,
       Action: p.action,
       'Site ID': p.id,
       Timestamp: p.ts,
     };
+    result._eventName = result['Action'];
+
+    return result;
   },
 } as const;

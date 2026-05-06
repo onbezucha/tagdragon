@@ -60,6 +60,8 @@ export const tiktokPixel: Provider = {
       }
     }
 
+    result._eventName = str(body['event']) ?? p['event'];
+
     return result;
   },
 } as const;

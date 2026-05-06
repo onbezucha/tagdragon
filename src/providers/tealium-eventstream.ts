@@ -25,6 +25,9 @@ export const tealiumEventstream: Provider = {
         result[key] = value;
       }
     }
+
+    result._eventName = p.tealium_event;
+
     return result;
   },
 } as const;

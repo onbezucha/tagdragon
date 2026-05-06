@@ -34,6 +34,8 @@ export const dynamicYield: Provider = {
     result['DY Context'] = str(body.context);
     result['Session ID'] = str(body.session);
 
+    result._eventName = p.name;
+
     return result;
   },
 } as const;

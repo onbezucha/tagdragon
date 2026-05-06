@@ -53,6 +53,8 @@ export const amplitude: Provider = {
       result['Groups'] = JSON.stringify(e.groups);
     }
 
+    result._eventName = e.event_type as string | undefined;
+
     return result;
   },
 } as const;

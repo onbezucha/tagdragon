@@ -8,6 +8,20 @@ import * as state from '../state';
 import * as dlState from '../datalayer/state';
 import { DEFAULT_CONFIG } from '@/shared/constants';
 import type { AppConfig } from '@/shared/constants';
+import { refreshCurrentDetail } from './detail-pane';
+import { saveValidationRules } from '../datalayer/utils/validator';
+
+// ─── SAVE CONFIRMATION ─────────────────────────────────────────────────────
+
+function showSaveConfirm(): void {
+  const $confirm = document.getElementById('settings-save-confirm');
+  if (!$confirm) return;
+  $confirm.classList.add('visible');
+  // CSS handles the animation + auto-hide
+  setTimeout(() => {
+    $confirm.classList.remove('visible');
+  }, 1500);
+}
 
 // ─── TYPES ────────────────────────────────────────────────────────────────
 
@@ -212,6 +226,17 @@ function renderDisplaySection(): string {
           <option value="desc"${cfg.sortOrder === 'desc' ? ' selected' : ''}>Newest first</option>
         </select>
       </div>
+      <div class="popover-row${nd('showEmptyParams')}">
+        <label class="popover-label" for="cfg-show-empty-params">
+          <svg class="popover-label-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3v18"/>
+            <rect width="18" height="18" x="3" y="3" rx="2"/>
+            <path d="M3 9h18"/>
+          </svg>
+          Show empty parameters
+        </label>
+        <input type="checkbox" class="popover-checkbox" id="cfg-show-empty-params"${cfg.showEmptyParams ? ' checked' : ''}>
+      </div>
       <label class="popover-checkbox-label${nd('wrapValues')}">
         <input type="checkbox" class="popover-checkbox" id="cfg-wrap-values"${cfg.wrapValues ? ' checked' : ''}>
         Wrap long values
@@ -393,6 +418,9 @@ function wireUpSectionControls(tab: DrawerTab): void {
   if (tab === 'network') {
     // Display
     wireSelect('cfg-sort-order', 'sortOrder', () => ctx?.syncQuickButtons());
+    wireCheckbox('cfg-show-empty-params', 'showEmptyParams', () => {
+      refreshCurrentDetail();
+    });
     wireCheckbox('cfg-wrap-values', 'wrapValues', () => {
       ctx?.syncQuickButtons();
       ctx?.applyWrapValuesClass();
@@ -435,6 +463,7 @@ function wireSelect(id: string, key: keyof AppConfig, afterFn?: () => void): voi
   el.value = String(state.getConfig()[key]);
   el.addEventListener('change', () => {
     state.updateConfig(key, el.value as AppConfig[typeof key]);
+    showSaveConfirm();
     afterFn?.();
   });
 }
@@ -445,6 +474,7 @@ function wireCheckbox(id: string, key: keyof AppConfig, afterFn?: () => void): v
   el.checked = state.getConfig()[key] as boolean;
   el.addEventListener('change', () => {
     state.updateConfig(key, el.checked);
+    showSaveConfirm();
     afterFn?.();
   });
 }
@@ -457,6 +487,7 @@ function wireCorrelationWindow(): void {
     const val = parseInt(el.value, 10) || 2000;
     state.updateConfig('correlationWindowMs', val);
     dlState.setCorrelationWindow(val);
+    showSaveConfirm();
   });
 }
 
@@ -490,6 +521,7 @@ function wireFooterButtons(): void {
     ctx?.syncDlQuickButtons();
     ctx?.applyWrapValuesClass();
     ctx?.applyCompactRowsClass();
+    refreshCurrentDetail();
   });
 
   // Export config
@@ -510,6 +542,10 @@ function wireFooterButtons(): void {
     input.type = 'file';
     input.accept = '.json';
     input.onchange = () => {
+      // Clear any previous error
+      const $importError = document.getElementById('import-error');
+      if ($importError) $importError.style.display = 'none';
+
       const file = input.files?.[0];
       if (!file) return;
       const reader = new FileReader();
@@ -540,6 +576,7 @@ function wireFooterButtons(): void {
             const cfgKey = key as keyof AppConfig;
             state.updateConfig(cfgKey, value as AppConfig[typeof cfgKey]);
           }
+          showSaveConfirm();
 
           dlState.initDlSortState();
           refreshContent();
@@ -547,8 +584,22 @@ function wireFooterButtons(): void {
           ctx?.syncDlQuickButtons();
           ctx?.applyWrapValuesClass();
           ctx?.applyCompactRowsClass();
-        } catch {
-          console.warn('TagDragon: Invalid config file');
+        } catch (err) {
+          const $importErrorEl = document.getElementById('import-error') as HTMLElement;
+          if ($importErrorEl) {
+            let message = 'Invalid config file — expected JSON';
+            if (err instanceof SyntaxError) {
+              message = 'Invalid config file — expected JSON';
+            } else if (err instanceof Error) {
+              message = err.message || 'Config file is missing required fields';
+            }
+            $importErrorEl.textContent = message;
+            $importErrorEl.style.display = 'block';
+            // Auto-hide after 5 seconds
+            setTimeout(() => {
+              $importErrorEl.style.display = 'none';
+            }, 5000);
+          }
         }
       };
       reader.readAsText(file);
@@ -573,6 +624,24 @@ function wireSettingsSearch(): void {
       const matches = q.length === 0 || text.includes(q);
       sectionEl.classList.toggle('popover-hidden', !matches);
     });
+
+    // Show no results message when search yields 0 visible sections
+    const visibleSections =
+      DOM.popoverBody?.querySelectorAll('.popover-section:not(.popover-hidden)') ?? [];
+    if (visibleSections.length === 0 && q.length > 0) {
+      let noResults = document.getElementById('settings-no-results');
+      if (!noResults) {
+        noResults = document.createElement('div');
+        noResults.id = 'settings-no-results';
+        noResults.className = 'settings-no-results';
+        DOM.popoverBody?.appendChild(noResults);
+      }
+      noResults.textContent = `No settings match "${q}"`;
+      noResults.style.display = '';
+    } else {
+      const noResults = document.getElementById('settings-no-results');
+      if (noResults) noResults.style.display = 'none';
+    }
   });
 }
 
@@ -603,6 +672,14 @@ function populateValidationRules(_expandEl: HTMLElement): void {
   wirePopoverValidationHandlers();
 }
 
+// ─── RERENDER VALIDATION RULES ───────────────────────────────────────────────
+
+function rerenderValidationRules(): void {
+  renderPopoverValidationRules();
+  renderPopoverCustomRules();
+  wirePopoverValidationHandlers();
+}
+
 // ─── POPOVER VALIDATION ───────────────────────────────────────────────────
 
 function renderPopoverValidationRules(): void {
@@ -612,10 +689,15 @@ function renderPopoverValidationRules(): void {
   const rules = dlState.getValidationRules().filter((r) => !r.id.startsWith('custom-'));
   $list.innerHTML = '';
 
-  for (const rule of rules) {
+  rules.forEach((rule, index) => {
     const row = document.createElement('div');
-    row.className = 'popover-filter-option';
+    row.className = 'popover-filter-option validation-rule';
     row.style.padding = '4px 12px';
+    row.dataset.index = String(index);
+
+    const priority = document.createElement('span');
+    priority.className = 'rule-priority';
+    priority.textContent = `#${index + 1}`;
 
     const toggle = document.createElement('button');
     toggle.className = `popover-footer-btn${rule.enabled ? ' active' : ''}`;
@@ -625,7 +707,7 @@ function renderPopoverValidationRules(): void {
       rule.enabled = !rule.enabled;
       toggle.textContent = rule.enabled ? 'ON' : 'OFF';
       toggle.classList.toggle('active', rule.enabled);
-      saveValidationRulesToStorage(dlState.getValidationRules());
+      void saveValidationRules(dlState.getValidationRules());
       dispatchRevalidate();
       updatePopoverValidationSummary();
     });
@@ -634,10 +716,23 @@ function renderPopoverValidationRules(): void {
     name.style.cssText = 'font-size:11px;color:var(--text-1);flex:1;';
     name.textContent = rule.name;
 
+    const moveUpBtn = document.createElement('button');
+    moveUpBtn.className = 'rule-move-btn rule-move-up';
+    moveUpBtn.textContent = '↑';
+    moveUpBtn.title = 'Move up';
+
+    const moveDownBtn = document.createElement('button');
+    moveDownBtn.className = 'rule-move-btn rule-move-down';
+    moveDownBtn.textContent = '↓';
+    moveDownBtn.title = 'Move down';
+
+    row.appendChild(priority);
     row.appendChild(toggle);
     row.appendChild(name);
+    row.appendChild(moveUpBtn);
+    row.appendChild(moveDownBtn);
     $list.appendChild(row);
-  }
+  });
 
   if (rules.length === 0) {
     $list.innerHTML = '<div class="popover-empty-state">No preset rules</div>';
@@ -651,9 +746,20 @@ function renderPopoverCustomRules(): void {
   const rules = dlState.getValidationRules().filter((r) => r.id.startsWith('custom-'));
   $list.innerHTML = '';
 
-  for (const rule of rules) {
+  // Get the base index (preset rules count) to calculate priority for custom rules
+  const presetCount = dlState
+    .getValidationRules()
+    .filter((r) => !r.id.startsWith('custom-')).length;
+
+  rules.forEach((rule, index) => {
     const row = document.createElement('div');
+    row.className = 'validation-rule';
     row.style.cssText = 'display:flex;align-items:center;gap:4px;padding:4px 12px;';
+    row.dataset.index = String(presetCount + index);
+
+    const priority = document.createElement('span');
+    priority.className = 'rule-priority';
+    priority.textContent = `#${presetCount + index + 1}`;
 
     const toggle = document.createElement('button');
     toggle.className = `popover-footer-btn${rule.enabled ? ' active' : ''}`;
@@ -663,7 +769,7 @@ function renderPopoverCustomRules(): void {
       rule.enabled = !rule.enabled;
       toggle.textContent = rule.enabled ? 'ON' : 'OFF';
       toggle.classList.toggle('active', rule.enabled);
-      saveValidationRulesToStorage(dlState.getValidationRules());
+      void saveValidationRules(dlState.getValidationRules());
       dispatchRevalidate();
       updatePopoverValidationSummary();
     });
@@ -673,14 +779,23 @@ function renderPopoverCustomRules(): void {
       'font-size:11px;color:var(--text-1);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
     name.textContent = rule.name;
 
+    const moveUpBtn = document.createElement('button');
+    moveUpBtn.className = 'rule-move-btn rule-move-up';
+    moveUpBtn.textContent = '↑';
+    moveUpBtn.title = 'Move up';
+
+    const moveDownBtn = document.createElement('button');
+    moveDownBtn.className = 'rule-move-btn rule-move-down';
+    moveDownBtn.textContent = '↓';
+    moveDownBtn.title = 'Move down';
+
     const deleteBtn = document.createElement('button');
     deleteBtn.textContent = '×';
-    deleteBtn.style.cssText =
-      'background:none;border:none;color:var(--red, #ef5350);cursor:pointer;font-size:14px;padding:0 4px;opacity:0.5;';
+    deleteBtn.className = 'rule-delete-btn';
     deleteBtn.addEventListener('click', () => {
       const updated = dlState.getValidationRules().filter((r) => r.id !== rule.id);
       dlState.setValidationRules(updated);
-      saveValidationRulesToStorage(updated);
+      void saveValidationRules(updated);
       dispatchRevalidate();
       renderPopoverCustomRules();
       updatePopoverValidationSummary();
@@ -692,11 +807,14 @@ function renderPopoverCustomRules(): void {
       deleteBtn.style.opacity = '0.5';
     });
 
+    row.appendChild(priority);
     row.appendChild(toggle);
     row.appendChild(name);
+    row.appendChild(moveUpBtn);
+    row.appendChild(moveDownBtn);
     row.appendChild(deleteBtn);
     $list.appendChild(row);
-  }
+  });
 }
 
 function updatePopoverValidationSummary(): void {
@@ -775,24 +893,51 @@ function wirePopoverValidationHandlers(): void {
 
       const rules = [...dlState.getValidationRules(), newRule];
       dlState.setValidationRules(rules);
-      saveValidationRulesToStorage(rules);
+      void saveValidationRules(rules);
       dispatchRevalidate();
       form.remove();
       renderPopoverCustomRules();
       updatePopoverValidationSummary();
     });
   });
+
+  // Wire up move buttons
+  wireRuleMoveButtons();
+}
+
+function wireRuleMoveButtons(): void {
+  // Move up buttons
+  document.querySelectorAll('.rule-move-up').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const ruleEl = (btn as HTMLElement).closest('.validation-rule') as HTMLElement;
+      const index = parseInt(ruleEl.dataset.index || '0', 10);
+      if (index > 0) {
+        const rules = [...dlState.getValidationRules()];
+        [rules[index - 1], rules[index]] = [rules[index], rules[index - 1]];
+        dlState.setValidationRules(rules);
+        void saveValidationRules(rules);
+        rerenderValidationRules();
+      }
+    });
+  });
+
+  // Move down buttons
+  document.querySelectorAll('.rule-move-down').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const ruleEl = (btn as HTMLElement).closest('.validation-rule') as HTMLElement;
+      const index = parseInt(ruleEl.dataset.index || '0', 10);
+      const rules = [...dlState.getValidationRules()];
+      if (index < rules.length - 1) {
+        [rules[index], rules[index + 1]] = [rules[index + 1], rules[index]];
+        dlState.setValidationRules(rules);
+        void saveValidationRules(rules);
+        rerenderValidationRules();
+      }
+    });
+  });
 }
 
 // ─── VALIDATION HELPERS ───────────────────────────────────────────────────
-
-function saveValidationRulesToStorage(rules: unknown[]): void {
-  try {
-    void chrome.storage.local.set({ rt_validation_rules: rules });
-  } catch {
-    // non-fatal
-  }
-}
 
 function dispatchRevalidate(): void {
   document.dispatchEvent(new CustomEvent('tagdragon:revalidate'));

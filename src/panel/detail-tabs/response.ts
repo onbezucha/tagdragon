@@ -14,6 +14,8 @@ export function renderResponse(body: string | null | undefined): string {
   }
 
   let pretty = body;
+  let isTruncated = false;
+  const totalLength = body.length;
 
   if (body.length < LARGE_RESPONSE_THRESHOLD) {
     // Small responses: try to parse and format JSON
@@ -24,6 +26,7 @@ export function renderResponse(body: string | null | undefined): string {
     }
   } else {
     // Large responses: try parse but truncate output to avoid performance issues
+    isTruncated = true;
     try {
       const parsed = JSON.parse(body);
       pretty =
@@ -34,5 +37,9 @@ export function renderResponse(body: string | null | undefined): string {
     }
   }
 
-  return `<pre class="json">${esc(pretty)}</pre>`;
+  const truncationWarning = isTruncated
+    ? `<div class="response-truncation-warning">⚠ Response truncated at ${TRUNCATED_OUTPUT_LENGTH.toLocaleString()} characters (original: ${totalLength.toLocaleString()})</div>`
+    : '';
+
+  return `<pre class="json">${esc(pretty)}</pre>${truncationWarning}`;
 }

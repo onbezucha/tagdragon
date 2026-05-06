@@ -1,0 +1,130 @@
+/* ─── Provider Breakdown ──────────────────────────────────────────────── */
+
+.provider-breakdown {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 8px;
+  font-size: 11px;
+  color: var(--text-2);
+  overflow-x: auto;
+  white-space: nowrap;
+  cursor: pointer;
+  border-left: 1px solid var(--border-subtle);
+  margin-left: 4px;
+}
+
+.provider-breakdown:hover {
+  background: var(--bg-2);
+}
+
+.pb-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.pb-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.pb-name {
+  max-width: 60px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pb-count {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  color: var(--text-3);
+}
+
+.pb-error {
+  color: var(--red);
+  font-size: 9px;
+  font-weight: 600;
+}
+
+.pb-more {
+  color: var(--text-3);
+  font-style: italic;
+}
+
+.pb-total {
+  color: var(--text-3);
+  margin-left: auto;
+}
+
+/* Popover */
+.pb-popover {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  background: var(--bg-1);
+  border: 1px solid var(--bg-2);
+  border-radius: 6px;
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.3);
+  min-width: 400px;
+  z-index: 1000;
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+.pb-popover-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--bg-2);
+  font-weight: 600;
+}
+
+.pb-popover-close {
+  background: none;
+  border: none;
+  color: var(--text-3);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 2px 6px;
+}
+
+.pb-popover-close:hover {
+  color: var(--text-1);
+}
+
+.pb-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.pb-table th {
+  text-align: left;
+  padding: 6px 12px;
+  color: var(--text-3);
+  font-weight: 500;
+  font-size: 11px;
+  border-bottom: 1px solid var(--bg-2);
+}
+
+.pb-table td {
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--bg-1);
+}
+
+.pb-table tr:hover td {
+  background: var(--bg-2);
+}
+
+.pb-table-error {
+  color: var(--red);
+  font-weight: 600;
+}
+
+.pb-table .pb-dot {
+  margin-right: 6px;
+  vertical-align: middle;
+}

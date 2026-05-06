@@ -36,6 +36,7 @@
 /* Status & memory */
 @import './panel/status-bar.css';
 @import './panel/memory-bar.css';
+@import './panel/provider-breakdown.css';
 
 /* DataLayer view */
 @import './panel/datalayer/layout.css';
@@ -531,6 +532,7 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    cursor: pointer;
   }
 
   .param-value.decoded {
@@ -577,19 +579,10 @@
   }
 
   .param-copy-btn.copied {
+    opacity: 1;
     color: var(--green);
-    transform: scale(1.15);
-    transition: color 0.1s, transform 0.15s;
-  }
-
-  /* Detail pane copy button feedback */
-  #btn-copy-url.copied,
-  #btn-copy-curl.copied,
-  #btn-copy-params.copied {
-    color: var(--green) !important;
-    border-color: var(--green) !important;
-    transform: scale(0.95);
-    transition: color 0.1s, border-color 0.1s, transform 0.1s;
+    transform: translateY(-50%);
+    transition: color 150ms var(--ease);
   }
 
   /* ═════════════════════════════════════════════════════════════════════
@@ -635,6 +628,7 @@
     white-space: nowrap;
     overflow-x: hidden;
     text-overflow: ellipsis;
+    cursor: pointer;
   }
 
   /* Wrap long values in param table when enabled */
@@ -1408,6 +1402,43 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
+}
+
+/* Copy feedback animations */
+.copy-fail {
+  color: var(--red) !important;
+  transition: color 150ms ease;
+}
+
+/* ─── Response Truncation Warning ─────────────────────────────────────── */
+
+.response-truncation-warning {
+  background: rgba(234, 179, 8, 0.1);
+  border-top: 1px solid rgba(234, 179, 8, 0.3);
+  color: var(--text-2);
+  font-size: 12px;
+  padding: 8px 12px;
+  text-align: center;
+}
+
+/* ─── Adobe Env Badge Visual Strength ─────────────────────────────────── */
+
+.env-badge--dev {
+  background: var(--red) !important;
+  color: white !important;
+}
+
+.env-badge--dev .env-badge-dot {
+  background: white !important;
+}
+
+.env-badge--acc {
+  background: rgba(234, 179, 8, 0.2) !important;
+  color: #eab308 !important;
+}
+
+.env-badge--acc .env-badge-dot {
+  background: #eab308 !important;
 }
 
 

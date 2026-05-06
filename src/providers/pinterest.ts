@@ -66,9 +66,10 @@ export const pinterestPixel: Provider = {
     // 'dep' — dedup info: "2,PAGE_LOAD" → extract label
     const depType = p['dep']?.split(',')?.[1] || undefined;
 
-    return {
+    const result: Record<string, string | undefined> = {
       // Event
       Event: p['event'],
+      _eventName: p['event'],
       'Event Type': depType,
       // Pixel Info
       'Tag ID': p['tid'],
@@ -90,5 +91,6 @@ export const pinterestPixel: Provider = {
       // Technical
       Timestamp: p['cb'],
     };
+    return result;
   },
 } as const;

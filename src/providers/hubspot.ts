@@ -8,7 +8,7 @@ export const hubspot: Provider = {
 
   parseParams(url: string, postBody: unknown): Record<string, string | undefined> {
     const p = getParams(url, postBody);
-    return {
+    const result: Record<string, string | undefined> = {
       'Hub ID': p.a,
       Event: p.e,
       'Page URL': p.pageUrl,
@@ -19,5 +19,7 @@ export const hubspot: Provider = {
       'Session Count': p.hssc,
       'Long-term Cookie': p.hstc,
     };
+    result._eventName = p.e;
+    return result;
   },
 } as const;

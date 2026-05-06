@@ -136,7 +136,36 @@ export function refreshHttpFilterPillStates(): void {
   });
 }
 
-// ─── PUBLIC API ───────────────────────────────────────────────────────────
+// ─── SHOW/HIDE BUTTON STATES ──────────────────────────────────────────────
+
+/**
+ * Update disabled states for Show All / Hide All buttons based on current provider visibility.
+ */
+function updateShowHideButtons(): void {
+  const hiddenProviders = getHiddenProviders();
+  const activeProviders = getActiveProviders();
+  const $showAll = document.getElementById('btn-show-all-providers') as HTMLButtonElement;
+  const $hideAll = document.getElementById('btn-hide-all-providers') as HTMLButtonElement;
+
+  if ($showAll) {
+    $showAll.disabled = hiddenProviders.size === 0;
+    $showAll.classList.toggle('disabled-action', hiddenProviders.size === 0);
+  }
+  if ($hideAll) {
+    $hideAll.disabled = activeProviders.size > 0 && hiddenProviders.size === activeProviders.size;
+    $hideAll.classList.toggle('disabled-action', hiddenProviders.size === activeProviders.size);
+  }
+}
+
+/**
+ * Update show/hide button states when a provider pill is toggled.
+ * Exported so pill-rendering.ts can call it after toggleProvider.
+ */
+export function onProviderPillToggled(): void {
+  updateShowHideButtons();
+}
+
+// ─── PUBLIC API ────────────────────────────────────────────────────────────
 
 export function initProviderFilterPopover(context: ProviderFilterContext): void {
   ctx = context;
@@ -173,6 +202,7 @@ export function initProviderFilterPopover(context: ProviderFilterContext): void 
     updateGroupStates();
     updateFooterSummary();
     updateHiddenBadge();
+    updateShowHideButtons();
     ctx?.doApplyFilters();
     ctx?.doUpdateActiveFilters();
   });
@@ -193,6 +223,7 @@ export function initProviderFilterPopover(context: ProviderFilterContext): void 
     updateGroupStates();
     updateFooterSummary();
     updateHiddenBadge();
+    updateShowHideButtons();
     ctx?.doApplyFilters();
     ctx?.doUpdateActiveFilters();
   });
@@ -208,6 +239,7 @@ function openProviderFilter(): void {
   DOM.providerFilterPopover?.classList.add('visible');
   providerFilterOpen = true;
   refreshHttpFilterPillStates();
+  updateShowHideButtons();
 }
 
 export function closeProviderFilter(): void {

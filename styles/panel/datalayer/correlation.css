@@ -72,3 +72,24 @@
 }
 
 .dl-correlation-goto:hover { background: var(--accent-muted); }
+
+/* === CORRELATION CONTROLS === */
+.dl-custom-badge {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 600;
+  background: var(--orange-muted, rgba(245, 158, 11, 0.15));
+  color: var(--orange, #f59e0b);
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+.dl-reset-link {
+  text-decoration: none;
+}
+
+.dl-reset-link:hover {
+  text-decoration: underline;
+}

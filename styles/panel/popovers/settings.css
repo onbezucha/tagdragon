@@ -45,3 +45,92 @@
   text-transform: uppercase;
   letter-spacing: 0.3px;
 }
+
+/* Import error message */
+.import-error {
+  color: var(--red);
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 4px;
+  padding: 6px 10px;
+  font-size: 12px;
+  margin-bottom: 8px;
+  width: 100%;
+}
+
+/* Save confirmation indicator */
+.settings-save-confirm {
+  font-size: 12px;
+  color: var(--green);
+  opacity: 0;
+  transition: opacity 200ms ease;
+  pointer-events: none;
+  margin-left: 8px;
+  align-self: center;
+}
+
+.settings-save-confirm.visible {
+  opacity: 1;
+}
+
+/* No results message for settings search */
+.settings-no-results {
+  text-align: center;
+  color: var(--text-3);
+  padding: 20px;
+  font-size: 13px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════ */
+/* VALIDATION RULE MOVE BUTTONS                                            */
+/* ═══════════════════════════════════════════════════════════════════════ */
+
+.validation-rule {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.rule-priority {
+  font-size: 10px;
+  color: var(--text-3);
+  min-width: 20px;
+  text-align: center;
+  font-family: monospace;
+}
+
+.rule-move-btn {
+  background: none;
+  border: 1px solid var(--bg-2);
+  color: var(--text-3);
+  width: 22px;
+  height: 22px;
+  border-radius: 3px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.rule-move-btn:hover {
+  background: var(--bg-2);
+  color: var(--text-1);
+}
+
+.rule-delete-btn {
+  background: none;
+  border: none;
+  color: var(--red, #ef5350);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0 4px;
+  opacity: 0.5;
+  flex-shrink: 0;
+}
+
+.rule-delete-btn:hover {
+  opacity: 1;
+}

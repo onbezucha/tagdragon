@@ -7,10 +7,13 @@ export const piwikProTm: Provider = {
 
   parseParams(url: string): Record<string, string | undefined> {
     const match = url.match(/([a-z0-9-]+)\.piwik\.pro\/([a-f0-9-]+)\/([a-f0-9]+)\.js/);
-    return {
+    const result: Record<string, string | undefined> = {
       'Account ID': match?.[2],
       'Container ID': match?.[3],
       'Request Type': 'Library Load',
     };
+    result._eventName = result['Request Type'];
+
+    return result;
   },
 } as const;

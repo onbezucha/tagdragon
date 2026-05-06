@@ -65,6 +65,7 @@ export function createRequestRow(
   }
 
   (row.querySelector('.req-event') as HTMLElement).textContent = eventName;
+  (row.querySelector('.req-event') as HTMLElement).title = eventName;
   (row.querySelector('.req-time') as HTMLElement).textContent = time;
 
   // Secondary line (dot + provider name + method + status)

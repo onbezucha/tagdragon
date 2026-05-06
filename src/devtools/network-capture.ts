@@ -32,7 +32,7 @@ chrome.storage.session
 /**
  * Parse raw HAR postData object — returns string, object or null.
  */
-function parsePostBody(postData: unknown): unknown {
+export function parsePostBody(postData: unknown): unknown {
   if (!postData) return null;
 
   const har = postData as HARPostData;
@@ -75,6 +75,9 @@ function processRequest(req: chrome.devtools.network.Request): void {
   const postBody = parsePostBody(postRaw);
   const allParams = getParams(url, postRaw);
   const decoded = provider.parseParams(url, postRaw);
+  // Extract provider-side _eventName before building parsedRequest
+  const providerEventName = (decoded as Record<string, string | undefined>)._eventName;
+  delete (decoded as Record<string, string | undefined>)._eventName;
 
   req.getContent((responseBody: string | null) => {
     const id = generateId();
@@ -109,6 +112,7 @@ function processRequest(req: chrome.devtools.network.Request): void {
       _hasResponseBody: !!responseBody,
       _hasRequestHeaders: (req.request.headers?.length || 0) > 0,
       _hasResponseHeaders: (req.response.headers?.length || 0) > 0,
+      _eventName: providerEventName,
       _ts: Date.now(),
     };
 
@@ -173,6 +177,8 @@ function handleRuntimeMessage(msg: RuntimeMessage): void {
     if (!provider) return;
     const allParams = getParams(msg.data.url, null);
     const decoded = provider.parseParams(msg.data.url, null);
+    const providerEventName = (decoded as Record<string, string | undefined>)._eventName;
+    delete (decoded as Record<string, string | undefined>)._eventName;
 
     sendToPanel({
       ...msg.data,
@@ -180,6 +186,7 @@ function handleRuntimeMessage(msg: RuntimeMessage): void {
       color: provider.color,
       decoded,
       allParams,
+      _eventName: providerEventName,
       source: 'extension',
     } as ParsedRequest);
   }

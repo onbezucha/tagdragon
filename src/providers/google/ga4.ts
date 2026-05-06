@@ -14,6 +14,7 @@ export const ga4: Provider = {
     const decoded: Record<string, string | undefined> = {
       // Hit Info
       Event: p.en,
+      _eventName: p.en,
       'Session ID': p.sid,
       'Session Count': p.sct,
       'Session Engaged': p.seg,

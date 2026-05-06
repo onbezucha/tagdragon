@@ -103,7 +103,6 @@ export function getEventName(data: ParsedRequest): string {
     data.decoded['Hit type'] ||
     data.decoded.event ||
     data.decoded.event_name ||
-    Object.values(data.decoded).find((v) => v && typeof v === 'string' && v.length < 50) ||
     getHostname(data.url)
   );
 }

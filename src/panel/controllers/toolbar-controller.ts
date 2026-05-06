@@ -17,7 +17,12 @@ import { closeDlFilterPopover } from '../components/dl-filter-popover';
 import { setActiveDlRow } from '../datalayer/components/push-list';
 import { selectDlPush } from '../datalayer/components/push-detail';
 import { dlClearAll } from './datalayer-controller';
-import { clearNetworkData, getExportRequests, exportCsv } from './network-controller';
+import {
+  clearNetworkData,
+  getExportRequests,
+  exportCsv,
+  getExportHostname,
+} from './network-controller';
 import { downloadJson } from '../utils/export';
 
 import { initExportFormatMenu } from '../utils/export-menu';
@@ -83,11 +88,16 @@ export function syncPauseUI(paused: boolean): void {
 
   // Network pause button
   const btnPause = document.getElementById('btn-pause');
-  togglePauseButtonState(btnPause, paused, 'Resume capture', 'Pause capture');
+  togglePauseButtonState(btnPause, paused, 'Resume capture (Space)', 'Pause capture (Space)');
 
   // DataLayer pause button
   const $dlPause = document.getElementById('dl-btn-pause');
-  togglePauseButtonState($dlPause, paused, 'Resume DataLayer capture', 'Pause DataLayer capture');
+  togglePauseButtonState(
+    $dlPause,
+    paused,
+    'Resume DataLayer capture (Space)',
+    'Pause DataLayer capture (Space)'
+  );
 }
 
 // ─── QUICK ACTIONS ────────────────────────────────────────────────────────────
@@ -110,6 +120,16 @@ export function syncQuickButtons(): void {
       cfg.sortOrder === 'desc'
         ? 'Newest first (click for oldest first)'
         : 'Oldest first (click for newest first)';
+
+    // Update sort arrow indicator
+    const arrow = cfg.sortOrder === 'desc' ? '↓' : '↑';
+    let arrowEl = sortBtn.querySelector('.sort-arrow') as HTMLElement;
+    if (!arrowEl) {
+      arrowEl = document.createElement('span');
+      arrowEl.className = 'sort-arrow';
+      sortBtn.appendChild(arrowEl);
+    }
+    arrowEl.textContent = arrow;
   }
 }
 
@@ -234,10 +254,24 @@ export function initToolbarHandlers(): void {
 
   // Export button
   btnExport?.addEventListener('click', () => {
-    if (state.getConfig().exportFormat === 'csv') {
-      exportCsv();
-    } else {
-      downloadJson(getExportRequests(), `requests-${Date.now()}.json`);
+    const hostname = getExportHostname();
+    const timestamp = Date.now();
+    try {
+      if (state.getConfig().exportFormat === 'csv') {
+        exportCsv(hostname, timestamp);
+      } else {
+        downloadJson(getExportRequests(), `tagdragon-${hostname}-${timestamp}.json`);
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      const $statusStats = document.getElementById('status-stats');
+      if ($statusStats) {
+        const original = $statusStats.textContent;
+        $statusStats.textContent = `Export failed: ${message}`;
+        setTimeout(() => {
+          $statusStats.textContent = original;
+        }, 5000);
+      }
     }
   });
 
@@ -310,6 +344,49 @@ export function initToolbarHandlers(): void {
     e.stopPropagation();
     toggleProviderFilter();
   });
+
+  // ─── WRAP VALUES TOGGLE ──────────────────────────────────────────────────────
+
+  const $btnWrap = document.getElementById('btn-wrap-values') as HTMLButtonElement | null;
+  if ($btnWrap) {
+    // Set initial state from config
+    const cfg = state.getConfig();
+    if (cfg.wrapValues) {
+      $btnWrap.classList.add('active');
+    }
+    $btnWrap.addEventListener('click', () => {
+      const currentCfg = state.getConfig();
+      const newValue = !currentCfg.wrapValues;
+      state.updateConfig('wrapValues', newValue);
+      $btnWrap.classList.toggle('active', newValue);
+      applyWrapValuesClass();
+      // Sync settings drawer checkbox if open
+      if (document.getElementById('cfg-wrap-values') as HTMLInputElement) {
+        (document.getElementById('cfg-wrap-values') as HTMLInputElement).checked = newValue;
+      }
+    });
+  }
+
+  // ─── COMPACT ROWS TOGGLE ────────────────────────────────────────────────────
+
+  const $btnCompact = document.getElementById('btn-compact-rows') as HTMLButtonElement | null;
+  if ($btnCompact) {
+    const cfg = state.getConfig();
+    if (cfg.compactRows) {
+      $btnCompact.classList.add('active');
+    }
+    $btnCompact.addEventListener('click', () => {
+      const currentCfg = state.getConfig();
+      const newValue = !currentCfg.compactRows;
+      state.updateConfig('compactRows', newValue);
+      $btnCompact.classList.toggle('active', newValue);
+      applyCompactRowsClass();
+      // Sync settings drawer checkbox if open
+      if (document.getElementById('cfg-compact-rows') as HTMLInputElement) {
+        (document.getElementById('cfg-compact-rows') as HTMLInputElement).checked = newValue;
+      }
+    });
+  }
 }
 
 // ─── REQUEST LIST CLICK ──────────────────────────────────────────────────────

@@ -12,9 +12,10 @@ export const redditPixel: Provider = {
     // Request type: custom event name takes priority over standard event
     const requestType = p['m.customEventName'] || p.event || undefined;
 
-    return {
+    const result: Record<string, string | undefined> = {
       'Account ID': p.id,
       Event: requestType,
+      _eventName: requestType,
       'Custom Event Name': p['m.customEventName'],
       'Item Count': p['m.itemCount'],
       Value: p['m.value'],
@@ -23,5 +24,6 @@ export const redditPixel: Provider = {
       Products: p['m.products'],
       'Conversion ID': p['m.conversionId'],
     };
+    return result;
   },
 } as const;

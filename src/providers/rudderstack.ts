@@ -63,6 +63,8 @@ export const rudderstack: Provider = {
       result[`${titleCase(key)} (trait)`] = formatJsonValue(value);
     }
 
+    result._eventName = body.event as string | undefined;
+
     return result;
   },
 } as const;

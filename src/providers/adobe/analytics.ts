@@ -51,7 +51,7 @@ export const adobeAA: Provider = {
       if (p[`h${i}`]) hiers[`hier${i}`] = p[`h${i}`];
     }
 
-    return {
+    const result: Record<string, string | undefined> = {
       'Hit type': hitType,
       'Report suite': rsid,
       'Page name': p.pageName || p.gn,
@@ -75,5 +75,8 @@ export const adobeAA: Provider = {
       ...hiers,
       ...(Object.keys(contextData).length ? { 'Context data': JSON.stringify(contextData) } : {}),
     };
+    result._eventName = result['Hit type'];
+
+    return result;
   },
 };

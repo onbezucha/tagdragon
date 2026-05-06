@@ -41,7 +41,7 @@ export const COMSCORE_CATEGORIES: ProviderCategories = {
     icon: '📝',
     order: 6,
     defaultExpanded: false,
-    patterns: [/^Segment$/],
+    patterns: [/^Segment$/, /^Publisher Segment$/],
   },
   customVars: {
     label: 'Custom Variables',

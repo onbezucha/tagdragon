@@ -24,7 +24,7 @@
 </p>
 
 <p align="center">
-  <em>68 providers · DataLayer Inspector · Consent Panel · No data leaves your browser</em>
+  <em>62 providers · DataLayer Inspector · Consent Panel · No data leaves your browser</em>
 </p>
 
 ---
@@ -36,7 +36,7 @@
 <td width="33%" valign="top">
 
 ### 🔍 Request Capture
-Real-time monitoring of tracking requests from 68 providers. Pause/resume, sort, auto-prune.
+Real-time monitoring of tracking requests from 62 providers. Pause/resume, sort, auto-prune.
 
 </td>
 <td width="33%" valign="top">
@@ -55,8 +55,8 @@ Inspect and override cookie/consent state. Test consent mode behavior without ma
 <tr>
 <td width="33%" valign="top">
 
-### 📊 68 Providers
-GA4, Meta, TikTok, LinkedIn, Adobe, Hotjar, Braze, HubSpot, Medallia, Indicative, and 58 more across 9 categories + ungrouped.
+### 📊 62 Providers
+GA4, Meta, TikTok, LinkedIn, Adobe, Hotjar, Braze, HubSpot, Medallia, RudderStack, and 53 more across 9 categories + ungrouped.
 
 </td>
 <td width="33%" valign="top">
@@ -106,22 +106,22 @@ npm run dev    # Watches CSS + JS for live changes
 
 ## 📊 Supported Providers
 
-68 providers across 9 categories + ungrouped.
+62 providers across 9 categories + ungrouped.
 
 | Category | Count | Providers |
 |----------|-------|-----------|
-| 📊 Analytics | 15 | GA4, Adobe Client-Side, Adobe Server-Side (AEP WebSDK), Amplitude, Mixpanel, Matomo, Piwik PRO, AT Internet, Comscore, Parse.ly, Webtrends, Scorecard, Medallia DXA, Indicative, RudderStack |
+| 📊 Analytics | 13 | GA4, Adobe Client-Side, Adobe Server-Side (AEP WebSDK), Amplitude, Mixpanel, Matomo, Piwik PRO, AT Internet, Comscore, Parse.ly, Medallia DXA, Indicative, RudderStack |
 | 🏷️ Tag Managers | 5 | Google Tag Manager, Tealium, Segment, Ensighten, Piwik PRO TM |
-| 📢 Marketing & Advertising | 24 | Google Ads, Meta Pixel, Bing Ads, Adform, DoubleClick, Criteo, Seznam Sklik, TikTok, X, Pinterest, The Trade Desk, Reddit, Snapchat, Spotify, Amazon Ads, Outbrain, Teads, RTB House, Zemanta, Sojern, Vibes, Brevo, Invoca, HubSpot |
-| 🎥 Session Replay | 5 | Hotjar, Microsoft Clarity, FullStory, Crazy Egg, Glassbox |
+| 📢 Marketing & Advertising | 22 | Google Ads, Meta Pixel, Bing Ads, Adform, DoubleClick, Criteo, Seznam Sklik, TikTok, X, Pinterest, The Trade Desk, Reddit, Snapchat, Spotify, Amazon Ads, Outbrain, Teads, RTB House, Sojern, Vibes, Brevo, Invoca, HubSpot |
+| 🎥 Session Replay | 6 | Hotjar, Microsoft Clarity, Microsoft Clarity Tag, FullStory, Crazy Egg, Glassbox |
 | 🧪 A/B Testing | 4 | Optimizely, Dynamic Yield, Split, Omniconvert |
 | 👤 Visitor Identification | 4 | LinkedIn, Merkury, Demandbase, 6Sense |
-| 💬 Customer Engagement | 3 | Braze, Lytics, Indicative |
+| 💬 Customer Engagement | 2 | Braze, Lytics |
 | 🗄️ CDP | 2 | mParticle, Tealium EventStream |
-| 🍂 Adobe Stack | 6 | Adobe Target, AAM, ECID, Heartbeat, DTM, Launch (CN) |
+| 🍂 Adobe Stack | 3 | Adobe Target, ECID, Launch (CN) |
 | 🔧 Other | 2 | Microsoft Clarity Tag, Seznam Sklik |
 
-> **Note:** Some providers appear in multiple contexts. Indicative is grouped under Analytics in the provider registry but also relates to Customer Engagement. Microsoft Clarity Tag (library load detection) is separate from Microsoft Clarity (event tracking) and is ungrouped.
+> **Note:** Some providers appear in multiple contexts. Microsoft Clarity Tag (library load detection) is separate from Microsoft Clarity (event tracking) and is listed under Session Replay but is ungrouped in the provider filter. Seznam Sklik appears in both Marketing and Other.
 
 👉 Full provider reference with URL patterns: [tagdragon.net/docs/providers](https://www.tagdragon.net/docs/providers)
 
@@ -134,7 +134,7 @@ npm run dev    # Watches CSS + JS for live changes
 | **QA & Implementation** | Verify tags fire correctly. Catch broken events, missing parameters, and misconfigured pixels before deployment. |
 | **Privacy & Compliance** | See exactly what data leaves the browser. Audit payloads for GDPR/CCPA. Use the Consent Panel to test consent mode behavior. |
 | **Performance Review** | Identify redundant tracking calls and oversized payloads. Auto-pruning keeps things fast on high-traffic sites. |
-| **Adobe Stack Debugging** | Switch DEV/ACC/PROD environments at the network level. Debug Launch, Analytics, Target, and AAM in one panel. |
+| **Adobe Stack Debugging** | Switch DEV/ACC/PROD environments at the network level. Debug Launch, Analytics, and Target in one panel. |
 | **DataLayer Validation** | Define custom validation rules for data layer pushes. Watch specific paths, detect missing keys, and validate e-commerce events. |
 
 ---
@@ -161,13 +161,16 @@ npm run dev    # Watches CSS + JS for live changes
 | `npm run lint` | ESLint check |
 | `npm run format` | Prettier auto-format |
 | `npm run format:check` | Prettier check (CI) |
-| `npm run test` | Vitest run all tests |
+| `npm run test` | Vitest run all tests (78 test files) |
 | `npm run test:watch` | Vitest watch mode |
 | `npm run test:coverage` | Vitest with coverage report |
 | `npm run analyze` | Build with bundle visualizer → `dist/stats.html` |
 | `npm run generate-icons` | Regenerate extension icons |
+| `npm run generate-provider-icons` | Regenerate provider icons |
 
 Pre-commit hooks (Husky + lint-staged) auto-lint and format staged `.ts` files.
+
+CI runs on every push/PR to master: lint → format check → type-check → test → build.
 
 ---
 
@@ -181,7 +184,7 @@ Full documentation available at [tagdragon.net/docs](https://www.tagdragon.net/d
 | [Features](https://www.tagdragon.net/docs/features) | Complete feature overview |
 | [DataLayer Tab](https://www.tagdragon.net/docs/datalayer) | DataLayer inspector guide |
 | [Consent Panel](https://www.tagdragon.net/docs/consent-panel) | Consent testing guide |
-| [Provider Reference](https://www.tagdragon.net/docs/providers) | All 68 providers |
+| [Provider Reference](https://www.tagdragon.net/docs/providers) | All 62 providers |
 | [Adobe Env Switcher](https://www.tagdragon.net/docs/adobe-env-switcher) | Adobe environment switching |
 | [Toolbar Reference](https://www.tagdragon.net/docs/toolbar-reference) | Complete UI reference |
 | [FAQ](https://www.tagdragon.net/docs/faq) | Frequently asked questions |

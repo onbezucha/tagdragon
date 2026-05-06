@@ -8,10 +8,12 @@ export const omniconvert: Provider = {
 
   parseParams(url: string, postBody: unknown): Record<string, string | undefined> {
     const p = getParams(url, postBody);
-    return {
+    const result: Record<string, string | undefined> = {
       Event: p.event,
       'Experiment ID': p.experiment_id,
       'Variation ID': p.variation_id,
     };
+    result._eventName = p.event;
+    return result;
   },
 } as const;

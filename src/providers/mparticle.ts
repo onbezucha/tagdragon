@@ -53,6 +53,8 @@ export const mparticle: Provider = {
     result['SDK Version'] = str(body.sdk);
     result['Batch ID'] = str(body.batch_id);
 
+    result._eventName = data.event_name as string | undefined;
+
     return result;
   },
 } as const;

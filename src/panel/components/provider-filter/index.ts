@@ -10,6 +10,8 @@ import { updateGroupStates, updateFooterSummary, updateHiddenBadge } from './pil
 export {
   ensureProviderPill,
   updateProviderCounts,
+  resetProviderCounts,
+  setProviderCounts,
   updateFilterBarVisibility,
   updateGroupStates,
   updateHiddenBadge,

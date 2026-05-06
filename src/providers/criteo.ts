@@ -33,6 +33,8 @@ export const criteo: Provider = {
       }
     }
 
+    result._eventName = p.e ?? str(body.e);
+
     return result;
   },
 } as const;

@@ -4,7 +4,7 @@ import { getParams } from './url-parser';
 export const comscore: Provider = {
   name: 'Comscore',
   color: '#0099CC',
-  pattern: /scorecardresearch\.com\/b\b|sb\.scorecardresearch\.com/,
+  pattern: /scorecardresearch\.com\/(b|p)\b|sb\.scorecardresearch\.com/,
 
   parseParams(url: string, postBody: unknown): Record<string, string | undefined> {
     const p = getParams(url, postBody);
@@ -26,6 +26,7 @@ export const comscore: Provider = {
       'cs_fpid',
       'cs_cfg',
       'c12',
+      'c4',
     ]);
 
     const extra: Record<string, string | undefined> = {};
@@ -35,7 +36,7 @@ export const comscore: Provider = {
       }
     }
 
-    return {
+    const result: Record<string, string | undefined> = {
       Type: p.c1,
       'Client ID': p.c2,
       Version: p.cv,
@@ -52,7 +53,11 @@ export const comscore: Provider = {
       'Fingerprint ID': p.cs_fpid,
       Config: p.cs_cfg,
       Segment: p.c12,
+      'Publisher Segment': p.c4,
       ...extra,
     };
+    result._eventName = result['Type'];
+
+    return result;
   },
 } as const;

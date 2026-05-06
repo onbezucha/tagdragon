@@ -19,7 +19,7 @@ interface HeavyData {
 // entries when exceeding the configured max size budget.
 // ═══════════════════════════════════════════════════════════════════════════
 
-class SizeTrackingMap<K, V> {
+export class SizeTrackingMap<K, V> {
   private _map: Map<K, V>;
   private _estimateSize: (value: V) => number;
   private _maxSize: number;
