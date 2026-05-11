@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeAll } from 'vitest';
 // Mock Chrome API before importing the module using vi.hoisted
 const { chromeMock } = vi.hoisted(() => ({
   chromeMock: {
-    devtools: { inspectedWindow: { tabId: 1 } },
+    devtools: { inspectedWindow: { tabId: 1, eval: vi.fn() } },
     storage: { session: { get: vi.fn().mockResolvedValue({}) } },
     runtime: { onMessage: { addListener: vi.fn() } },
   },

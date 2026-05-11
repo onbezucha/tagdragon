@@ -1,0 +1,61 @@
+// ─── LUCIDE ICON REGISTRY ────────────────────────────────────────────────────
+// Single source of truth for all Lucide icons used in the panel.
+// Both createIcons() calls (index.ts, info-popover.ts) use this shared registry.
+// When adding a new data-lucide="..." to panel.html, add the icon here.
+
+import {
+  Cable,
+  Database,
+  ChevronDown,
+  Eraser,
+  Cookie,
+  Sun,
+  Moon,
+  Trash2,
+  Settings,
+  CircleHelp,
+  Search,
+  X,
+  ArrowUpDown,
+  Filter,
+  Download,
+  Pause,
+  Play,
+  SlidersHorizontal,
+  Upload,
+  WrapText,
+  AlignJustify,
+  Maximize2,
+  ShoppingCart,
+  CheckCircle,
+  EyeOff,
+} from 'lucide';
+
+/** All Lucide icons used in the panel (static HTML + dynamic components). */
+export const PANEL_ICONS = {
+  Cable,
+  Database,
+  ChevronDown,
+  Eraser,
+  Cookie,
+  Sun,
+  Moon,
+  Trash2,
+  Settings,
+  CircleHelp,
+  Search,
+  X,
+  ArrowUpDown,
+  Filter,
+  Download,
+  Pause,
+  Play,
+  SlidersHorizontal,
+  Upload,
+  WrapText,
+  AlignJustify,
+  Maximize2,
+  ShoppingCart,
+  CheckCircle,
+  EyeOff,
+};

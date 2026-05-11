@@ -2,7 +2,12 @@
 // Handles messages between the popup and the rest of the extension.
 // Runs in background (service worker) context.
 
-import type { TabPopupStats, PopupStatsResponse, UpdatePopupStatsMessage } from '@/types/popup';
+import type {
+  TabPopupStats,
+  PopupStatsResponse,
+  UpdatePopupStatsMessage,
+  UpdatePopupStatsBatchMessage,
+} from '@/types/popup';
 import { updateBadgeForTab } from './badge';
 import { devToolsPorts } from './index';
 
@@ -56,6 +61,13 @@ export function initPopupBridge(): void {
       return true;
     }
 
+    if (message.type === 'UPDATE_POPUP_STATS_BATCH') {
+      handleUpdateStatsBatch(message as UpdatePopupStatsBatchMessage)
+        .then(() => sendResponse({ ok: true }))
+        .catch(() => sendResponse({ ok: false }));
+      return true;
+    }
+
     if (message.type === 'GET_POPUP_STATS') {
       handleGetStats(message.tabId)
         .then((data) => sendResponse({ ok: true, data }))
@@ -99,7 +111,7 @@ async function getActiveTabId(): Promise<number> {
   return tab.id;
 }
 
-function createEmptyStats(tabId: number): TabPopupStats {
+export function createEmptyStats(tabId: number): TabPopupStats {
   return {
     tabId,
     totalRequests: 0,
@@ -115,25 +127,60 @@ function createEmptyStats(tabId: number): TabPopupStats {
 
 // ─── HANDLERS ─────────────────────────────────────────────────────────────────
 
+interface StatsUpdate {
+  provider: string;
+  color: string;
+  size: number;
+  duration: number;
+  status: number;
+}
+
+/**
+ * Accumulate a single update into the stats object.
+ * Shared between single and batch update handlers.
+ */
+export function accumulateStatsUpdate(stats: TabPopupStats, update: StatsUpdate): void {
+  stats.totalRequests++;
+  stats.totalSize += update.size || 0;
+  stats.totalDuration += update.duration || 0;
+  if (update.status >= 200 && update.status < 300) stats.successCount++;
+  const existing = stats.providers.find((p) => p.name === update.provider);
+  if (existing) {
+    existing.count++;
+  } else {
+    stats.providers.push({ name: update.provider, color: update.color, count: 1 });
+  }
+}
+
 async function handleUpdateStats(message: UpdatePopupStatsMessage): Promise<void> {
   if (typeof message.tabId !== 'number' || message.tabId <= 0) return;
   const allStats = await loadStatsCache();
   const stats: TabPopupStats = allStats[message.tabId] ?? createEmptyStats(message.tabId);
 
-  stats.totalRequests++;
-  stats.totalSize += message.size || 0;
-  stats.totalDuration += message.duration || 0;
-  if (message.status >= 200 && message.status < 300) stats.successCount++;
+  const now = new Date().toISOString();
+  stats.lastRequest = now;
+  if (!stats.firstRequest) stats.firstRequest = now;
+
+  accumulateStatsUpdate(stats, message);
+  stats.providers.sort((a, b) => b.count - a.count);
+
+  allStats[message.tabId] = stats;
+  scheduleFlush();
+  await updateBadgeForTab(message.tabId, stats.totalRequests);
+}
+
+async function handleUpdateStatsBatch(message: UpdatePopupStatsBatchMessage): Promise<void> {
+  if (typeof message.tabId !== 'number' || message.tabId <= 0) return;
+  if (!Array.isArray(message.updates) || message.updates.length === 0) return;
+  const allStats = await loadStatsCache();
+  const stats: TabPopupStats = allStats[message.tabId] ?? createEmptyStats(message.tabId);
 
   const now = new Date().toISOString();
   stats.lastRequest = now;
   if (!stats.firstRequest) stats.firstRequest = now;
 
-  const existing = stats.providers.find((p) => p.name === message.provider);
-  if (existing) {
-    existing.count++;
-  } else {
-    stats.providers.push({ name: message.provider, color: message.color, count: 1 });
+  for (const update of message.updates) {
+    accumulateStatsUpdate(stats, update);
   }
   stats.providers.sort((a, b) => b.count - a.count);
 
@@ -150,7 +197,7 @@ async function handleGetStats(tabId?: number): Promise<PopupStatsResponse> {
   return buildPopupResponse(stats, targetTabId);
 }
 
-function buildPopupResponse(stats: TabPopupStats, tabId: number): PopupStatsResponse {
+export function buildPopupResponse(stats: TabPopupStats, tabId: number): PopupStatsResponse {
   const TOP_N = 5;
   const topProviders = stats.providers.slice(0, TOP_N);
   const others = stats.providers.slice(TOP_N);

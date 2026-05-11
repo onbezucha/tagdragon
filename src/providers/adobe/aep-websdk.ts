@@ -1,6 +1,6 @@
-import type { Provider } from '../../types/provider';
-import { getParams } from '../url-parser';
-import { parsePostBodyJson, titleCase, formatJsonValue } from '../parse-helpers';
+import type { Provider } from '@/types/provider';
+import { getParams } from '@/providers/url-parser';
+import { parsePostBodyJson, titleCase, formatJsonValue } from '@/providers/parse-helpers';
 
 export const aepWebSDK: Provider = {
   name: 'Adobe Server-Side',
@@ -170,4 +170,4 @@ export const aepWebSDK: Provider = {
 
     return result;
   },
-};
+} as const;

@@ -3,7 +3,7 @@
 // Handles buffering and communication with the DevTools panel window.
 // ═══════════════════════════════════════════════════════════════════════════
 
-import type { ParsedRequest } from '@/types/request';
+import type { ParsedRequest, PageNavigation } from '@/types/request';
 import type { DataLayerPush, DataLayerSource } from '@/types/datalayer';
 import { MAX_BUFFER } from '@/shared/constants';
 
@@ -159,10 +159,13 @@ export interface PanelWindow extends Window {
   setPanelPaused: (paused: boolean) => void;
   flushPendingRequests: () => void;
   flushPendingDlPushes: () => void;
+  insertDlNavMarker: (url: string) => void;
+  receivePageNavigation: (nav: PageNavigation) => void;
 }
 
 let panelWindow: PanelWindow | null = null;
 let buffer: ParsedRequest[] = [];
+let navBuffer: PageNavigation[] = [];
 
 // ─── HEAVY DATA STORE ─────────────────────────────────────────────────────
 // Map from request ID to heavy data (response body, headers).
@@ -203,9 +206,24 @@ export function sendToPanel(data: ParsedRequest): void {
     }
   }
   buffer.push(data);
-  if (buffer.length > MAX_BUFFER) {
-    buffer = buffer.slice(-MAX_BUFFER);
+  if (buffer.length > MAX_BUFFER) buffer.splice(0, buffer.length - MAX_BUFFER);
+}
+
+/**
+ * Send a page navigation event to the panel window.
+ * Buffers if panel is not yet open.
+ */
+export function sendPageNavigation(nav: PageNavigation): void {
+  if (panelWindow && !panelWindow.closed && panelWindow.receivePageNavigation) {
+    try {
+      panelWindow.receivePageNavigation(nav);
+      return;
+    } catch {
+      // fall through to buffer
+    }
   }
+  navBuffer.push(nav);
+  if (navBuffer.length > MAX_BUFFER) navBuffer.splice(0, navBuffer.length - MAX_BUFFER);
 }
 
 /**
@@ -248,6 +266,18 @@ export function setPanelWindow(win: PanelWindow): void {
     }
   });
   buffer = [];
+
+  // Flush buffered page navigations
+  navBuffer.forEach((nav) => {
+    try {
+      if (win.receivePageNavigation) {
+        win.receivePageNavigation(nav);
+      }
+    } catch {
+      // ignore
+    }
+  });
+  navBuffer = [];
 }
 
 /**

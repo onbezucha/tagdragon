@@ -130,9 +130,17 @@
       </div>
     </div>
     <div class="ctx-right">
+    <!-- HIDE GTM SYSTEM EVENTS TOGGLE -->
+    <button id="dl-btn-hide-gtm" class="quick-btn active" data-tooltip="Hide GTM system events">
+      <i data-lucide="eye-off"></i>
+    </button>
     <!-- SORT TOGGLE BUTTON -->
     <button id="dl-btn-sort" class="quick-btn" data-tooltip="Toggle sort order">
       <i data-lucide="arrow-up-down"></i>
+    </button>
+    <!-- WRAP VALUES TOGGLE BUTTON -->
+    <button id="dl-btn-wrap-values" class="quick-btn" data-tooltip="Wrap long values" aria-label="Toggle wrap values">
+      <i data-lucide="wrap-text"></i>
     </button>
     <!-- DATA LAYER FILTER BUTTON - Opens DL filter popover -->
     <button id="dl-btn-filter" class="quick-btn" data-tooltip="DataLayer filters">
@@ -360,8 +368,40 @@
         <span class="info-version" id="info-version"></span>
       </div>
 
-      <div class="info-description">
-        Marketing &amp; Analytics Tracker — captures and decodes tracking requests from 68+ platforms.
+      <div class="info-description" id="info-description">
+        Marketing &amp; Analytics Tracker —
+        <strong><span id="info-provider-count">59</span> providers</strong> in
+        <span id="info-category-count">9</span> categories, decoded in real time.
+      </div>
+
+      <div id="info-session-stats" class="info-session-stats">
+        <div class="info-stats-cards">
+          <div class="info-stat-card">
+            <span class="info-stat-value" id="info-stat-requests">0</span>
+            <span class="info-stat-label">Requests</span>
+          </div>
+          <div class="info-stat-card">
+            <span class="info-stat-value" id="info-stat-providers">0</span>
+            <span class="info-stat-label">Providers</span>
+          </div>
+          <div class="info-stat-card">
+            <span class="info-stat-value" id="info-stat-dl">0</span>
+            <span class="info-stat-label">DL pushes</span>
+          </div>
+        </div>
+        <div class="info-stats-top" id="info-stats-top"></div>
+      </div>
+
+      <div class="info-section">
+        <button class="info-section-header" aria-expanded="true">
+          <svg class="info-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="m6 9 6 6 6-6"/>
+          </svg>
+          <span>🆕 What's New</span>
+        </button>
+        <div class="info-section-content">
+          <div id="info-whats-new" class="info-whats-new"></div>
+        </div>
       </div>
 
       <div class="info-section">
@@ -391,10 +431,10 @@
           <svg class="info-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="m6 9 6 6 6-6"/>
           </svg>
-          <span>📡 DataLayer sources</span>
+          <span>⌨️ Keyboard shortcuts</span>
         </button>
         <div class="info-section-content">
-          <div id="info-dl-sources" class="info-dl-sources"></div>
+          <div id="info-shortcuts-list" class="info-shortcuts"></div>
         </div>
       </div>
 
@@ -403,10 +443,10 @@
           <svg class="info-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="m6 9 6 6 6-6"/>
           </svg>
-          <span>⌨️ Keyboard shortcuts</span>
+          <span>📡 DataLayer sources</span>
         </button>
         <div class="info-section-content">
-          <div id="info-shortcuts-list" class="info-shortcuts"></div>
+          <div id="info-dl-sources" class="info-dl-sources"></div>
         </div>
       </div>
 
@@ -423,8 +463,12 @@
       </div>
 
       <div class="info-footer">
-        <span>MIT License © 2025 Ondřej Bezucha</span>
-        <a href="https://www.tagdragon.net/" target="_blank" rel="noopener" class="info-footer-link">tagdragon.net</a>
+        <span>MIT License © 2025–2026 Ondřej Bezucha</span>
+        <div class="info-footer-links">
+          <a href="https://www.tagdragon.net/" target="_blank" rel="noopener" class="info-footer-link">Website</a>
+          <a href="https://github.com/onbezucha/tagdragon" target="_blank" rel="noopener" class="info-footer-link">GitHub</a>
+          <a href="https://github.com/onbezucha/tagdragon/releases" target="_blank" rel="noopener" class="info-footer-link">Releases</a>
+        </div>
       </div>
     </div>
   </section>
@@ -460,7 +504,7 @@
             <div class="es-feature-card">
               <div class="es-feature-icon">📡</div>
               <div class="es-feature-title">Capture</div>
-              <div class="es-feature-desc">Intercepts 69+ marketing &amp; analytics platforms</div>
+              <div class="es-feature-desc">Intercepts 59 marketing &amp; analytics platforms</div>
             </div>
             <div class="es-feature-card">
               <div class="es-feature-icon">🔍</div>
@@ -474,7 +518,7 @@
             </div>
           </div>
 
-          <p class="es-hint">Open any page with GA4, GTM, Meta Pixel, or any of 67 supported providers.<br>Reload the page — tracking requests appear here instantly.</p>
+          <p class="es-hint">Open any page with GA4, GTM, Meta Pixel, or any of 59 supported providers.<br>Reload the page — tracking requests appear here instantly.</p>
 
           <!-- Action Button -->
           <button id="btn-reload-page" class="es-action-btn" aria-label="Reload page">
@@ -631,7 +675,7 @@
             </button>
 
             <!-- Hint -->
-            <div class="empty-subtitle">Push data to start monitoring your data layer</div>
+            <div id="dl-empty-hint" class="empty-subtitle">Open a page with GTM, Tealium, Adobe, or Segment to see DataLayer pushes</div>
           </div>
         </div>
         <div id="dl-status-text"></div>

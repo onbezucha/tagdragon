@@ -28,7 +28,7 @@ Load the extension in Chrome:
 | `npm run lint` | ESLint check |
 | `npm run format` | Prettier auto-format |
 | `npm run format:check` | Prettier check (used in CI) |
-| `npm run test` | Vitest run all tests (83 test files) |
+| `npm run test` | Vitest run all tests (115 test files) |
 | `npm run test:watch` | Vitest watch mode |
 | `npm run test:coverage` | Vitest with coverage report |
 | `npm run analyze` | Build with bundle visualizer → opens `dist/stats.html` |
@@ -73,13 +73,13 @@ export const myProvider: Provider = {
 - **Path aliases** — use `@/*` to reference `src/*`
 - **Comment headers** — use `═══` for major sections, `───` for subsections
 
-Full conventions are documented in `JEAN.md`.
+Full conventions are documented in `AGENTS.md`.
 
 ## Testing
 
-The project uses Vitest with 83 test files covering:
+The project uses Vitest with 115 test files covering:
 
-- **Provider matching** — pattern tests and URL parsing for all 67 providers
+- **Provider matching** — pattern tests and URL parsing for all 59 providers
 - **DevTools** — network capture, panel bridge, data layer relay
 - **Panel/DataLayer** — diff renderer, correlation, validator, e-commerce formatter, changed-paths
 - **Content scripts** — data sanitization

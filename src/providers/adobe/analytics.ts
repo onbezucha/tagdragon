@@ -1,5 +1,5 @@
-import type { Provider } from '../../types/provider';
-import { getParams, extractPath } from '../url-parser';
+import type { Provider } from '@/types/provider';
+import { getParams, extractPath } from '@/providers/url-parser';
 
 export const adobeAA: Provider = {
   name: 'Adobe Client-Side',
@@ -79,4 +79,4 @@ export const adobeAA: Provider = {
 
     return result;
   },
-};
+} as const;

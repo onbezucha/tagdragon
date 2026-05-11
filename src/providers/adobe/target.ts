@@ -1,6 +1,6 @@
-import type { Provider } from '../../types/provider';
-import { getParams } from '../url-parser';
-import { parsePostBodyJson } from '../parse-helpers';
+import type { Provider } from '@/types/provider';
+import { getParams } from '@/providers/url-parser';
+import { parsePostBodyJson } from '@/providers/parse-helpers';
 
 /**
  * Extract mbox names and parameters from execute/prefetch containers.

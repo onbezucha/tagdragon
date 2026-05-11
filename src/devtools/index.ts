@@ -1,8 +1,13 @@
 // ─── DEVTOOLS ENTRY POINT ────────────────────────────────────────────────────
 // Creates the DevTools panel and initializes network capture.
 
-import { setPanelWindow, getPanelWindow, type PanelWindow } from './panel-bridge';
-import { initNetworkCapture } from './network-capture';
+import {
+  setPanelWindow,
+  getPanelWindow,
+  sendPageNavigation,
+  type PanelWindow,
+} from './panel-bridge';
+import { initNetworkCapture, setCurrentPageUrl } from './network-capture';
 import {
   sendDataLayerPushToPanel,
   sendDataLayerSourcesToPanel,
@@ -87,6 +92,16 @@ function attachPortListener(port: chrome.runtime.Port): void {
 const devToolsPort = chrome.runtime.connect({ name: `devtools_${tabId}` });
 attachPortListener(devToolsPort);
 
+// ─── RELOAD INSPECTED TAB (from panel button) ─────────────────────────────────
+// The panel cannot access chrome.devtools.inspectedWindow directly,
+// so it sends a message here and we execute the reload in the DevTools context.
+
+chrome.runtime.onMessage.addListener((msg) => {
+  if (msg.type === 'RELOAD_INSPECTED_TAB') {
+    chrome.devtools.inspectedWindow.eval('location.reload()');
+  }
+});
+
 // ─── PANEL CREATION ──────────────────────────────────────────────────────────
 
 chrome.devtools.panels.create('TagDragon', '', 'public/panel.html', (panel) => {
@@ -126,12 +141,24 @@ chrome.devtools.panels.create('TagDragon', '', 'public/panel.html', (panel) => {
 
   // Re-inject on navigation — panel.onShown does not fire on page navigation,
   // so without this listener the MAIN world script would never run on the new page.
-  chrome.devtools.network.onNavigated.addListener(() => {
+  chrome.devtools.network.onNavigated.addListener((url: string) => {
     const win = getPanelWindow();
-    if (win && !win.closed && typeof win.clearDataLayer === 'function') {
-      win.clearDataLayer();
+
+    // DataLayer nav marker — use URL directly (same as Network)
+    if (win && !win.closed && typeof win.insertDlNavMarker === 'function') {
+      win.insertDlNavMarker(url);
     }
+
+    // Re-inject content scripts on new page
     chrome.runtime.sendMessage({ type: 'INJECT_DATALAYER', tabId }).catch(() => {});
+
+    // Update page URL + generate navId, then send navigation event
+    const navId = setCurrentPageUrl(url);
+    sendPageNavigation({
+      id: navId,
+      url,
+      timestamp: new Date().toISOString(),
+    });
   });
 
   // When panel is hidden, we keep the panel window reference for buffering

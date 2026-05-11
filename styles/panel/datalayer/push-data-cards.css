@@ -1,0 +1,132 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+ * PUSH DATA CATEGORY CARDS
+ * Styles for category cards in the PushData sub-tab.
+ * Each card groups related key-value pairs with an icon and colored accent.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ─── Card Container ─────────────────────────────────────────────────────── */
+
+.dl-category-card {
+  border-left: 3px solid var(--card-color, var(--text-3));
+  border-radius: 6px;
+  margin-bottom: 10px;
+  background: var(--bg-1);
+  overflow: hidden;
+}
+
+.dl-category-card:hover {
+  background: var(--bg-2);
+}
+
+/* ─── Card Header ────────────────────────────────────────────────────────── */
+
+.dl-category-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  cursor: pointer;
+  user-select: none;
+  border-bottom: 1px solid transparent;
+  transition: background 0.15s ease;
+}
+
+.dl-category-header:hover {
+  background: var(--bg-2);
+}
+
+.dl-category-card:not(.collapsed) > .dl-category-header {
+  border-bottom-color: var(--border);
+}
+
+/* ─── Icon ───────────────────────────────────────────────────────────────── */
+
+.dl-category-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--card-color, var(--text-2));
+  flex-shrink: 0;
+}
+
+.dl-category-icon svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* ─── Label ──────────────────────────────────────────────────────────────── */
+
+.dl-category-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-1);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ─── Count Badge ────────────────────────────────────────────────────────── */
+
+.dl-category-count {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-2);
+  margin-left: auto;
+}
+
+/* ─── Collapse Toggle ────────────────────────────────────────────────────── */
+
+.dl-category-toggle {
+  font-size: 12px;
+  color: var(--text-3);
+  transition: transform 0.15s ease;
+  flex-shrink: 0;
+}
+
+.dl-category-card.collapsed .dl-category-toggle {
+  transform: rotate(-90deg);
+}
+
+/* ─── Card Body ──────────────────────────────────────────────────────────── */
+
+.dl-category-body {
+  padding: 4px 10px 6px;
+}
+
+.dl-category-card.collapsed > .dl-category-body {
+  display: none;
+}
+
+/* ─── Inline Tree inside Cards ───────────────────────────────────────────── */
+
+.dl-category-body > .dl-tree-node {
+  padding: 0;
+}
+
+.dl-category-body > .dl-tree-node > .dl-tree-row {
+  padding-left: 0 !important;
+}
+
+/* ─── E-commerce table inside card ───────────────────────────────────────── */
+
+.dl-category-body > .dl-ec-container {
+  margin-bottom: 8px;
+}
+
+/* ─── Compact Mode ───────────────────────────────────────────────────────── */
+
+body.compact-rows .dl-category-header {
+  padding: 4px 8px;
+}
+
+body.compact-rows .dl-category-body {
+  padding: 2px 8px 4px;
+}
+
+/* ─── Wrap Values Mode ───────────────────────────────────────────────────── */
+
+body.wrap-values .dl-category-body .dl-tree-value {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+  word-break: break-all;
+}

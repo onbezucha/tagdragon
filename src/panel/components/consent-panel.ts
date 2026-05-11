@@ -217,7 +217,12 @@ export async function clearAllCookies(): Promise<number> {
   try {
     return await Promise.race<number>([
       chrome.runtime
-        .sendMessage({ type: 'CLEAR_COOKIES', url })
+        .sendMessage({
+          type: 'CLEAR_COOKIES',
+          url,
+          source: 'devtools',
+          tabId: chrome.devtools.inspectedWindow.tabId,
+        })
         .then((resp: unknown) => (resp as { deleted?: number } | null)?.deleted ?? 0),
       new Promise<never>((_, reject) =>
         setTimeout(() => reject(new Error('Clear cookies timeout')), 5000)

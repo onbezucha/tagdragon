@@ -20,7 +20,7 @@ body.compact-rows .dl-push-preview { display: none; }
 .dl-push-primary {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--icon-gap-md);
   font-size: 12px;
   flex-wrap: wrap;
 }
@@ -100,5 +100,40 @@ body.compact-rows .dl-push-preview { display: none; }
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.3px;
+  flex-shrink: 0;
+}
+
+/* Correlation count badge on push row */
+.dl-correlation-count {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--accent);
+  opacity: 0.7;
+  margin-left: auto;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.dl-correlation-count:hover {
+  opacity: 1;
+}
+
+.dl-push-row.page-collapsed {
+  display: none;
+}
+
+.dl-replay-badge {
+  font-size: 10px;
+  color: var(--text-3);
+  margin-right: 2px;
+  flex-shrink: 0;
+}
+
+/* Diff count badge on push row */
+.dl-diff-count {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--yellow);
+  opacity: 0.6;
+  white-space: nowrap;
   flex-shrink: 0;
 }

@@ -22,4 +22,5 @@
 
 #dl-filter-popover.visible {
   display: block;
+  pointer-events: auto;
 }

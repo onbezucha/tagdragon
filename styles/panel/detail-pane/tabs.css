@@ -50,23 +50,6 @@
   padding: 12px;
 }
 
-#detail-content::-webkit-scrollbar {
-  width: 8px;
-}
-
-#detail-content::-webkit-scrollbar-track {
-  background: var(--bg-0);
-}
-
-#detail-content::-webkit-scrollbar-thumb {
-  background: var(--bg-2);
-  border-radius: 4px;
-}
-
-#detail-content::-webkit-scrollbar-thumb:hover {
-  background: var(--bg-3);
-}
-
 .tab-pane {
   display: none;
 }

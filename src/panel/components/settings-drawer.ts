@@ -208,7 +208,7 @@ function nd(key: keyof AppConfig): string {
 // ─── CHEVRON SVG ──────────────────────────────────────────────────────────
 
 const CHEVRON_SVG =
-  '<svg class="popover-label-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>';
+  '<svg class="popover-label-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>';
 
 // ─── RENDER: DISPLAY SECTION ──────────────────────────────────────────────
 
@@ -220,7 +220,7 @@ function renderDisplaySection(): string {
     'display',
     `
       <div class="popover-row${nd('sortOrder')}">
-        <span class="popover-label">Sort order</span>
+        <span class="popover-label"><svg class="popover-label-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/></svg> Sort order</span>
         <select id="cfg-sort-order" class="popover-select">
           <option value="asc"${cfg.sortOrder === 'asc' ? ' selected' : ''}>Oldest first</option>
           <option value="desc"${cfg.sortOrder === 'desc' ? ' selected' : ''}>Newest first</option>
@@ -239,18 +239,36 @@ function renderDisplaySection(): string {
       </div>
       <label class="popover-checkbox-label${nd('wrapValues')}">
         <input type="checkbox" class="popover-checkbox" id="cfg-wrap-values"${cfg.wrapValues ? ' checked' : ''}>
+        <svg class="popover-label-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M3 12h15a3 3 0 1 1 0 6h-4"/><path d="m16 16-2 2 2 2"/><path d="M3 18h7"/></svg>
         Wrap long values
       </label>
       <label class="popover-checkbox-label${nd('autoExpand')}">
         <input type="checkbox" class="popover-checkbox" id="cfg-auto-expand"${cfg.autoExpand ? ' checked' : ''}>
+        <svg class="popover-label-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22v-6"/><path d="m8 18 4 4 4-4"/><path d="M12 2v6"/><path d="m8 6 4-4 4 4"/></svg>
         Auto-expand sections
       </label>
       <label class="popover-checkbox-label${nd('compactRows')}">
         <input type="checkbox" class="popover-checkbox" id="cfg-compact-rows"${cfg.compactRows ? ' checked' : ''}>
+        <svg class="popover-label-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" x2="21" y1="6" y2="6"/><line x1="3" x2="21" y1="12" y2="12"/><line x1="3" x2="21" y1="18" y2="18"/></svg>
         Compact rows
       </label>
+      <label class="popover-checkbox-label${nd('sectionAccentBar')}">
+        <input type="checkbox" class="popover-checkbox" id="cfg-section-accent-bar"${cfg.sectionAccentBar ? ' checked' : ''}>
+        <svg class="popover-label-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/></svg>
+        Section accent bar
+      </label>
+      <label class="popover-checkbox-label${nd('sectionDimOthers')}">
+        <input type="checkbox" class="popover-checkbox" id="cfg-section-dim-others"${cfg.sectionDimOthers ? ' checked' : ''}>
+        <svg class="popover-label-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49"/><path d="M14.084 14.158a3 3 0 0 1-4.242-4.242"/><path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143"/><path d="m2 2 20 20"/></svg>
+        Dim other sections
+      </label>
+      <div class="popover-row popover-row-slider${nd('sectionDimOpacity')}" id="cfg-section-dim-slider-row"${cfg.sectionDimOthers ? '' : ' style="opacity:0.4;pointer-events:none;"'}>
+        <span class="popover-label"><svg class="popover-label-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg> Dim intensity</span>
+        <input type="range" id="cfg-section-dim-opacity" class="popover-range" min="0.1" max="0.9" step="0.1" value="${cfg.sectionDimOpacity}">
+        <span class="popover-range-value" id="cfg-section-dim-opacity-value">${Math.round(cfg.sectionDimOpacity * 100)}%</span>
+      </div>
       <div class="popover-row${nd('defaultTab')}">
-        <span class="popover-label">Default detail tab</span>
+        <span class="popover-label"><svg class="popover-label-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="m9 16 2 2 4-4"/></svg> Default detail tab</span>
         <select id="cfg-default-tab" class="popover-select">
           <option value="decoded"${cfg.defaultTab === 'decoded' ? ' selected' : ''}>Decoded</option>
           <option value="query"${cfg.defaultTab === 'query' ? ' selected' : ''}>Query</option>
@@ -273,7 +291,7 @@ function renderNetworkLimitsSection(): string {
     'performance',
     `
       <div class="popover-row${nd('maxRequests')}">
-        <span class="popover-label">Max requests</span>
+        <span class="popover-label"><svg class="popover-label-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/></svg> Max requests</span>
         <select id="cfg-max-requests" class="popover-select">
           <option value="100"${cfg.maxRequests === 100 ? ' selected' : ''}>100</option>
           <option value="250"${cfg.maxRequests === 250 ? ' selected' : ''}>250</option>
@@ -285,6 +303,7 @@ function renderNetworkLimitsSection(): string {
       </div>
       <label class="popover-checkbox-label${nd('autoPrune')}">
         <input type="checkbox" class="popover-checkbox" id="cfg-auto-prune"${cfg.autoPrune ? ' checked' : ''}>
+        <svg class="popover-label-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><path d="M8.12 8.12 12 12"/><path d="M20 4 8.12 15.88"/><circle cx="6" cy="18" r="3"/><path d="M14.8 14.8 20 20"/></svg>
         Auto-prune when limit reached
       </label>
     `
@@ -300,7 +319,7 @@ function renderDlLimitsSection(): string {
     'performance',
     `
       <div class="popover-row${nd('maxDlPushes')}">
-        <span class="popover-label">Max DL pushes</span>
+        <span class="popover-label"><svg class="popover-label-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/></svg> Max DL pushes</span>
         <select id="cfg-max-dl-pushes" class="popover-select">
           <option value="200"${cfg.maxDlPushes === 200 ? ' selected' : ''}>200</option>
           <option value="500"${cfg.maxDlPushes === 500 ? ' selected' : ''}>500</option>
@@ -323,7 +342,7 @@ function renderDlDisplaySection(): string {
     'dl-display',
     `
       <div class="popover-row${nd('dlSortField')}">
-        <span class="popover-label">Sort field</span>
+        <span class="popover-label"><svg class="popover-label-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/></svg> Sort field</span>
         <select id="cfg-dl-sort-field" class="popover-select">
           <option value="time"${cfg.dlSortField === 'time' ? ' selected' : ''}>Time</option>
           <option value="keycount"${cfg.dlSortField === 'keycount' ? ' selected' : ''}>Key count</option>
@@ -331,7 +350,7 @@ function renderDlDisplaySection(): string {
         </select>
       </div>
       <div class="popover-row${nd('dlSortOrder')}">
-        <span class="popover-label">Sort order</span>
+        <span class="popover-label"><svg class="popover-label-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/></svg> Sort order</span>
         <select id="cfg-dl-sort-order" class="popover-select">
           <option value="asc"${cfg.dlSortOrder === 'asc' ? ' selected' : ''}>Oldest first</option>
           <option value="desc"${cfg.dlSortOrder === 'desc' ? ' selected' : ''}>Newest first</option>
@@ -339,6 +358,7 @@ function renderDlDisplaySection(): string {
       </div>
       <label class="popover-checkbox-label${nd('dlGroupBySource')}">
         <input type="checkbox" class="popover-checkbox" id="cfg-dl-group-by-source"${cfg.dlGroupBySource ? ' checked' : ''}>
+        <svg class="popover-label-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.84Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/></svg>
         Group by source
       </label>
     `
@@ -358,7 +378,7 @@ function renderDlToolsSection(): string {
     'dl-tools',
     `
       <div class="popover-row${nd('correlationWindowMs')}">
-        <span class="popover-label">Correlation window</span>
+        <span class="popover-label"><svg class="popover-label-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="10" x2="14" y1="2" y2="2"/><line x1="12" x2="15" y1="14" y2="11"/><circle cx="12" cy="14" r="8"/></svg> Correlation window</span>
         <div style="display:flex;align-items:center;gap:4px;">
           <input type="number" id="cfg-correlation-window" class="popover-number-input" value="${Number(cfg.correlationWindowMs) || 5000}" min="500" max="10000" step="500">
           <span style="font-size:10px;color:var(--text-2);">ms</span>
@@ -424,9 +444,27 @@ function wireUpSectionControls(tab: DrawerTab): void {
     wireCheckbox('cfg-wrap-values', 'wrapValues', () => {
       ctx?.syncQuickButtons();
       ctx?.applyWrapValuesClass();
+      // Sync toolbar button active states
+      const val =
+        (document.getElementById('cfg-wrap-values') as HTMLInputElement)?.checked ?? false;
+      const $netBtn = document.getElementById('btn-wrap-values');
+      const $dlBtn = document.getElementById('dl-btn-wrap-values');
+      if ($netBtn) $netBtn.classList.toggle('active', val);
+      if ($dlBtn) $dlBtn.classList.toggle('active', val);
     });
     wireCheckbox('cfg-auto-expand', 'autoExpand', () => ctx?.syncQuickButtons());
     wireCheckbox('cfg-compact-rows', 'compactRows', () => ctx?.applyCompactRowsClass());
+    wireCheckbox('cfg-section-accent-bar', 'sectionAccentBar');
+    wireCheckbox('cfg-section-dim-others', 'sectionDimOthers', () => {
+      const sliderRow = document.getElementById('cfg-section-dim-slider-row');
+      if (sliderRow) {
+        const enabled = (document.getElementById('cfg-section-dim-others') as HTMLInputElement)
+          ?.checked;
+        sliderRow.style.opacity = enabled ? '' : '0.4';
+        sliderRow.style.pointerEvents = enabled ? '' : 'none';
+      }
+    });
+    wireRangeSlider('cfg-section-dim-opacity', 'sectionDimOpacity');
     wireSelect('cfg-default-tab', 'defaultTab');
     // Limits
     wireSelect('cfg-max-requests', 'maxRequests');
@@ -474,6 +512,22 @@ function wireCheckbox(id: string, key: keyof AppConfig, afterFn?: () => void): v
   el.checked = state.getConfig()[key] as boolean;
   el.addEventListener('change', () => {
     state.updateConfig(key, el.checked);
+    showSaveConfirm();
+    afterFn?.();
+  });
+}
+
+function wireRangeSlider(id: string, key: keyof AppConfig, afterFn?: () => void): void {
+  const el = document.getElementById(id) as HTMLInputElement | null;
+  const valueDisplay = document.getElementById(`${id}-value`);
+  if (!el) return;
+  el.value = String(state.getConfig()[key]);
+  if (valueDisplay)
+    valueDisplay.textContent = `${Math.round(Number(state.getConfig()[key]) * 100)}%`;
+  el.addEventListener('input', () => {
+    const val = parseFloat(el.value);
+    state.updateConfig(key, val);
+    if (valueDisplay) valueDisplay.textContent = `${Math.round(val * 100)}%`;
     showSaveConfirm();
     afterFn?.();
   });

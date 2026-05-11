@@ -61,7 +61,7 @@ import { outbrain } from './outbrain';
 import { teads } from './teads';
 import { rtbHouse } from './rtb-house';
 import { sojern } from './sojern';
-import { vibes } from './vibes';
+
 import { invoca } from './invoca';
 import { brevo } from './brevo';
 
@@ -86,14 +86,12 @@ import { sixsense } from './sixsense';
 // Customer Engagement / CRM
 import { braze } from './braze';
 import { lytics } from './lytics';
-import { indicative } from './indicative';
 
 // Tag Managers (other)
 import { ensighten } from './ensighten';
 
 // Others
 import { seznamSklik } from './seznam-sklik';
-import { merkury } from './merkury';
 
 /**
  * All registered providers, in matching priority order.
@@ -170,7 +168,6 @@ export const PROVIDERS: ProviderRegistry = [
   teads,
   rtbHouse,
   sojern,
-  vibes,
   invoca,
   brevo,
   hubspot,
@@ -183,14 +180,12 @@ export const PROVIDERS: ProviderRegistry = [
   // Customer Engagement / CRM
   braze,
   lytics,
-  indicative,
 
   // Tag Managers (other)
   ensighten,
 
   // Others
   seznamSklik,
-  merkury,
 ] as const;
 
 // ─── DOMAIN INDEX ────────────────────────────────────────────────────────────
@@ -229,45 +224,80 @@ function buildDomainIndex(): void {
 buildDomainIndex();
 
 /**
+ * Lightweight hostname extractor — avoids allocating a full URL object.
+ * Used in the hot path where `new URL().hostname` is called for every request.
+ */
+function extractHostname(url: string): string {
+  // Fast path: skip protocol
+  let start = url.indexOf('//');
+  if (start === -1) start = 0;
+  else start += 2;
+  // Skip auth (user:pass@)
+  const atPos = url.indexOf('@', start);
+  if (atPos !== -1 && atPos < url.indexOf('/', start)) start = atPos + 1;
+  // Find end of host
+  const pathStart = url.indexOf('/', start);
+  const portStart = url.indexOf(':', start);
+  let end = pathStart === -1 ? url.length : pathStart;
+  if (portStart !== -1 && portStart < end) end = portStart;
+  // Handle [ipv6]
+  if (url[start] === '[') {
+    const bracketEnd = url.indexOf(']', start);
+    return url.substring(start + 1, bracketEnd === -1 ? end : bracketEnd);
+  }
+  return url.substring(start, end);
+}
+
+/**
  * Find the first provider whose pattern matches the given URL.
  * Uses domain-first lookup for fast matching, falls back to full scan.
  */
 export function matchProvider(url: string): Provider | null {
   try {
-    const hostname = new URL(url).hostname;
+    const hostname = extractHostname(url);
 
-    // Find candidates from domain index
-    const candidates: number[] = [];
-
-    // Check exact hostname first
+    // Test exact hostname matches first (most likely match)
     const exact = domainIndex.get(hostname);
-    if (exact) candidates.push(...exact);
+    if (exact) {
+      for (const idx of exact) {
+        const p = PROVIDERS[idx].pattern;
+        if (p.flags.includes('g')) p.lastIndex = 0;
+        if (p.test(url)) return PROVIDERS[idx];
+      }
+    }
 
-    // Check parent domain (remove first subdomain)
+    // Test parent domain matches
     const dotIdx = hostname.indexOf('.');
     if (dotIdx > 0) {
       const parent = hostname.slice(dotIdx + 1);
       const parentMatch = domainIndex.get(parent);
-      if (parentMatch) candidates.push(...parentMatch);
+      if (parentMatch) {
+        for (const idx of parentMatch) {
+          const p = PROVIDERS[idx].pattern;
+          if (p.flags.includes('g')) p.lastIndex = 0;
+          if (p.test(url)) return PROVIDERS[idx];
+        }
+      }
     }
 
-    // Also check for "www." prefix
+    // Test www.-stripped matches
     if (hostname.startsWith('www.')) {
       const withoutWww = hostname.slice(4);
       const wwwMatch = domainIndex.get(withoutWww);
-      if (wwwMatch) candidates.push(...wwwMatch);
+      if (wwwMatch) {
+        for (const idx of wwwMatch) {
+          const p = PROVIDERS[idx].pattern;
+          if (p.flags.includes('g')) p.lastIndex = 0;
+          if (p.test(url)) return PROVIDERS[idx];
+        }
+      }
     }
 
-    // Test candidates first (most likely match), then generic
-    // IMPORTANT: candidates may contain duplicates from overlapping lookups,
-    // but since PROVIDERS ordering is preserved, first match still wins
-    const ordered = [...candidates, ...genericIndices];
-    for (const idx of ordered) {
+    // Then test generic providers
+    for (const idx of genericIndices) {
       const p = PROVIDERS[idx].pattern;
-      p.lastIndex = 0; // defensive reset — prevent stale state from global-flagged regexes
-      if (p.test(url)) {
-        return PROVIDERS[idx] as Provider;
-      }
+      if (p.flags.includes('g')) p.lastIndex = 0;
+      if (p.test(url)) return PROVIDERS[idx];
     }
   } catch {
     // URL parsing failed, fall through to full scan
@@ -276,7 +306,7 @@ export function matchProvider(url: string): Provider | null {
   // Fallback: full scan (should rarely be reached)
   return (
     PROVIDERS.find((p) => {
-      p.pattern.lastIndex = 0;
+      if (p.pattern.flags.includes('g')) p.pattern.lastIndex = 0;
       return p.pattern.test(url);
     }) ?? null
   );

@@ -10,9 +10,12 @@
   padding: 0 8px;
   background-color: var(--bg-0);
   border-bottom: 3px solid var(--border-strong);
-  gap: 8px;
+  gap: var(--icon-gap-lg);
   height: 34px;
   grid-row: 2;
+  grid-column: 1;
+  position: relative;
+  z-index: 10;
 }
 
 .toolbar-separator {

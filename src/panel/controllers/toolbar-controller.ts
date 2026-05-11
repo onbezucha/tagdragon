@@ -35,6 +35,8 @@ const COOKIE_RESET_TIMEOUT_MS = 2000;
 
 // ─── CALLBACKS ───────────────────────────────────────────────────────────────
 
+import { getGotoNetworkRequest } from './datalayer-controller';
+
 function doSelectRequest(data: import('@/types/request').ParsedRequest, row: HTMLElement): void {
   selectRequest(data, row);
 }
@@ -42,14 +44,7 @@ function doSelectRequest(data: import('@/types/request').ParsedRequest, row: HTM
 function doSelectPush(push: import('@/types/datalayer').DataLayerPush, row: HTMLElement): void {
   dlState.setDlSelectedId(push.id);
   setActiveDlRow(row);
-  selectDlPush(push, row, gotoNetworkRequest!);
-}
-
-// Reference to the gotoNetworkRequest function (set via setter before initToolbarHandlers)
-let gotoNetworkRequest: ((reqId: number) => void) | null = null;
-
-export function setGotoNetworkRequestRef(fn: (reqId: number) => void): void {
-  gotoNetworkRequest = fn;
+  selectDlPush(push, row, getGotoNetworkRequest()!);
 }
 
 // ─── PAUSE UI SYNC ───────────────────────────────────────────────────────────
@@ -143,6 +138,16 @@ export function syncDlQuickButtons(): void {
       order === 'desc'
         ? 'Newest first (click for oldest first)'
         : 'Oldest first (click for newest first)';
+
+    // Update sort arrow indicator
+    const arrow = order === 'desc' ? '↓' : '↑';
+    let arrowEl = $dlSortBtn.querySelector('.sort-arrow') as HTMLElement;
+    if (!arrowEl) {
+      arrowEl = document.createElement('span');
+      arrowEl.className = 'sort-arrow';
+      $dlSortBtn.appendChild(arrowEl);
+    }
+    arrowEl.textContent = arrow;
   }
 }
 
@@ -260,7 +265,10 @@ export function initToolbarHandlers(): void {
       if (state.getConfig().exportFormat === 'csv') {
         exportCsv(hostname, timestamp);
       } else {
-        downloadJson(getExportRequests(), `tagdragon-${hostname}-${timestamp}.json`);
+        downloadJson(
+          { pageNavigations: state.getPageNavigations(), requests: getExportRequests() },
+          `tagdragon-${hostname}-${timestamp}.json`
+        );
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error';
@@ -360,6 +368,35 @@ export function initToolbarHandlers(): void {
       state.updateConfig('wrapValues', newValue);
       $btnWrap.classList.toggle('active', newValue);
       applyWrapValuesClass();
+      // Sync DataLayer wrap button active state
+      const $dlBtn = document.getElementById('dl-btn-wrap-values');
+      if ($dlBtn) $dlBtn.classList.toggle('active', newValue);
+      // Sync settings drawer checkbox if open
+      if (document.getElementById('cfg-wrap-values') as HTMLInputElement) {
+        (document.getElementById('cfg-wrap-values') as HTMLInputElement).checked = newValue;
+      }
+    });
+  }
+
+  // ─── DATALAYER WRAP VALUES TOGGLE ────────────────────────────────────────
+
+  const $dlBtnWrap = document.getElementById('dl-btn-wrap-values') as HTMLButtonElement | null;
+  if ($dlBtnWrap) {
+    // Set initial state from config
+    const cfg = state.getConfig();
+    if (cfg.wrapValues) {
+      $dlBtnWrap.classList.add('active');
+    }
+    $dlBtnWrap.addEventListener('click', () => {
+      const currentCfg = state.getConfig();
+      const newValue = !currentCfg.wrapValues;
+      state.updateConfig('wrapValues', newValue);
+      $dlBtnWrap.classList.toggle('active', newValue);
+      applyWrapValuesClass();
+      // Sync Network wrap button active state
+      if ($btnWrap) {
+        $btnWrap.classList.toggle('active', newValue);
+      }
       // Sync settings drawer checkbox if open
       if (document.getElementById('cfg-wrap-values') as HTMLInputElement) {
         (document.getElementById('cfg-wrap-values') as HTMLInputElement).checked = newValue;
@@ -387,6 +424,13 @@ export function initToolbarHandlers(): void {
       }
     });
   }
+
+  // ─── RELOAD PAGE (empty state) ──────────────────────────────────────────────
+
+  const btnReloadPage = document.getElementById('btn-reload-page');
+  btnReloadPage?.addEventListener('click', () => {
+    chrome.runtime.sendMessage({ type: 'RELOAD_INSPECTED_TAB' }).catch(() => {});
+  });
 }
 
 // ─── REQUEST LIST CLICK ──────────────────────────────────────────────────────

@@ -1,9 +1,15 @@
 // ─── PUSH LIST COMPONENT ─────────────────────────────────────────────────────
 // Renders the list of DataLayer pushes. Parallels request-list.ts.
 
-import type { DataLayerPush, DataLayerSource } from '@/types/datalayer';
+import { isDlNavMarker } from '@/types/datalayer';
+import type {
+  DataLayerPush,
+  DataLayerSource,
+  DlNavMarker,
+  DlTimelineEntry,
+} from '@/types/datalayer';
 import { DOM } from '../../utils/dom';
-import { formatTimestamp } from '../../utils/format';
+import { formatTimestamp, esc } from '../../utils/format';
 import { getConfig } from '../../state';
 import { downloadCsv, downloadJson } from '../../utils/export';
 import { SOURCE_LABELS, SOURCE_TOOLTIPS, getSourceColor } from '@/shared/datalayer-constants';
@@ -18,6 +24,8 @@ import {
   getValidationErrors,
   getDlSortField,
   getDlSortOrder,
+  getAllDlEntries,
+  getDlNavMarkers,
 } from '../state';
 import { updateDlStatusBar } from '../../components/status-bar';
 
@@ -48,16 +56,40 @@ rowTemplate.innerHTML = `
 // ─── ROW CREATION ────────────────────────────────────────────────────────────
 
 /**
+ * Count total nested keys in an object (recursive).
+ */
+function countNestedKeys(obj: unknown, maxDepth = 5): number {
+  if (maxDepth <= 0 || obj === null || obj === undefined) return 0;
+  if (typeof obj !== 'object') return 0;
+
+  let count = 0;
+  const entries = Array.isArray(obj) ? obj : Object.values(obj as Record<string, unknown>);
+  for (const value of entries) {
+    if (value && typeof value === 'object') {
+      const childKeys = Object.keys(value as object).length;
+      count += childKeys + countNestedKeys(value, maxDepth - 1);
+    }
+  }
+  return count;
+}
+
+/**
  * Create a push row element.
  */
 export function createDlPushRow(
   push: DataLayerPush,
   isVisible: boolean,
-  onSelect: DlSelectCallback
+  onSelect: DlSelectCallback,
+  sessionStart?: string
 ): HTMLElement {
   const row = (rowTemplate.content.firstElementChild?.cloneNode(true) ??
     document.createElement('div')) as HTMLElement;
   row.dataset['id'] = String(push.id);
+
+  // Link push to its navigation section
+  if (push._dlNavMarkerId) {
+    row.dataset.dlNavId = String(push._dlNavMarkerId);
+  }
 
   if (!isVisible) {
     row.style.display = 'none';
@@ -66,8 +98,8 @@ export function createDlPushRow(
   const color = getSourceColor(push.source);
   const badge = getSourceBadge(push.source);
   const cfg = getConfig();
-  const sessionStart = getAllDlPushes()[0]?.timestamp;
-  const time = formatTimestamp(push.timestamp, cfg.timestampFormat, sessionStart);
+  const _sessionStart = sessionStart ?? getAllDlPushes()[0]?.timestamp;
+  const time = formatTimestamp(push.timestamp, cfg.timestampFormat, _sessionStart);
 
   const indexEl = row.querySelector<HTMLElement>('.dl-push-index');
   if (indexEl) indexEl.textContent = `#${push.pushIndex}`;
@@ -88,8 +120,12 @@ export function createDlPushRow(
   }
 
   const keycount = Object.keys(push.data).length;
+  const nestedCount = countNestedKeys(push.data);
   const keycountEl = row.querySelector<HTMLElement>('.dl-push-keycount');
-  if (keycountEl) keycountEl.textContent = `${keycount} key${keycount !== 1 ? 's' : ''}`;
+  if (keycountEl) {
+    const nested = nestedCount > 0 ? ` (${nestedCount} nested)` : '';
+    keycountEl.textContent = `${keycount} key${keycount !== 1 ? 's' : ''}${nested}`;
+  }
 
   const timeEl = row.querySelector<HTMLElement>('.dl-push-time');
   if (timeEl) timeEl.textContent = time;
@@ -103,6 +139,18 @@ export function createDlPushRow(
     ecBadge.className = 'dl-ec-badge';
     ecBadge.textContent = push._ecommerceType.toUpperCase();
     row.querySelector('.dl-push-primary')?.appendChild(ecBadge);
+  }
+
+  // Replay badge — dim styling and indicator for replayed pushes
+  if (push.isReplay) {
+    row.classList.add('dl-push-replay');
+    const replayBadge = document.createElement('span');
+    replayBadge.className = 'dl-replay-badge';
+    replayBadge.textContent = '↺';
+    replayBadge.title = 'Replayed from existing dataLayer';
+    row
+      .querySelector('.dl-push-primary')
+      ?.insertBefore(replayBadge, row.querySelector('.dl-push-index'));
   }
 
   // Validation error indicator
@@ -119,12 +167,90 @@ export function createDlPushRow(
     row.querySelector('.dl-push-primary')?.insertBefore(dot, row.querySelector('.dl-push-index'));
   }
 
+  // Correlation count badge
+  const correlatedCount = push._correlatedCount;
+  if (correlatedCount && correlatedCount > 0) {
+    const corrBadge = document.createElement('span');
+    corrBadge.className = 'dl-correlation-count';
+    corrBadge.textContent = `${correlatedCount} →`;
+    corrBadge.title = `${correlatedCount} correlated network request${correlatedCount !== 1 ? 's' : ''}`;
+    corrBadge.style.cursor = 'pointer';
+    row.querySelector('.dl-push-primary')?.appendChild(corrBadge);
+  }
+
+  // Diff count badge
+  const diffCount = push._diffCount;
+  if (diffCount !== undefined && diffCount > 0) {
+    const diffBadge = document.createElement('span');
+    diffBadge.className = 'dl-diff-count';
+    diffBadge.textContent = `±${diffCount}`;
+    diffBadge.title = `${diffCount} path${diffCount !== 1 ? 's' : ''} changed from previous state`;
+    row.querySelector('.dl-push-primary')?.appendChild(diffBadge);
+  }
+
   // Click to select
   row.addEventListener('click', () => {
     onSelect(push, row);
   });
 
   return row;
+}
+
+// ─── NAVIGATION MARKER RENDER ─────────────────────────────────────────────
+
+/**
+ * Render a navigation marker row in the push list.
+ * Visual separator between pushes from different pages.
+ * Returns the DOM element (does NOT append to list — caller handles placement).
+ */
+export function renderDlNavMarker(marker: DlNavMarker): HTMLElement {
+  const divider = document.createElement('div');
+  divider.className = 'dl-page-divider';
+  divider.dataset.navId = String(marker.id);
+  divider.dataset.navMarker = 'true';
+
+  // Parse URL into hostname + path
+  let hostname = '';
+  let displayPath = '';
+  try {
+    const u = new URL(marker.url);
+    hostname = u.hostname;
+    displayPath = u.pathname + u.search;
+  } catch {
+    displayPath = marker.url;
+  }
+
+  // Parse timestamp
+  const time = new Date(marker.timestamp);
+  const timeStr = time.toLocaleTimeString('en-GB', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  });
+
+  divider.innerHTML = `
+    <div class="dl-page-divider-left">
+      <svg class="dl-page-divider-chevron" width="12" height="12" viewBox="0 0 24 24"
+           fill="none" stroke="currentColor" stroke-width="2">
+        <path d="m6 9 6 6 6-6"/>
+      </svg>
+      <svg class="dl-page-divider-favicon" width="16" height="16" viewBox="0 0 24 24"
+           fill="none" stroke="currentColor" stroke-width="1.5">
+        <circle cx="12" cy="12" r="10"/>
+        <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/>
+        <path d="M2 12h20"/>
+      </svg>
+      <span class="dl-page-divider-hostname">${esc(hostname)}</span>
+      <span class="dl-page-divider-time">${esc(timeStr)}</span>
+      <span class="dl-page-divider-path">${esc(displayPath)}</span>
+    </div>
+    <div class="dl-page-divider-right">
+      <span class="dl-page-divider-count">0</span>
+    </div>
+  `;
+
+  divider.title = marker.url;
+  return divider;
 }
 
 function buildPreview(data: Record<string, unknown>): string {
@@ -137,8 +263,38 @@ function buildPreview(data: Record<string, unknown>): string {
     'gtm.scrollDirection',
   ]);
   const parts: string[] = [];
+
+  // E-commerce special: show first product info
+  const ec = data['ecommerce'];
+  if (ec && typeof ec === 'object' && ec !== null) {
+    const ecObj = ec as Record<string, unknown>;
+    // Try GA4 items first
+    const items = Array.isArray(ecObj['items']) ? ecObj['items'] : [];
+    // Try UA products
+    const purchase = ecObj['purchase'] as Record<string, unknown> | undefined;
+    const products = purchase && Array.isArray(purchase['products']) ? purchase['products'] : [];
+    const allItems = items.length > 0 ? items : products;
+
+    if (allItems.length > 0) {
+      const firstItem = allItems[0] as Record<string, unknown>;
+      const name =
+        firstItem['item_name'] ?? firstItem['name'] ?? firstItem['item_id'] ?? firstItem['id'];
+      if (name) {
+        const suffix = allItems.length > 1 ? ` +${allItems.length - 1} more` : '';
+        parts.push(`🛒 ${String(name)}${suffix}`);
+      }
+    }
+    // Add value/currency if present
+    if (ecObj['value']) {
+      const currency = typeof ecObj['currency'] === 'string' ? ` ${ecObj['currency']}` : '';
+      parts.push(`${ecObj['value']}${currency}`);
+    }
+  }
+
+  // Regular preview (skip already shown keys)
   for (const [k, v] of Object.entries(data)) {
     if (skip.has(k)) continue;
+    if (k === 'ecommerce' && parts.length > 0 && parts[0].startsWith('🛒')) continue;
     const isObj = typeof v === 'object' && v !== null;
     const valStr = isObj ? (Array.isArray(v) ? `[…]` : '{…}') : String(v).slice(0, 35);
     parts.push(`${k}: ${valStr}`);
@@ -182,8 +338,15 @@ export function setActiveDlRow(row: HTMLElement): void {
 
 /**
  * Navigate to the next/previous push in the list.
+ * @param direction +1 for next, -1 for previous
+ * @param onSelect Callback when a push is selected
+ * @param skipNoise When true, skip pushes with gtm.* event names
  */
-export function navigateDlList(direction: number, onSelect: DlSelectCallback): void {
+export function navigateDlList(
+  direction: number,
+  onSelect: DlSelectCallback,
+  skipNoise = false
+): void {
   const $list = DOM.dlPushList;
   if (!$list) return;
 
@@ -197,6 +360,18 @@ export function navigateDlList(direction: number, onSelect: DlSelectCallback): v
 
   let nextIndex = currentIndex + direction;
   nextIndex = Math.max(0, Math.min(nextIndex, rows.length - 1));
+
+  // Skip GTM system events when skipNoise is true
+  if (skipNoise) {
+    while (nextIndex >= 0 && nextIndex < rows.length) {
+      const pushId = Number(rows[nextIndex].dataset['id']);
+      const push = getDlPushById(pushId);
+      if (push && !push._eventName?.startsWith('gtm.')) break;
+      nextIndex += direction;
+    }
+    // Clamp after skipping
+    if (nextIndex < 0 || nextIndex >= rows.length) return;
+  }
 
   const nextRow = rows[nextIndex];
   if (!nextRow) return;
@@ -336,8 +511,10 @@ export function dlMatchesFilter(
   source: string,
   eventName: string,
   hasKey: string,
-  ecommerceOnly: boolean
+  ecommerceOnly: boolean,
+  hideGtmSystem: boolean
 ): boolean {
+  if (hideGtmSystem && push._eventName?.startsWith('gtm.')) return false;
   if (source && push.source !== source) return false;
   if (eventName && push._eventName !== eventName) return false;
   if (ecommerceOnly && !push._ecommerceType) return false;
@@ -406,11 +583,52 @@ export function getSortedDlPushIds(): number[] {
     return _sortCache.result;
   }
 
-  const all = getAllDlPushes();
+  const all = getAllDlEntries();
   let sorted: number[];
 
   if (field === 'time') {
-    sorted = order === 'asc' ? all.map((p) => p.id) : [...all].reverse().map((p) => p.id);
+    if (order === 'asc') {
+      sorted = all.map((p) => p.id);
+    } else {
+      // Descending: split into sections by nav markers, reverse each section's pushes
+      // (keeping the marker at the top), then reverse sections order (newest page first)
+      const sections: DlTimelineEntry[][] = [];
+      let currentSection: DlTimelineEntry[] = [];
+
+      for (const entry of all) {
+        if (isDlNavMarker(entry)) {
+          // Flush current section (may be empty on first marker at index 0)
+          if (currentSection.length > 0) {
+            sections.push(currentSection);
+          }
+          // Start a new section with the nav marker
+          currentSection = [entry];
+        } else {
+          currentSection.push(entry);
+        }
+      }
+      // Flush last section
+      if (currentSection.length > 0) {
+        sections.push(currentSection);
+      }
+
+      // Process each section: marker sections keep marker first then reverse pushes;
+      // initial section (no marker) just reverses pushes.
+      const processed = sections.map((section) => {
+        if (section.length > 0 && isDlNavMarker(section[0])) {
+          const [marker, ...pushes] = section;
+          return [marker, ...pushes.reverse()];
+        }
+        // Initial section (no leading marker) — reverse pushes
+        return [...section].reverse();
+      });
+
+      // Reverse sections order so newest page appears first
+      sorted = processed
+        .reverse()
+        .flat()
+        .map((e) => e.id);
+    }
   } else if (field === 'keycount') {
     sorted = [...all]
       .sort((a, b) => {
@@ -441,6 +659,13 @@ export function renderGroupedPushList(
   filteredIds: Set<number>,
   onSelect: DlSelectCallback
 ): void {
+  // Render markers before groups (DD-5: v1 simplification)
+  const markers = getDlNavMarkers();
+  for (const marker of markers) {
+    $list.appendChild(renderDlNavMarker(marker));
+  }
+
+  // Existing grouping logic — only pushes
   const all = getAllDlPushes();
   const groups = new Map<DataLayerSource, DataLayerPush[]>();
 
@@ -459,7 +684,7 @@ export function renderGroupedPushList(
     header.className = 'dl-group-header';
     header.style.borderLeftColor = color;
     header.innerHTML = `
-      <span style="color:${color};font-weight:600;font-size:11px;">${label}</span>
+      <span style="color:${color};font-weight:600;font-size:11px;">${esc(label)}</span>
       <span style="font-size:10px;color:var(--text-2);font-family:var(--font-mono);">${pushes.length} pushes</span>
       <span class="dl-group-chevron">▼</span>
     `;
@@ -473,7 +698,8 @@ export function renderGroupedPushList(
 
     for (const push of pushes) {
       const isVisible = filteredIds.has(push.id);
-      const row = createDlPushRow(push, isVisible, onSelect);
+      const sessionStart = all[0]?.timestamp;
+      const row = createDlPushRow(push, isVisible, onSelect, sessionStart);
       groupBody.appendChild(row);
     }
 

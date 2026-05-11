@@ -4,8 +4,11 @@
 // Extracted from src/panel/index.ts
 // ═══════════════════════════════════════════════════════════════════════════
 
-import type { DataLayerPush, DataLayerSource } from '@/types/datalayer';
+import type { DataLayerPush, DataLayerSource, DlNavMarker } from '@/types/datalayer';
+import { isDlNavMarker } from '@/types/datalayer';
+import { generateId } from '@/shared/id-gen';
 import { computeChangedPaths } from '../datalayer/utils/changed-paths';
+import { findCorrelatedRequests } from '../datalayer/utils/correlation';
 
 import * as state from '../state';
 import * as dlState from '../datalayer/state';
@@ -22,11 +25,14 @@ import {
   renderGroupedPushList,
   invalidateDlSortCache,
   updateDlRowValidation,
+  renderDlNavMarker,
 } from '../datalayer/components/push-list';
 import {
   selectDlPush,
   closeDlDetail,
   initDlDetailTabHandlers,
+  incrementLiveTabBadge,
+  resetLiveTabBadge,
 } from '../datalayer/components/push-detail';
 import {
   queueHighlights,
@@ -40,12 +46,14 @@ import {
   getDlSortField,
   getDlSortOrder,
   getDlGroupBySource,
+  getDlNavMarkerCount,
 } from '../datalayer/state';
 
 import { initExportFormatMenu } from '../utils/export-menu';
+import { syncDlQuickButtons } from './toolbar-controller';
 
 import { SOURCE_DESCRIPTIONS } from '@/shared/datalayer-constants';
-import { updateDlStatusBar as _updateDlStatusBar } from '../components/status-bar';
+import { updateDlStatusBar } from '../components/status-bar';
 import { toggleDlFilterPopover } from '../components/dl-filter-popover';
 import { FILTER_DEBOUNCE_MS } from '@/shared/constants';
 
@@ -57,6 +65,9 @@ let isPanelReady = false;
 // Module-level buffer for pushes arriving before init completes
 const earlyDlPushBuffer: DataLayerPush[] = [];
 
+/** Track the most recent nav marker ID for push stamping */
+let _currentDlNavMarkerId: number | undefined;
+
 // ─── EXTERNAL HELPERS (imported from index.ts) ──────────────────────────────
 
 // These are set by initDatalayerController() after index.ts initializes them
@@ -66,6 +77,10 @@ let syncPauseUIRef: ((paused: boolean) => void) | null = null;
 
 export function setGotoNetworkRequest(fn: (reqId: number) => void): void {
   gotoNetworkRequestRef = fn;
+}
+
+export function getGotoNetworkRequest(): ((reqId: number) => void) | null {
+  return gotoNetworkRequestRef;
 }
 
 export function setSwitchView(fn: (view: 'network' | 'datalayer') => void): void {
@@ -88,6 +103,7 @@ function handleDlPushSelect(p: DataLayerPush, r: HTMLElement): void {
   if (gotoNetworkRequestRef) {
     selectDlPush(p, r, gotoNetworkRequestRef);
   }
+  applyDlSectionHighlight(r);
 }
 
 // ─── DATALAYER CLEAR ──────────────────────────────────────────────────────────
@@ -106,6 +122,7 @@ export function dlClearAll(): void {
   if ($empty) $empty.style.display = '';
 
   closeDlDetail();
+  resetLiveTabBadge();
   updateDlStatusBar();
 
   const $dlBadge = DOM.tabBadgeDatalayer;
@@ -133,7 +150,8 @@ export function dlApplyFilter(): void {
         dlState.getDlFilterSource(),
         dlState.getDlFilterEventName(),
         dlState.getDlFilterHasKey(),
-        dlState.getDlEcommerceOnly()
+        dlState.getDlEcommerceOnly(),
+        dlState.getDlHideGtmSystem()
       )
     ) {
       dlState.addDlFilteredId(push.id);
@@ -240,14 +258,19 @@ export function updateDlFilterChips(): void {
     chips.push(chip);
   }
 
+  if (dlState.getDlHideGtmSystem()) {
+    const chip = createDlFilterChip('GTM', 'system events hidden', () => {
+      dlState.setDlHideGtmSystem(false);
+      const $btn = document.getElementById('dl-btn-hide-gtm');
+      if ($btn) $btn.classList.remove('active');
+      dlApplyFilter();
+      updateDlFilterChips();
+    });
+    chips.push(chip);
+  }
+
   chips.forEach((c) => $bar.appendChild(c));
   $bar.classList.toggle('visible', chips.length > 0);
-}
-
-// ─── STATUS BAR UPDATE (called by flushPendingDlPushes) ─────────────────────
-
-function updateDlStatusBar(): void {
-  _updateDlStatusBar();
 }
 
 // ─── DATALAYER FULL LIST RENDER ─────────────────────────────────────────────
@@ -262,7 +285,7 @@ export function renderDlPushListFull(): void {
 
   $list.innerHTML = '';
 
-  if (dlState.getDlTotalCount() === 0) {
+  if (dlState.getDlTotalCount() === 0 && getDlNavMarkerCount() === 0) {
     if ($empty) $empty.style.display = '';
     return;
   }
@@ -274,17 +297,25 @@ export function renderDlPushListFull(): void {
   } else {
     const sortedIds = getSortedDlPushIds();
     const filteredIds = dlState.getDlFilteredIds();
+    const sessionStart = dlState.getAllDlPushes()[0]?.timestamp;
     const fragment = document.createDocumentFragment();
 
     for (const id of sortedIds) {
-      const push = dlState.getDlPushById(id);
-      if (!push) continue;
-      const isVisible = filteredIds.has(id);
-      try {
-        const row = createDlPushRow(push, isVisible, handleDlPushSelect);
-        fragment.appendChild(row);
-      } catch (e) {
-        console.warn('[TagDragon] Failed to create push row:', e);
+      const entry = dlState.getDlEntryById(id);
+      if (!entry) continue;
+
+      // DD-5: Render marker or push based on discriminator
+      if (isDlNavMarker(entry)) {
+        const markerRow = renderDlNavMarker(entry);
+        fragment.appendChild(markerRow);
+      } else {
+        const isVisible = filteredIds.has(id);
+        try {
+          const row = createDlPushRow(entry, isVisible, handleDlPushSelect, sessionStart);
+          fragment.appendChild(row);
+        } catch (e) {
+          console.warn('[TagDragon] Failed to create push row:', e);
+        }
       }
     }
 
@@ -292,6 +323,9 @@ export function renderDlPushListFull(): void {
   }
 
   updateDlStatusBar();
+
+  // Update divider counts after full render
+  updateDlDividerCounts();
 }
 
 // ─── DATALAYER BATCHED RENDERING ─────────────────────────────────────────────
@@ -302,15 +336,22 @@ export function flushPendingDlPushes(): void {
   if (pending.length === 0) return;
 
   // 1. Compute highlights + validation in batch
-  const allPushes = dlState.getAllDlPushes();
-  for (let i = allPushes.length - pending.length; i < allPushes.length; i++) {
+  // Use getAllDlEntries() so indices align with dlState.all (used by computeCumulativeState)
+  const allEntries = dlState.getAllDlEntries();
+  let pendingCount = pending.length;
+
+  for (let i = allEntries.length - 1; i >= 0 && pendingCount > 0; i--) {
+    const entry = allEntries[i];
+    if (isDlNavMarker(entry)) continue;
+
+    pendingCount--;
     if (i < 1) continue;
-    const currPush = allPushes[i];
-    // Use computeCumulativeState for lazy on-demand computation with caching
-    // (push.cumulativeState is null to avoid expensive snapshot on every push)
+
     const prevState = dlState.computeCumulativeState(i - 1);
     const currState = dlState.computeCumulativeState(i);
     const changedPaths = computeChangedPaths(prevState, currState);
+    // Cache diff count for push row badge
+    (entry as { _diffCount?: number })._diffCount = changedPaths.size;
     if (changedPaths.size > 0) {
       queueHighlights(changedPaths, prevState, currState);
       checkWatchPaths(prevState, currState);
@@ -318,9 +359,9 @@ export function flushPendingDlPushes(): void {
 
     if (dlState.isValidationLoaded()) {
       const rules = dlState.getValidationRules();
-      const errors = validatePush(currPush, rules);
+      const errors = validatePush(entry, rules);
       if (errors.length > 0) {
-        dlState.setValidationErrors(currPush.id, errors);
+        dlState.setValidationErrors(entry.id, errors);
       }
     }
   }
@@ -342,25 +383,40 @@ export function flushPendingDlPushes(): void {
       // For desc, reverse the batch so newest push ends up at the top of the prepended fragment
       const isDesc = getDlSortOrder() === 'desc';
       const pendingToRender = isDesc ? [...pending].reverse() : pending;
+      const sessionStart = dlState.getAllDlPushes()[0]?.timestamp;
       const fragment = document.createDocumentFragment();
 
       for (const { push, isVisible } of pendingToRender) {
         try {
-          const row = createDlPushRow(push, isVisible, handleDlPushSelect);
+          const row = createDlPushRow(push, isVisible, handleDlPushSelect, sessionStart);
           fragment.appendChild(row);
         } catch (e) {
           console.warn('[TagDragon] Failed to create push row:', e);
         }
       }
       if (isDesc) {
-        $list.insertBefore(fragment, $list.firstChild);
+        // Insert after the first divider so the nav marker stays at the top of its section
+        const $firstDivider = $list.querySelector(':scope > .dl-page-divider');
+        if ($firstDivider) {
+          $list.insertBefore(fragment, $firstDivider.nextSibling);
+        } else {
+          $list.insertBefore(fragment, $list.firstChild);
+        }
       } else {
         $list.appendChild(fragment);
       }
+
+      // Update divider counts after incremental DOM update
+      updateDlDividerCounts();
     }
   }
 
   dlState.clearDlPendingPushes();
+
+  // Notify Live tab about new pushes (for notification badge)
+  for (const _ of pending) {
+    incrementLiveTabBadge();
+  }
 
   // 3. Single status update
   updateDlStatusBar();
@@ -376,6 +432,9 @@ export function flushPendingDlPushes(): void {
 
   // 5. Update filter chips
   updateDlFilterChips();
+
+  // Auto-highlight the latest nav section
+  highlightLatestDlSection();
 }
 
 // ─── DATALAYER RECEIVERS ──────────────────────────────────────────────────────
@@ -397,8 +456,23 @@ window.receiveDataLayerPush = function (push: DataLayerPush): void {
     sourceLabel: push.sourceLabel || push.source.toUpperCase(),
   };
 
+  // Pre-compute correlation count for push row badge
+  const allRequests = state.getAllRequests();
+  const windowMs = dlState.getCorrelationWindow();
+  (enrichedPush as { _correlatedCount?: number })._correlatedCount = findCorrelatedRequests(
+    enrichedPush,
+    allRequests,
+    windowMs
+  ).length;
+
   // Invalidate cached search index so enriched fields are included
   delete (enrichedPush as { _searchIndex?: string })._searchIndex;
+
+  // Stamp push with current nav marker ID
+  if (_currentDlNavMarkerId !== undefined) {
+    (enrichedPush as { _dlNavMarkerId?: number })._dlNavMarkerId = _currentDlNavMarkerId;
+    dlState.incrementNavPushCount(_currentDlNavMarkerId);
+  }
 
   const pruned = dlState.addDlPush(enrichedPush);
   if (pruned) {
@@ -414,7 +488,6 @@ window.receiveDataLayerPush = function (push: DataLayerPush): void {
     dlState.setDlRafId(null);
     renderDlPushListFull();
     dlApplyFilter();
-    updateDlStatusBar();
     const $dlBadge = DOM.tabBadgeDatalayer;
     if ($dlBadge) $dlBadge.textContent = String(dlState.getDlTotalCount());
     const $count = document.getElementById('dl-push-count');
@@ -423,6 +496,7 @@ window.receiveDataLayerPush = function (push: DataLayerPush): void {
       $count.textContent = `${n} push${n !== 1 ? 'es' : ''}`;
     }
     updateDlFilterChips();
+    highlightLatestDlSection();
     return; // skip normal pending queue
   }
 
@@ -434,7 +508,8 @@ window.receiveDataLayerPush = function (push: DataLayerPush): void {
     dlState.getDlFilterSource(),
     dlState.getDlFilterEventName(),
     dlState.getDlFilterHasKey(),
-    dlState.getDlEcommerceOnly()
+    dlState.getDlEcommerceOnly(),
+    dlState.getDlHideGtmSystem()
   );
   if (isVisible) dlState.addDlFilteredId(push.id);
 
@@ -475,6 +550,223 @@ window.receiveDataLayerSources = function (
       $detection.appendChild(statusPill);
     }
   }
+
+  // Update empty state hint based on detected sources
+  const $emptyHint = document.getElementById('dl-empty-hint');
+  if ($emptyHint) {
+    if (sources.length > 0) {
+      const detectedLabels = sources.map((s) => labels[s] ?? s.toUpperCase()).join(', ');
+      $emptyHint.textContent = `${detectedLabels} detected but no pushes captured yet. Try interacting with the page or click Re-inject Scripts.`;
+    } else {
+      $emptyHint.textContent =
+        'Open a page with GTM, Tealium, Adobe, or Segment to see DataLayer pushes';
+    }
+  }
+};
+
+// ─── NAVIGATION MARKER ────────────────────────────────────────────────────
+
+function updateDlDividerCounts(): void {
+  const $list = DOM.dlPushList;
+  if (!$list) return;
+
+  const markers = dlState.getDlNavMarkers();
+  const pushCounts = dlState.getNavPushCounts();
+  for (const marker of markers) {
+    const divider = $list.querySelector(`.dl-page-divider[data-nav-id="${marker.id}"]`);
+    if (!divider) continue;
+
+    const count = pushCounts.get(marker.id) ?? 0;
+    const countEl = divider.querySelector('.dl-page-divider-count');
+    if (countEl) countEl.textContent = String(count);
+  }
+}
+
+function initDlDividerInteractions(): void {
+  const $list = DOM.dlPushList;
+  if (!$list) return;
+
+  $list.addEventListener('click', (e: Event) => {
+    const target = e.target as HTMLElement;
+    const divider = target.closest('.dl-page-divider') as HTMLElement | null;
+    if (divider) {
+      toggleDlCollapse(divider);
+      e.stopPropagation();
+    }
+  });
+}
+
+function toggleDlCollapse(divider: HTMLElement): void {
+  divider.classList.toggle('collapsed');
+
+  const isCollapsed = divider.classList.contains('collapsed');
+  const navId = divider.dataset.navId;
+  if (!navId) return;
+
+  const $list = DOM.dlPushList;
+  if (!$list) return;
+
+  const rows = $list.querySelectorAll(`.dl-push-row[data-dl-nav-id="${navId}"]`);
+  for (const row of rows) {
+    if (isCollapsed) {
+      row.classList.add('page-collapsed');
+    } else {
+      row.classList.remove('page-collapsed');
+    }
+  }
+}
+
+function applyDlSectionHighlight(row: HTMLElement): void {
+  const $list = DOM.dlPushList;
+  if (!$list) return;
+
+  // Clear previous highlights
+  $list
+    .querySelectorAll('.dl-page-divider.section-active')
+    .forEach((d) => d.classList.remove('section-active'));
+  $list
+    .querySelectorAll('.dl-push-row.section-active')
+    .forEach((r) => r.classList.remove('section-active'));
+  $list
+    .querySelectorAll('.dl-page-divider.section-dimmed')
+    .forEach((d) => d.classList.remove('section-dimmed'));
+  $list
+    .querySelectorAll('.dl-push-row.section-dimmed')
+    .forEach((r) => r.classList.remove('section-dimmed'));
+
+  const navId = (row.dataset as Record<string, string>).dlNavId;
+  if (!navId) return;
+
+  const sectionCfg = state.getConfig();
+
+  // Accent bar
+  if (sectionCfg.sectionAccentBar) {
+    const divider = $list.querySelector(`.dl-page-divider[data-nav-id="${navId}"]`);
+    if (divider) divider.classList.add('section-active');
+
+    $list
+      .querySelectorAll(`.dl-push-row[data-dl-nav-id="${navId}"]`)
+      .forEach((r) => r.classList.add('section-active'));
+  }
+
+  // Dimming
+  if (sectionCfg.sectionDimOthers) {
+    $list.style.setProperty('--section-dim-opacity', String(sectionCfg.sectionDimOpacity));
+
+    $list
+      .querySelectorAll(`.dl-page-divider:not([data-nav-id="${navId}"])`)
+      .forEach((d) => d.classList.add('section-dimmed'));
+
+    $list
+      .querySelectorAll(`.dl-push-row:not([data-dl-nav-id="${navId}"])`)
+      .forEach((r) => r.classList.add('section-dimmed'));
+  }
+}
+
+/**
+ * Auto-highlights the latest (current) page navigation section.
+ * Uses `_currentDlNavMarkerId` to highlight the most recent nav marker section
+ * and dims all other sections. No arguments — reads from module state.
+ */
+function highlightLatestDlSection(): void {
+  const $list = DOM.dlPushList;
+  if (!$list || _currentDlNavMarkerId === undefined) return;
+
+  const navId = String(_currentDlNavMarkerId);
+  const sectionCfg = state.getConfig();
+
+  // Clear previous highlights
+  $list
+    .querySelectorAll('.dl-page-divider.section-active')
+    .forEach((d) => d.classList.remove('section-active'));
+  $list
+    .querySelectorAll('.dl-push-row.section-active')
+    .forEach((r) => r.classList.remove('section-active'));
+  $list
+    .querySelectorAll('.dl-page-divider.section-dimmed')
+    .forEach((d) => d.classList.remove('section-dimmed'));
+  $list
+    .querySelectorAll('.dl-push-row.section-dimmed')
+    .forEach((r) => r.classList.remove('section-dimmed'));
+
+  // Accent bar
+  if (sectionCfg.sectionAccentBar) {
+    const divider = $list.querySelector(`.dl-page-divider[data-nav-id="${navId}"]`);
+    if (divider) divider.classList.add('section-active');
+
+    $list
+      .querySelectorAll(`.dl-push-row[data-dl-nav-id="${navId}"]`)
+      .forEach((r) => r.classList.add('section-active'));
+  }
+
+  // Dimming
+  if (sectionCfg.sectionDimOthers) {
+    $list.style.setProperty('--section-dim-opacity', String(sectionCfg.sectionDimOpacity));
+
+    $list
+      .querySelectorAll(`.dl-page-divider:not([data-nav-id="${navId}"])`)
+      .forEach((d) => d.classList.add('section-dimmed'));
+
+    $list
+      .querySelectorAll(`.dl-push-row[data-dl-nav-id]:not([data-dl-nav-id="${navId}"])`)
+      .forEach((r) => r.classList.add('section-dimmed'));
+  }
+}
+
+window.insertDlNavMarker = function (url: string): void {
+  // DD-3: No marker when paused
+  if (dlState.getDlIsPaused()) return;
+
+  // DD-4: Reset live inspector state for the new page context
+  clearLiveState();
+
+  const now = new Date();
+  const marker: DlNavMarker = {
+    id: generateId(),
+    _type: 'nav-marker',
+    timestamp: now.toISOString(),
+    url,
+    source: 'navigation',
+    sourceLabel: 'Navigation',
+    pushIndex: -1,
+    data: {},
+    cumulativeState: null,
+    isReplay: false,
+    _ecommerceType: null,
+    _eventName: undefined,
+    _ts: now.getTime(),
+  };
+
+  _currentDlNavMarkerId = marker.id;
+
+  // Insert marker into the unified timeline via existing mechanism
+  dlState.addDlPush(marker);
+
+  // Render the marker incrementally
+  const $list = DOM.dlPushList;
+  const $empty = DOM.dlEmptyState;
+  if ($empty) $empty.style.display = 'none';
+
+  if ($list) {
+    const sortField = getDlSortField();
+    const sortOrd = getDlSortOrder();
+
+    if (sortField === 'time' && !getDlGroupBySource()) {
+      // Time-based sort: insert at correct position (top for desc, bottom for asc)
+      const row = renderDlNavMarker(marker);
+      if (sortOrd === 'desc') {
+        $list.insertBefore(row, $list.firstChild);
+      } else {
+        $list.appendChild(row);
+      }
+    } else {
+      // Non-time sort or grouped: full re-render needed
+      renderDlPushListFull();
+    }
+  }
+
+  updateDlDividerCounts();
+  highlightLatestDlSection();
 };
 
 window.clearDataLayer = function (): void {
@@ -570,9 +862,7 @@ async function initDatalayerHandlers(): Promise<void> {
   const $dlSortBtn = document.getElementById('dl-btn-sort');
   $dlSortBtn?.addEventListener('click', () => {
     const newOrder = toggleDlSortOrder();
-    // Sync quick button (will be handled by index.ts via custom event)
-    const event = new CustomEvent('tagdragon:sync-dl-quick-buttons');
-    document.dispatchEvent(event);
+    syncDlQuickButtons();
     renderDlPushListFull();
     // Sync settings control
     const event2 = new CustomEvent('tagdragon:sync-settings', {
@@ -586,6 +876,16 @@ async function initDatalayerHandlers(): Promise<void> {
   $dlFilterBtn?.addEventListener('click', (e: Event) => {
     e.stopPropagation();
     toggleDlFilterPopover();
+  });
+
+  // DL Hide GTM system events toggle
+  const $dlHideGtm = document.getElementById('dl-btn-hide-gtm');
+  $dlHideGtm?.addEventListener('click', () => {
+    const current = dlState.getDlHideGtmSystem();
+    dlState.setDlHideGtmSystem(!current);
+    $dlHideGtm.classList.toggle('active', !current);
+    dlApplyFilter();
+    updateDlFilterChips();
   });
 
   // Listen for revalidate events from the settings drawer
@@ -629,6 +929,9 @@ export function setPanelReady(): void {
 export function initDatalayerController(): void {
   // Expose flush functions for devtools page to call on panel shown
   window.flushPendingDlPushes = flushPendingDlPushes;
+
+  // Initialize divider click interactions
+  initDlDividerInteractions();
 
   // Initialize all event handlers
   void initDatalayerHandlers();

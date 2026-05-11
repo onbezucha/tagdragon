@@ -4,6 +4,12 @@
    Extracted from public/panel.html inline <style>
    ═══════════════════════════════════════════════════════════════════════════ */
 
+#popovers {
+  grid-row: 1 / -1;
+  grid-column: 1;
+  pointer-events: none;
+}
+
 .popover-header {
   display: flex;
   align-items: center;
@@ -443,4 +449,27 @@
   background: var(--accent-muted);
   border-color: var(--accent);
   color: var(--accent);
+}
+
+/* ─── RANGE SLIDER ─────────────────────────────────────────────────────── */
+
+.popover-range {
+  width: 80px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.popover-range-value {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-2);
+  min-width: 30px;
+  text-align: right;
+}
+
+.popover-row-slider {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: opacity 150ms var(--ease);
 }

@@ -1,5 +1,5 @@
-import type { Provider } from '../../types/provider';
-import { getParams } from '../url-parser';
+import type { Provider } from '@/types/provider';
+import { getParams } from '@/providers/url-parser';
 
 export const gtm: Provider = {
   name: 'GTM',
@@ -18,4 +18,4 @@ export const gtm: Provider = {
       'Preview Cookies': p.gtm_cookies_win,
     };
   },
-};
+} as const;

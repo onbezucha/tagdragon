@@ -36,3 +36,15 @@ export interface UpdatePopupStatsMessage {
   status: number;
   duration: number;
 }
+
+export interface UpdatePopupStatsBatchMessage {
+  type: 'UPDATE_POPUP_STATS_BATCH';
+  tabId: number;
+  updates: Array<{
+    provider: string;
+    color: string;
+    size: number;
+    status: number;
+    duration: number;
+  }>;
+}

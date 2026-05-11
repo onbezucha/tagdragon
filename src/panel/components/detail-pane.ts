@@ -24,6 +24,7 @@ import {
   findTriggeringPush,
   renderTriggeredBy,
   hideTriggeredByBanner,
+  type TriggeringPushResult,
 } from '../datalayer/utils/reverse-correlation';
 import { getAllDlPushes } from '../datalayer/state';
 import { buildGroupIcon } from '../utils/icon-builder';
@@ -31,6 +32,14 @@ import { SLOW_REQUEST_THRESHOLD_MS } from '@/shared/constants';
 
 // Currently displayed request — used by copy action buttons
 let _currentRequest: ParsedRequest | null = null;
+
+// Scroll behavior flag for selectRequest
+let _smoothScroll = true;
+
+/** Set scroll behavior for the next selectRequest call. */
+export function setSmoothScroll(smooth: boolean): void {
+  _smoothScroll = smooth;
+}
 
 // ─── TAB CONTENT CACHE ───────────────────────────────────────────────────────
 // LRU-like cache: requestId → tabName → rendered HTML (max 10 entries)
@@ -44,7 +53,9 @@ function getCached(id: string, tab: string): string | undefined {
 function setCache(id: string, tab: string, html: string): void {
   if (!tabCache.has(id)) {
     if (tabCache.size >= TAB_CACHE_MAX) {
-      tabCache.delete(tabCache.keys().next().value!);
+      const firstKey = tabCache.keys().next().value!;
+      tabCache.get(firstKey)?.clear();
+      tabCache.delete(firstKey);
     }
     tabCache.set(id, new Map());
   }
@@ -110,6 +121,54 @@ export function selectRequest(data: ParsedRequest, row: HTMLElement): void {
   _currentRequest = data;
   qsa('.req-row.active').forEach((r) => r.classList.remove('active'));
   row.classList.add('active');
+
+  // Update page divider section highlighting
+  const $list = DOM.list;
+  if ($list) {
+    // Clear all section states (always, regardless of config)
+    $list
+      .querySelectorAll('.page-divider.section-active')
+      .forEach((d) => d.classList.remove('section-active'));
+    $list
+      .querySelectorAll('.page-divider.section-dimmed')
+      .forEach((d) => d.classList.remove('section-dimmed'));
+    $list
+      .querySelectorAll('.req-row.section-active')
+      .forEach((r) => r.classList.remove('section-active'));
+    $list
+      .querySelectorAll('.req-row.section-dimmed')
+      .forEach((r) => r.classList.remove('section-dimmed'));
+
+    const navId = row.dataset?.pageNavId;
+    if (navId) {
+      const sectionCfg = getConfig();
+
+      // Set dimming intensity via CSS custom property
+      $list.style.setProperty('--section-dim-opacity', String(sectionCfg.sectionDimOpacity));
+
+      // Accent bar — only if enabled
+      if (sectionCfg.sectionAccentBar) {
+        const divider = $list.querySelector(`.page-divider[data-nav-id="${navId}"]`);
+        if (divider) divider.classList.add('section-active');
+
+        $list.querySelectorAll(`.req-row[data-page-nav-id="${navId}"]`).forEach((r) => {
+          r.classList.add('section-active');
+        });
+      }
+
+      // Dimming — only if enabled
+      if (sectionCfg.sectionDimOthers) {
+        $list.querySelectorAll(`.page-divider:not([data-nav-id="${navId}"])`).forEach((d) => {
+          d.classList.add('section-dimmed');
+        });
+
+        $list.querySelectorAll(`.req-row:not([data-page-nav-id="${navId}"])`).forEach((r) => {
+          r.classList.add('section-dimmed');
+        });
+      }
+    }
+  }
+
   setSelectedId(String(data.id));
 
   // Lazy categorization – compute only when user actually views the request
@@ -212,22 +271,27 @@ export function selectRequest(data: ParsedRequest, row: HTMLElement): void {
   // Triggered by DataLayer banner
   const $triggerBanner = DOM.triggeredByBanner;
   if ($triggerBanner) {
-    const dlPushes = getAllDlPushes();
-    if (dlPushes.length > 0) {
-      const triggering = findTriggeringPush(data, dlPushes);
-      if (triggering) {
-        renderTriggeredBy($triggerBanner, triggering, (pushId: number) => {
-          document.dispatchEvent(new CustomEvent('goto-datalayer-push', { detail: pushId }));
-        });
-      } else {
-        hideTriggeredByBanner($triggerBanner);
+    // Compute and cache triggering push per request
+    if (!data._triggeringPush) {
+      const dlPushes = getAllDlPushes();
+      if (dlPushes.length > 0) {
+        data._triggeringPush = findTriggeringPush(data, dlPushes) ?? null;
       }
+    }
+    if (data._triggeringPush) {
+      renderTriggeredBy(
+        $triggerBanner,
+        data._triggeringPush as TriggeringPushResult,
+        (pushId: number) => {
+          document.dispatchEvent(new CustomEvent('goto-datalayer-push', { detail: pushId }));
+        }
+      );
     } else {
       hideTriggeredByBanner($triggerBanner);
     }
   }
 
-  row.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  row.scrollIntoView({ block: 'nearest', behavior: _smoothScroll ? 'smooth' : 'auto' });
 }
 
 /**
@@ -385,6 +449,10 @@ function autoExpandSections(): void {
 export function closeDetailPane(): void {
   DOM.detail?.classList.add('hidden');
   qsa('.req-row.active').forEach((r) => r.classList.remove('active'));
+  qsa('.page-divider.section-active').forEach((d) => d.classList.remove('section-active'));
+  qsa('.page-divider.section-dimmed').forEach((d) => d.classList.remove('section-dimmed'));
+  qsa('.req-row.section-active').forEach((r) => r.classList.remove('section-active'));
+  qsa('.req-row.section-dimmed').forEach((r) => r.classList.remove('section-dimmed'));
   setSelectedId(null);
   if (DOM.triggeredByBanner) hideTriggeredByBanner(DOM.triggeredByBanner);
 }

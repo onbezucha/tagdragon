@@ -1,6 +1,10 @@
 import type { Provider } from '@/types/provider';
 import { getParams } from './url-parser';
 
+/**
+ * Lytics (acquired by Contentstack, December 2024)
+ * Continues to operate under the Lytics brand. Endpoints unchanged.
+ */
 export const lytics: Provider = {
   name: 'Lytics',
   color: '#6C3FEE',

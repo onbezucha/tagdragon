@@ -7,18 +7,18 @@ import { CHECK_SVG, COPY_FLASH_MS } from '@/shared/constants';
  * Swaps inner SVG to checkmark, adds 'copied' class, reverts after COPY_FLASH_MS.
  */
 export function flashCopyFeedback(el: HTMLElement): void {
-  // Uložit původní SVG (jen první <svg> element)
+  // Store original SVG (just first <svg> element)
   const originalSvg = el.querySelector('svg');
   const originalHtml = originalSvg?.outerHTML ?? '';
 
-  // Nahradit checkmark SVG
+  // Replace checkmark SVG
   el.innerHTML = CHECK_SVG;
 
-  // Aktivovat animaci
+  // Activate animation
   el.classList.add('copied');
 
   setTimeout(() => {
-    // Vrátit původní SVG
+    // Restore original SVG
     el.innerHTML = originalHtml;
     el.classList.remove('copied');
   }, COPY_FLASH_MS);
@@ -97,13 +97,11 @@ interface DOMRefs {
   readonly dlPushList: HTMLElement | null;
   readonly dlDetailPane: HTMLElement | null;
   readonly dlEmptyState: HTMLElement | null;
-  readonly dlSplitter: HTMLElement | null;
   readonly dlFilterInput: HTMLInputElement | null;
 
   readonly dlBtnExport: HTMLElement | null;
   readonly dlView: HTMLElement | null;
   readonly dlFilterBar: HTMLElement | null;
-  readonly dlMain: HTMLElement | null;
   readonly dlDetailContent: HTMLElement | null;
   readonly dlDetailTabs: HTMLElement | null;
   readonly dlDetailBadge: HTMLElement | null;
@@ -115,7 +113,6 @@ interface DOMRefs {
   readonly settingsSearch: HTMLInputElement | null;
   // ─── PROVIDER FILTER POPOVER REFS ──────────────────────────────────
   readonly providerFilterPopover: HTMLElement | null;
-  readonly providerPopoverBody: HTMLElement | null;
   readonly btnProviderPopoverClose: HTMLElement | null;
 }
 
@@ -170,13 +167,11 @@ let _infoProviderGroups: HTMLElement | null | undefined;
 let _dlPushList: HTMLElement | null | undefined;
 let _dlDetailPane: HTMLElement | null | undefined;
 let _dlEmptyState: HTMLElement | null | undefined;
-let _dlSplitter: HTMLElement | null | undefined;
 let _dlFilterInput: HTMLInputElement | null | undefined;
 
 let _dlBtnExport: HTMLElement | null | undefined;
 let _dlView: HTMLElement | null | undefined;
 let _dlFilterBar: HTMLElement | null | undefined;
-let _dlMain: HTMLElement | null | undefined;
 let _dlDetailContent: HTMLElement | null | undefined;
 let _dlDetailTabs: HTMLElement | null | undefined;
 let _dlDetailBadge: HTMLElement | null | undefined;
@@ -186,7 +181,6 @@ let _popoverBody: HTMLElement | null | undefined;
 let _btnSettingsClose: HTMLElement | null | undefined;
 let _settingsSearch: HTMLInputElement | null | undefined;
 let _providerFilterPopover: HTMLElement | null | undefined;
-let _providerPopoverBody: HTMLElement | null | undefined;
 let _btnProviderPopoverClose: HTMLElement | null | undefined;
 
 export const DOM: DOMRefs = {
@@ -390,10 +384,6 @@ export const DOM: DOMRefs = {
     if (_dlEmptyState === undefined) _dlEmptyState = $('dl-empty-state');
     return _dlEmptyState;
   },
-  get dlSplitter() {
-    if (_dlSplitter === undefined) _dlSplitter = $('dl-splitter');
-    return _dlSplitter;
-  },
   get dlFilterInput() {
     if (_dlFilterInput === undefined) _dlFilterInput = $<HTMLInputElement>('dl-filter-input');
     return _dlFilterInput;
@@ -410,10 +400,6 @@ export const DOM: DOMRefs = {
   get dlFilterBar() {
     if (_dlFilterBar === undefined) _dlFilterBar = $('dl-filter-bar');
     return _dlFilterBar;
-  },
-  get dlMain() {
-    if (_dlMain === undefined) _dlMain = $('dl-main');
-    return _dlMain;
   },
   get dlDetailContent() {
     if (_dlDetailContent === undefined) _dlDetailContent = $('dl-detail-content');
@@ -452,10 +438,6 @@ export const DOM: DOMRefs = {
   get providerFilterPopover() {
     if (_providerFilterPopover === undefined) _providerFilterPopover = $('provider-filter-popover');
     return _providerFilterPopover;
-  },
-  get providerPopoverBody() {
-    if (_providerPopoverBody === undefined) _providerPopoverBody = $('provider-popover-body');
-    return _providerPopoverBody;
   },
   get btnProviderPopoverClose() {
     if (_btnProviderPopoverClose === undefined)

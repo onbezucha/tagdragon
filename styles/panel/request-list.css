@@ -1,11 +1,22 @@
 /* ═══════════════════════════════════════════════════════════════════════════
-   REQUEST LIST — #list-pane, #request-list, scrollbar
-   Extracted from public/panel.html inline <style>
-   ═══════════════════════════════════════════════════════════════════════════ */
+    REQUEST LIST — #list-pane, #request-list, scrollbar
+    Extracted from public/panel.html inline <style>
+    ═══════════════════════════════════════════════════════════════════════════ */
 
+/* ── Cross-tab navigation flash highlight ── */
+@keyframes dl-goto-flash {
+  0% { background-color: var(--accent-a30, rgba(99, 102, 241, 0.3)); }
+  100% { background-color: transparent; }
+}
+.request-row.dl-goto-highlight {
+  animation: dl-goto-flash 2s ease-out;
+}
+
+/* ── List pane layout ── */
 #list-pane {
   display: flex;
   flex-direction: column;
+  min-height: 0;
   background-color: var(--bg-0);
   border-right: 1px solid var(--border);
   overflow: hidden;
@@ -19,19 +30,4 @@
   flex-direction: column;
 }
 
-#request-list::-webkit-scrollbar {
-  width: 8px;
-}
 
-#request-list::-webkit-scrollbar-track {
-  background: var(--bg-0);
-}
-
-#request-list::-webkit-scrollbar-thumb {
-  background: var(--bg-2);
-  border-radius: 4px;
-}
-
-#request-list::-webkit-scrollbar-thumb:hover {
-  background: var(--bg-3);
-}

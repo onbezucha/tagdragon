@@ -27,6 +27,9 @@ export interface AppConfig {
   dlGroupBySource: boolean;
   maxDlPushes: number;
   correlationWindowMs: number;
+  sectionAccentBar: boolean;
+  sectionDimOthers: boolean;
+  sectionDimOpacity: number;
 }
 
 export const DEFAULT_CONFIG: AppConfig = {
@@ -48,6 +51,9 @@ export const DEFAULT_CONFIG: AppConfig = {
   dlGroupBySource: false,
   maxDlPushes: 1000,
   correlationWindowMs: 2000,
+  sectionAccentBar: true,
+  sectionDimOthers: true,
+  sectionDimOpacity: 0.5,
 };
 
 /** Max buffered messages before dropping oldest (panel-bridge, data-layer-relay) */

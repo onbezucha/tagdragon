@@ -10,11 +10,81 @@ import type { TabPopupStats } from '@/types/popup';
 import type { HARPostData } from '@/types/har';
 import { generateId } from '@/shared/id-gen';
 
+// ─── BATCHED POPUP STATS ──────────────────────────────────────────────────
+// Batches popup stats updates to reduce IPC overhead. Instead of sending one
+// message per request, collects updates and sends them in a batch every 200ms.
+
+let _statsQueue: Array<{
+  provider: string;
+  color: string;
+  size: number;
+  status: number;
+  duration: number;
+}> = [];
+let _statsTimer: ReturnType<typeof setTimeout> | null = null;
+const STATS_BATCH_INTERVAL_MS = 200;
+
+function flushStatsBatch(): void {
+  if (_statsQueue.length === 0) return;
+  const batch = _statsQueue;
+  _statsQueue = [];
+  _statsTimer = null;
+  chrome.runtime
+    .sendMessage({
+      type: 'UPDATE_POPUP_STATS_BATCH',
+      tabId,
+      updates: batch,
+    })
+    .catch(() => {
+      // Background may not be ready, ignore
+    });
+}
+
+function queueStatsUpdate(
+  provider: string,
+  color: string,
+  size: number,
+  status: number,
+  duration: number
+): void {
+  _statsQueue.push({ provider, color, size, status, duration });
+  if (!_statsTimer) {
+    _statsTimer = setTimeout(flushStatsBatch, STATS_BATCH_INTERVAL_MS);
+  }
+}
+
+// ─── PAGE NAVIGATION TRACKING ──────────────────────────────────────────────────
+
+let _currentPageUrl: string | null = null;
+let _currentPageNavId: string | null = null;
+
+// Initialize current page URL and navId on load
+chrome.devtools.inspectedWindow.eval('document.URL', (result: unknown) => {
+  if (typeof result === 'string') {
+    _currentPageUrl = result;
+    _currentPageNavId = String(generateId());
+  }
+});
+
+/**
+ * Update current page URL and generate a new navigation ID.
+ * Called from index.ts on navigation. Returns the navId so the caller
+ * can construct the PageNavigation object with the same ID.
+ */
+export function setCurrentPageUrl(url: string): string {
+  _currentPageUrl = url;
+  _currentPageNavId = String(generateId());
+  return _currentPageNavId;
+}
+
 // ─── PAUSE STATE ──────────────────────────────────────────────────────────────
 // Local pause flag, kept in sync with background via RECORDING_PAUSED/RESUMED messages.
 
 const tabId = chrome.devtools.inspectedWindow.tabId;
 let isPaused = false;
+
+// Maximum length for stored response body content
+const MAX_RESPONSE_BODY_LENGTH = 4000;
 
 // Load initial pause state from session storage (in case popup was paused before DevTools opened)
 chrome.storage.session
@@ -59,6 +129,18 @@ export function parsePostBody(postData: unknown): unknown {
   }
 }
 
+/**
+ * Extract and remove provider-side _eventName from decoded params.
+ * Returns the extracted event name (or undefined) and mutates decoded to remove the key.
+ */
+function extractAndRemoveProviderEventName(
+  decoded: Record<string, string | undefined>
+): string | undefined {
+  const eventName = decoded._eventName;
+  delete decoded._eventName;
+  return eventName;
+}
+
 // ─── REQUEST PROCESSING ───────────────────────────────────────────────────────
 
 /**
@@ -76,15 +158,17 @@ function processRequest(req: chrome.devtools.network.Request): void {
   const allParams = getParams(url, postRaw);
   const decoded = provider.parseParams(url, postRaw);
   // Extract provider-side _eventName before building parsedRequest
-  const providerEventName = (decoded as Record<string, string | undefined>)._eventName;
-  delete (decoded as Record<string, string | undefined>)._eventName;
+  const providerEventName = extractAndRemoveProviderEventName(
+    decoded as Record<string, string | undefined>
+  );
 
   req.getContent((responseBody: string | null) => {
     const id = generateId();
+    const timestamp = new Date(Math.floor(id / 1000)).toISOString();
 
     // Store heavy data locally (not sent to panel immediately)
     heavyDataStore.set(id, {
-      responseBody: (responseBody || '').slice(0, 4000),
+      responseBody: (responseBody || '').slice(0, MAX_RESPONSE_BODY_LENGTH),
       requestHeaders: headersToObj(req.request.headers),
       responseHeaders: headersToObj(req.response.headers),
     });
@@ -99,7 +183,7 @@ function processRequest(req: chrome.devtools.network.Request): void {
       url,
       method: req.request.method as ParsedRequest['method'],
       status: req.response.status,
-      timestamp: new Date().toISOString(),
+      timestamp,
       duration: Math.round(req.time * 1000),
       size,
       allParams,
@@ -113,27 +197,21 @@ function processRequest(req: chrome.devtools.network.Request): void {
       _hasRequestHeaders: (req.request.headers?.length || 0) > 0,
       _hasResponseHeaders: (req.response.headers?.length || 0) > 0,
       _eventName: providerEventName,
-      _ts: Date.now(),
+      _ts: Math.floor(id / 1000),
+      _pageUrl: _currentPageUrl ?? undefined,
+      _pageNavId: _currentPageNavId ?? undefined,
     };
 
     sendToPanel(parsedRequest);
 
-    // Notify background to update popup stats and badge.
-    // Fix: stats aggregation and badge update happen in background context
-    // (only background can call chrome.action.setBadgeText).
-    chrome.runtime
-      .sendMessage({
-        type: 'UPDATE_POPUP_STATS',
-        tabId,
-        provider: provider.name,
-        color: provider.color,
-        size,
-        status: req.response.status,
-        duration: Math.round(req.time * 1000),
-      })
-      .catch(() => {
-        // Background may not be ready, ignore
-      });
+    // Batch popup stats update to reduce IPC overhead
+    queueStatsUpdate(
+      provider.name,
+      provider.color,
+      size,
+      req.response.status,
+      Math.round(req.time * 1000)
+    );
   });
 }
 
@@ -177,8 +255,9 @@ function handleRuntimeMessage(msg: RuntimeMessage): void {
     if (!provider) return;
     const allParams = getParams(msg.data.url, null);
     const decoded = provider.parseParams(msg.data.url, null);
-    const providerEventName = (decoded as Record<string, string | undefined>)._eventName;
-    delete (decoded as Record<string, string | undefined>)._eventName;
+    const providerEventName = extractAndRemoveProviderEventName(
+      decoded as Record<string, string | undefined>
+    );
 
     sendToPanel({
       ...msg.data,

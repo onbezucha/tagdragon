@@ -33,6 +33,7 @@
 
 #consent-popover.visible {
   display: block;
+  pointer-events: auto;
 }
 
 .consent-section {
@@ -376,14 +377,3 @@
   line-height: 1.5;
 }
 
-/* Scrollbar */
-.consent-categories::-webkit-scrollbar {
-  width: 5px;
-}
-.consent-categories::-webkit-scrollbar-track {
-  background: var(--bg-1);
-}
-.consent-categories::-webkit-scrollbar-thumb {
-  background: var(--bg-3);
-  border-radius: 3px;
-}

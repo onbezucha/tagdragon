@@ -29,6 +29,12 @@ describe('AT Internet Provider', () => {
       ).toBe(true);
     });
 
+    it('matches collect.tcc.nu (legacy AT Internet)', () => {
+      expect(
+        atInternet.pattern.test('https://collect.tcc.nu/event?s=123456')
+      ).toBe(true);
+    });
+
     it('does NOT match unrelated analytics domains', () => {
       expect(
         atInternet.pattern.test('https://google-analytics.com/collect')

@@ -9,6 +9,22 @@ export type EcommerceType = 'purchase' | 'checkout' | 'impression' | 'promo' | '
  * Unified implementation used by both the relay and the panel formatter.
  */
 export function detectEcommerceType(data: Record<string, unknown>): EcommerceType {
+  // Quick top-level scan — if no e-commerce related keys exist, bail immediately
+  let hasEcomKey = false;
+  for (const key of Object.keys(data)) {
+    if (
+      key === 'event' ||
+      key === 'ecommerce' ||
+      key === 'items' ||
+      key === 'purchase' ||
+      key === 'refund'
+    ) {
+      hasEcomKey = true;
+      break;
+    }
+  }
+  if (!hasEcomKey) return null;
+
   const event = typeof data['event'] === 'string' ? data['event'] : '';
 
   // Event-name-only detection (no ecommerce field needed)

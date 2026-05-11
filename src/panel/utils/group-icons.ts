@@ -49,3 +49,18 @@ export const GROUP_ICONS: Record<string, string> = {
     <path d="M8 1L1 15h4.2l.9-2.5h3.8L10.8 15H15L8 1zm0 4.2l1.4 4.3H6.6L8 5.2z"/>
   </svg>`,
 };
+
+// ─── GROUP COLORS ──────────────────────────────────────────────────────────
+// Accent colors for provider group visual distinction (left border).
+
+export const GROUP_COLORS: Record<string, string> = {
+  analytics: '#3B82F6', // blue
+  tagmanager: '#F59E0B', // amber
+  marketing: '#EF4444', // red
+  replay: '#8B5CF6', // violet
+  abtesting: '#10B981', // emerald
+  visitorid: '#6366F1', // indigo
+  engagement: '#EC4899', // pink
+  cdp: '#14B8A6', // teal
+  adobe: '#F97316', // orange
+};

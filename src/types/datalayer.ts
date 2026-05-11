@@ -17,10 +17,50 @@ export interface DataLayerPush {
   // E-commerce detection (computed)
   readonly _ecommerceType?: 'purchase' | 'checkout' | 'impression' | 'promo' | 'refund' | null;
   readonly _eventName?: string; // Extracted event name
+  readonly _dlNavMarkerId?: number; // ID of the DlNavMarker this push belongs to
+
+  // Correlation count (computed)
+  _correlatedCount?: number; // Number of correlated network requests (cached)
+
+  // Diff count (computed)
+  _diffCount?: number; // Number of changed paths from previous state (cached)
 
   // Search indexing
   _searchIndex?: string;
   _ts?: number;
+}
+
+// ─── NAVIGATION MARKER ─────────────────────────────────────────────────────
+// Special entry in dlState.all marking page navigation boundaries.
+
+export interface DlNavMarker {
+  readonly id: number; // Unique ID via generateId()
+  readonly _type: 'nav-marker'; // Discriminator — always 'nav-marker'
+  readonly timestamp: string; // ISO timestamp of navigation
+  readonly url: string; // New page URL after navigation (empty string if unavailable)
+  readonly source: 'navigation'; // Constant — enables source-based iteration without guard
+  readonly sourceLabel: 'Navigation';
+  readonly pushIndex: -1; // Sentinel value — markers are not pushes
+  readonly data: Record<string, unknown>; // Empty object — satisfies DataLayerPush shape
+  cumulativeState: null;
+  readonly isReplay: false;
+  readonly _ecommerceType: null;
+  readonly _eventName: undefined;
+  _ts?: number;
+  _searchIndex?: string;
+}
+
+/** Union type for any entry in the DataLayer timeline */
+export type DlTimelineEntry = DataLayerPush | DlNavMarker;
+
+/** Type guard: returns true for navigation markers */
+export function isDlNavMarker(entry: DlTimelineEntry): entry is DlNavMarker {
+  return (entry as DlNavMarker)._type === 'nav-marker';
+}
+
+/** Type guard: returns true for regular pushes */
+export function isDlPush(entry: DlTimelineEntry): entry is DataLayerPush {
+  return (entry as DlNavMarker)._type !== 'nav-marker';
 }
 
 export interface DiffEntry {
@@ -32,8 +72,8 @@ export interface DiffEntry {
 }
 
 export interface DataLayerState {
-  all: DataLayerPush[];
-  map: Map<number, DataLayerPush>; // keyed by id (number)
+  all: DlTimelineEntry[];
+  map: Map<number, DlTimelineEntry>; // keyed by id (number)
   filteredIds: Set<number>;
   selectedId: number | null;
   isPaused: boolean;

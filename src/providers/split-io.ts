@@ -1,6 +1,11 @@
 import type { Provider } from '@/types/provider';
 import { parsePostBodyJson } from './parse-helpers';
 
+/**
+ * Split (acquired by Harness, June 2024 → Harness Feature Management & Experimentation)
+ * Pattern still covers events.split.io — legacy endpoint remains functional.
+ * Harness FME migration guide: docs.split.io → Harness Developer Hub.
+ */
 export const splitIo: Provider = {
   name: 'Split',
   color: '#00B5AD',

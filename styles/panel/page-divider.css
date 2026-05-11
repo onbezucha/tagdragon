@@ -1,0 +1,159 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   PAGE DIVIDER — Dragon Amber Hybrid Design
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.page-divider {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 5px 10px;
+  --divider-indent: 40px;
+  background: var(--bg-3);
+  border-top: 1px solid var(--border-strong);
+  cursor: pointer;
+  user-select: none;
+  font-size: 11px;
+  position: relative;
+  z-index: 1;
+  transition: background 100ms var(--ease), opacity 150ms var(--ease);
+}
+
+/* Amber gradient bottom edge */
+.page-divider::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    var(--accent-glow) 0%,
+    var(--border-subtle) 40%,
+    transparent 100%
+  );
+  pointer-events: none;
+}
+
+.page-divider:hover {
+  background: var(--bg-hover);
+}
+
+/* ─── LEFT SECTION ─────────────────────────────────────────────────────── */
+
+.page-divider-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  flex: 1;
+  flex-wrap: wrap;
+}
+
+/* Chevron */
+.page-divider-chevron {
+  flex-shrink: 0;
+  transition: transform 150ms var(--ease);
+  color: var(--text-2);
+}
+
+.page-divider.collapsed .page-divider-chevron {
+  transform: rotate(-90deg);
+}
+
+/* Favicon (globe SVG) */
+.page-divider-favicon {
+  flex-shrink: 0;
+  color: var(--accent);
+  opacity: 0.8;
+}
+
+/* Hostname — Dragon Amber accent */
+.page-divider-hostname {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+/* Path */
+.page-divider-path {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-1);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 0 0 calc(100% - var(--divider-indent));
+  margin-left: var(--divider-indent);
+}
+
+/* Time */
+.page-divider-time {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-2);
+  flex-shrink: 0;
+  margin-left: 4px;
+}
+
+/* ─── RIGHT SECTION ────────────────────────────────────────────────────── */
+
+.page-divider-right {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  margin-left: 8px;
+}
+
+/* Count badge */
+.page-divider-count {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  background: var(--accent-muted);
+  padding: 1px 6px;
+  border-radius: 8px;
+  color: var(--accent);
+  border: 1px solid var(--accent-glow);
+}
+
+/* ─── STATES ───────────────────────────────────────────────────────────── */
+
+/* ─── ACTIVE SECTION STATES ─────────────────────────────────────────── */
+
+/* Active section: divider gets left accent bar */
+.page-divider.section-active::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 3px;
+  background: var(--accent);
+  border-radius: 0 1px 1px 0;
+  z-index: 2;
+}
+
+/* Active section: divider background tint */
+.page-divider.section-active {
+  background: var(--bg-active);
+}
+
+/* Rows in the active section get a subtle left accent */
+.req-row.section-active {
+  border-left-color: var(--accent-glow);
+}
+
+/* Dimmed divider (other sections when one is active) */
+.page-divider.section-dimmed {
+  opacity: var(--section-dim-opacity, 0.5);
+}
+
+/* Dimmed rows (other sections when one is active) */
+.req-row.section-dimmed {
+  opacity: var(--section-dim-opacity, 0.5);
+}
+

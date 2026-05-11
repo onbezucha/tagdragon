@@ -1,5 +1,5 @@
-import type { Provider } from '../../types/provider';
-import { getParams } from '../url-parser';
+import type { Provider } from '@/types/provider';
+import { getParams } from '@/providers/url-parser';
 
 export const adobeECID: Provider = {
   name: 'Adobe ECID',

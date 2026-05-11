@@ -10,6 +10,7 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 @import './panel/base.css';
+@import './panel/scrollbar.css';
 @import './panel/global-tab-bar.css';
 @import './panel/context-toolbar.css';
 
@@ -42,11 +43,14 @@
 @import './panel/datalayer/layout.css';
 @import './panel/datalayer/push-list.css';
 @import './panel/datalayer/detail.css';
+@import './panel/datalayer/push-data-cards.css';
 @import './panel/datalayer/diff.css';
 @import './panel/datalayer/live-inspector.css';
 @import './panel/datalayer/correlation.css';
 @import './panel/datalayer/ecommerce.css';
 @import './panel/datalayer/filter-bar.css';
+@import './panel/datalayer/nav-marker.css';
+@import './panel/page-divider.css';
 
 @tailwind base;
 @tailwind components;
@@ -148,7 +152,18 @@
     --radius: 6px;
     --radius-lg: 8px;
     --ease: cubic-bezier(0.4, 0, 0.2, 1);
-    
+
+    /* ─── ICON SPACING TOKENS ───────────────────────────────────────────────── */
+    --icon-gap-xs: 3px;   /* micro: dot → label (status bar pb-item) */
+    --icon-gap-sm: 5px;   /* small: pill internal (ppill) */
+    --icon-gap-md: 8px;   /* medium: icon → text in rows */
+    --icon-gap-lg: 10px;  /* large: between logical groups */
+
+    /* Icon size tokens */
+    --icon-sm: 12px;      /* group header icons */
+    --icon-md: 14px;      /* pill icons, toolbar buttons */
+    --icon-lg: 20px;      /* row icons, detail summary */
+
     /* ─── THEME TOGGLE ICON ──────────────────────────────────────────────────── */
     --theme-icon-sun: block;
     --theme-icon-moon: none;
@@ -224,7 +239,7 @@
     border-bottom: 1px solid var(--border-subtle);
     cursor: pointer;
     border-left: 3px solid transparent;
-    transition: background 100ms var(--ease);
+    transition: background 100ms var(--ease), opacity 150ms var(--ease), border-left-color 100ms var(--ease);
     display: flex;
     flex-direction: column;
     gap: 3px;
@@ -255,6 +270,10 @@
     display: none;
   }
 
+  .req-row.page-collapsed {
+    display: none;
+  }
+
   .req-row.search-match {
     border-left-color: var(--accent-muted);
   }
@@ -279,18 +298,18 @@
   .req-primary {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: var(--icon-gap-md);
     font-size: 12px;
   }
 
   .req-secondary {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: var(--icon-gap-md);
     font-size: 11px;
     color: var(--text-2);
     margin-top: 3px;
-    padding-left: 26px;
+    padding-left: 28px;
   }
 
   .req-secondary > span + span:not(.req-provider-name)::before {
@@ -315,8 +334,8 @@
   }
 
   .req-category-icon svg {
-    width: 20px;
-    height: 20px;
+    width: var(--icon-lg);
+    height: var(--icon-lg);
   }
 
   .req-event {
@@ -634,8 +653,9 @@
   /* Wrap long values in param table when enabled */
   body.wrap-values .param-table .pv {
     white-space: normal;
-    overflow-x: visible;
+    overflow: visible;
     text-overflow: clip;
+    max-height: none;
   }
 
   .param-table .pc {
@@ -665,9 +685,15 @@
     background: var(--bg-2);
     border-radius: var(--radius);
     padding: 12px;
-    white-space: pre-wrap;
+    white-space: pre;
+    overflow-x: auto;
     word-break: break-all;
     border: 1px solid var(--border-subtle);
+  }
+
+  body.wrap-values pre.json {
+    white-space: pre-wrap;
+    overflow-x: visible;
   }
 
   /* ═════════════════════════════════════════════════════════════════════
@@ -995,30 +1021,6 @@
   }
 }
 
-@layer utilities {
-  /* ═════════════════════════════════════════════════════════════════════
-       GLOBAL SCROLLBAR STYLING
-       ═════════════════════════════════════════════════════════════════════ */
-
-  *::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-  }
-
-  *::-webkit-scrollbar-track {
-    background: var(--bg-0);
-  }
-
-  *::-webkit-scrollbar-thumb {
-    background: var(--bg-3);
-    border-radius: 3px;
-  }
-
-  *::-webkit-scrollbar-thumb:hover {
-    background: var(--border-strong);
-  }
-}
-
 /* ═══════════════════════════════════════════════════════════════════════════
    ADOBE ENVIRONMENT SWITCHER
    ═══════════════════════════════════════════════════════════════════════════ */
@@ -1110,6 +1112,7 @@
 
 #env-popover.visible {
   display: block;
+  pointer-events: auto;
 }
 
 /* Detected info */

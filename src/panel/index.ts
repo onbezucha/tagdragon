@@ -42,30 +42,8 @@ import { initDlSortState } from './datalayer/state';
 import { loadValidationRules } from './datalayer/utils/validator';
 import { setValidationRules, setValidationLoaded } from './datalayer/state';
 import { updateDlRowValidation } from './datalayer/components/push-list';
-import {
-  createIcons,
-  Cable,
-  Database,
-  ChevronDown,
-  Eraser,
-  Cookie,
-  Sun,
-  Moon,
-  Trash2,
-  Upload,
-  Settings,
-  CircleHelp,
-  Search,
-  X,
-  ArrowUpDown,
-  Filter,
-  Download,
-  Pause,
-  Play,
-  SlidersHorizontal,
-  WrapText,
-  AlignJustify,
-} from 'lucide';
+import { createIcons } from 'lucide';
+import { PANEL_ICONS } from './utils/lucide-icons';
 
 // Toolbar controller imports
 import {
@@ -78,7 +56,6 @@ import {
   applyWrapValuesClass,
   applyCompactRowsClass,
   initRequestListHandler,
-  setGotoNetworkRequestRef,
 } from './controllers/toolbar-controller';
 
 import { doApplyFilters, doUpdateActiveFilters } from './controllers/filter-callbacks';
@@ -99,6 +76,8 @@ declare global {
     triggerReinject: () => void;
     flushPendingRequests: () => void;
     flushPendingDlPushes: () => void;
+    insertDlNavMarker: (url: string) => void;
+    receivePageNavigation: (nav: import('@/types/request').PageNavigation) => void;
   }
 }
 
@@ -119,6 +98,16 @@ function gotoNetworkRequest(reqId: number): void {
     row.style.display = '';
   }
   selectRequest(reqData, row);
+
+  // Flash highlight to help user locate the row after cross-tab navigation
+  row.classList.add('dl-goto-highlight');
+  row.addEventListener(
+    'animationend',
+    () => {
+      row.classList.remove('dl-goto-highlight');
+    },
+    { once: true }
+  );
 }
 
 /**
@@ -156,13 +145,7 @@ function switchView(view: 'network' | 'datalayer'): void {
   const $main = DOM.main;
   const $dlView = DOM.dlView;
   if ($main) $main.style.display = view === 'network' ? '' : 'none';
-  if ($dlView) $dlView.style.display = view === 'datalayer' ? 'block' : 'none';
-
-  // Toggle filter bars
-  const $filterBar = DOM.filterBar;
-  const $dlFilterBar = DOM.dlFilterBar;
-  if ($filterBar) $filterBar.style.display = view === 'network' ? '' : 'none';
-  if ($dlFilterBar) $dlFilterBar.style.display = view === 'datalayer' ? '' : 'none';
+  if ($dlView) $dlView.style.display = view === 'datalayer' ? '' : 'none';
 
   // Update tab buttons
   document.querySelectorAll('.tab-btn[data-view]').forEach((btn) => {
@@ -260,9 +243,6 @@ setGotoNetworkRequest(gotoNetworkRequest);
 setSwitchView(switchView);
 setSyncPauseUI(syncPauseUI);
 
-// Also pass to toolbar controller for doSelectPush
-setGotoNetworkRequestRef(gotoNetworkRequest);
-
 // ─── INITIALIZE ──────────────────────────────────────────────────────────────
 
 async function init(): Promise<void> {
@@ -276,31 +256,7 @@ async function init(): Promise<void> {
   });
 
   // Lucide icons — replace <i data-lucide="..."> placeholders with SVGs
-  createIcons({
-    icons: {
-      Cable,
-      Database,
-      ChevronDown,
-      Eraser,
-      Cookie,
-      Sun,
-      Moon,
-      Trash2,
-      Settings,
-      CircleHelp,
-      Search,
-      X,
-      ArrowUpDown,
-      Filter,
-      Download,
-      Pause,
-      Play,
-      SlidersHorizontal,
-      Upload,
-      WrapText,
-      AlignJustify,
-    },
-  });
+  createIcons({ icons: PANEL_ICONS });
 
   // Remove data-lucide attributes from processed SVGs to prevent re-processing
   // by subsequent createIcons() calls (e.g., in info-popover.ts renderToolbarIcons)

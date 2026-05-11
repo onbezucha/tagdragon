@@ -3,7 +3,7 @@
 // Re-exports from pill-rendering and popover for backward compatibility.
 // ═══════════════════════════════════════════════════════════════════════════
 
-import { updateGroupStates, updateFooterSummary, updateHiddenBadge } from './pill-rendering';
+import { updateGroupStates, updateFooterSummary, updateHiddenBadge } from './pill-dom-updates';
 
 // ─── FROM PILL-RENDERING ──────────────────────────────────────────────────────
 
@@ -13,12 +13,13 @@ export {
   resetProviderCounts,
   setProviderCounts,
   updateFilterBarVisibility,
-  updateGroupStates,
-  updateHiddenBadge,
-  updateFooterSummary,
   ensureProviderGroup,
   showProviderContextMenu,
 } from './pill-rendering';
+
+// ─── FROM PILL-DOM-UPDATES ────────────────────────────────────────────────────
+
+export { updateGroupStates, updateHiddenBadge, updateFooterSummary } from './pill-dom-updates';
 
 // ─── FROM POPOVER ────────────────────────────────────────────────────────────
 

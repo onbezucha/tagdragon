@@ -1,10 +1,15 @@
 import type { Provider } from '@/types/provider';
 import { getParams } from './url-parser';
 
+/**
+ * AT Internet (acquired by Piano, March 2021 → Piano Analytics)
+ * Legacy endpoints: ati-host.net, .xiti.com, collect.tcc.nu
+ * Piano SDK uses configurable collectDomain — no fixed Piano collect endpoint.
+ */
 export const atInternet: Provider = {
   name: 'AT Internet',
   color: '#00BCD4',
-  pattern: /ati-host\.net|\.xiti\.com/,
+  pattern: /ati-host\.net|\.xiti\.com|collect\.tcc\.nu/,
 
   parseParams(url: string, postBody: unknown): Record<string, string | undefined> {
     const p = getParams(url, postBody);

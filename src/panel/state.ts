@@ -10,6 +10,7 @@ import type {
   TabName,
   PendingRequest,
   AdobeEnvState,
+  PageNavigation,
 } from '@/types/request';
 import { DEFAULT_CONFIG } from '@/shared/constants';
 import type { AppConfig } from '@/shared/constants';
@@ -73,6 +74,18 @@ const activeProviders = new Set<string>();
  */
 const hiddenProviders = new Set<string>();
 
+// ─── PAGE NAVIGATION STATE ──────────────────────────────────────────────
+
+/**
+ * Array of page navigation events captured in the current session
+ */
+const pageNavigations: PageNavigation[] = [];
+
+/**
+ * Currently active page filter (navigation ID being used as filter)
+ */
+let activePageFilter: string | null = null;
+
 // ─── BATCHING STATE ──────────────────────────────────────────────────────────
 
 /**
@@ -119,6 +132,8 @@ export function clearRequests(): void {
   requestState.map.clear();
   requestState.filteredIds.clear();
   activeProviders.clear();
+  pageNavigations.length = 0;
+  activePageFilter = null;
 }
 
 /**
@@ -332,6 +347,45 @@ export function resetFilters(): void {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// PAGE NAVIGATION OPERATIONS
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Get all captured page navigation events.
+ */
+export function getPageNavigations(): PageNavigation[] {
+  return pageNavigations;
+}
+
+/**
+ * Add a new page navigation event.
+ */
+export function addPageNavigation(nav: PageNavigation): void {
+  pageNavigations.push(nav);
+}
+
+/**
+ * Clear all page navigation events.
+ */
+export function clearPageNavigations(): void {
+  pageNavigations.length = 0;
+}
+
+/**
+ * Get the currently active page filter (navigation ID).
+ */
+export function getActivePageFilter(): string | null {
+  return activePageFilter;
+}
+
+/**
+ * Set the active page filter (navigation ID to filter by).
+ */
+export function setActivePageFilter(navId: string | null): void {
+  activePageFilter = navId;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // STATS OPERATIONS
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -471,7 +525,7 @@ export async function loadConfig(): Promise<void> {
     }
   } catch (error) {
     // Fallback to defaults (storage may not be available in all contexts)
-    console.warn('Request Tracker: Config load failed, using defaults', error);
+    console.warn('[TagDragon] Config load failed, using defaults', error);
   }
   const storedHidden: string[] = config.hiddenProviders ?? [];
   hiddenProviders.clear();
@@ -493,7 +547,7 @@ async function saveConfig(): Promise<void> {
   try {
     await chrome.storage.local.set({ rt_config: config });
   } catch (error) {
-    console.warn('Request Tracker: Config save failed', error);
+    console.warn('[TagDragon] Config save failed', error);
   }
 }
 

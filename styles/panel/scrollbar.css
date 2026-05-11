@@ -1,0 +1,92 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   SCROLLBAR — Unified thin scrollbar for all scrollable containers
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  --scrollbar-width: 6px;
+  --scrollbar-track: var(--bg-0);
+  --scrollbar-thumb: var(--bg-3);
+  --scrollbar-thumb-hover: var(--border-strong);
+  --scrollbar-radius: 3px;
+}
+
+/* ─── Scrollable containers (explicit, no * selector) ─────────────────── */
+
+#request-list,
+#detail-content,
+#dl-push-list,
+#dl-detail-content,
+.popover-body,
+#info-popover,
+.popover-filter-expand.open,
+#provider-group-list,
+.consent-categories,
+.dl-tree,
+#dl-watch-toast-area {
+  scrollbar-gutter: stable;
+}
+
+/* ─── Scrollbar width ─────────────────────────────────────────────────── */
+
+#request-list::-webkit-scrollbar,
+#detail-content::-webkit-scrollbar,
+#dl-push-list::-webkit-scrollbar,
+#dl-detail-content::-webkit-scrollbar,
+.popover-body::-webkit-scrollbar,
+#info-popover::-webkit-scrollbar,
+.popover-filter-expand.open::-webkit-scrollbar,
+#provider-group-list::-webkit-scrollbar,
+.consent-categories::-webkit-scrollbar,
+.dl-tree::-webkit-scrollbar,
+#dl-watch-toast-area::-webkit-scrollbar {
+  width: var(--scrollbar-width);
+}
+
+/* ─── Scrollbar track ─────────────────────────────────────────────────── */
+
+#request-list::-webkit-scrollbar-track,
+#detail-content::-webkit-scrollbar-track,
+#dl-push-list::-webkit-scrollbar-track,
+#dl-detail-content::-webkit-scrollbar-track,
+.popover-body::-webkit-scrollbar-track,
+#info-popover::-webkit-scrollbar-track,
+.popover-filter-expand.open::-webkit-scrollbar-track,
+#provider-group-list::-webkit-scrollbar-track,
+.consent-categories::-webkit-scrollbar-track,
+.dl-tree::-webkit-scrollbar-track,
+#dl-watch-toast-area::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+
+/* ─── Scrollbar thumb ─────────────────────────────────────────────────── */
+
+#request-list::-webkit-scrollbar-thumb,
+#detail-content::-webkit-scrollbar-thumb,
+#dl-push-list::-webkit-scrollbar-thumb,
+#dl-detail-content::-webkit-scrollbar-thumb,
+.popover-body::-webkit-scrollbar-thumb,
+#info-popover::-webkit-scrollbar-thumb,
+.popover-filter-expand.open::-webkit-scrollbar-thumb,
+#provider-group-list::-webkit-scrollbar-thumb,
+.consent-categories::-webkit-scrollbar-thumb,
+.dl-tree::-webkit-scrollbar-thumb,
+#dl-watch-toast-area::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: var(--scrollbar-radius);
+}
+
+/* ─── Scrollbar thumb hover ───────────────────────────────────────────── */
+
+#request-list::-webkit-scrollbar-thumb:hover,
+#detail-content::-webkit-scrollbar-thumb:hover,
+#dl-push-list::-webkit-scrollbar-thumb:hover,
+#dl-detail-content::-webkit-scrollbar-thumb:hover,
+.popover-body::-webkit-scrollbar-thumb:hover,
+#info-popover::-webkit-scrollbar-thumb:hover,
+.popover-filter-expand.open::-webkit-scrollbar-thumb:hover,
+#provider-group-list::-webkit-scrollbar-thumb:hover,
+.consent-categories::-webkit-scrollbar-thumb:hover,
+.dl-tree::-webkit-scrollbar-thumb:hover,
+#dl-watch-toast-area::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}

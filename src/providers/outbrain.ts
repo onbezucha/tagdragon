@@ -1,6 +1,11 @@
 import type { Provider } from '@/types/provider';
 import { getParams } from './url-parser';
 
+/**
+ * Outbrain (merged with Teads, February 2025 — combined entity operates as Teads)
+ * Legacy Outbrain pixels (tr.outbrain.com) remain functional.
+ * TagDragon also has a separate Teads provider (t.teads.tv).
+ */
 export const outbrain: Provider = {
   name: 'Outbrain',
   color: '#0066CC',

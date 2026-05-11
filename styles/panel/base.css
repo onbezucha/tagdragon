@@ -21,7 +21,8 @@ html, body {
 
 body {
   display: grid;
-  grid-template-rows: 32px 34px auto 1fr 24px;
+  grid-template-columns: 1fr;
+  grid-template-rows: 32px 34px auto 1fr 24px 2px;
   gap: 0;
   overflow: hidden;
 }

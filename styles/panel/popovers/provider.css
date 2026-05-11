@@ -23,6 +23,7 @@
 
 #provider-filter-popover.visible {
   display: flex;
+  pointer-events: auto;
 }
 
 /* === PROVIDER POPOVER === */
@@ -83,7 +84,7 @@
 .pgroup-header {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--icon-gap-sm);
   padding: 3px 6px 3px 4px;
   border-bottom: 1px solid var(--border-subtle);
   user-select: none;
@@ -130,7 +131,7 @@
 
 .pgroup-pills {
   display: flex;
-  gap: 4px;
+  gap: var(--icon-gap-sm);
   align-items: center;
   flex-wrap: wrap;
   padding: 4px 8px 6px 20px;
@@ -143,7 +144,7 @@
 .ppill {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: var(--icon-gap-sm);
   padding: 3px 8px 3px 6px;
   border-radius: 12px;
   font-size: 11px;
@@ -194,8 +195,8 @@
 }
 
 .ppill-icon svg {
-  width: 14px;
-  height: 14px;
+  width: var(--icon-md);
+  height: var(--icon-md);
 }
 
 /* Active pill — full color icon */

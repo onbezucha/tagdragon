@@ -48,7 +48,6 @@ import { TEADS_CATEGORIES } from './marketing/teads';
 import { THE_TRADE_DESK_CATEGORIES } from './marketing/thetradedesk';
 import { TIKTOK_CATEGORIES } from './marketing/tiktok';
 import { TWITTER_PIXEL_CATEGORIES } from './marketing/twitter-pixel';
-import { VIBES_CATEGORIES } from './marketing/vibes';
 
 // Analytics
 import { AMPLITUDE_CATEGORIES } from './analytics/amplitude';
@@ -58,7 +57,6 @@ import { CRAZY_EGG_CATEGORIES } from './analytics/crazy-egg';
 import { FULLSTORY_CATEGORIES } from './analytics/fullstory';
 import { GLASSBOX_CATEGORIES } from './analytics/glassbox';
 import { HOTJAR_CATEGORIES } from './analytics/hotjar';
-import { INDICATIVE_CATEGORIES } from './analytics/indicative';
 import { MATOMO_CATEGORIES } from './analytics/matomo';
 import { MEDALLIA_CATEGORIES } from './analytics/medallia';
 import { MIXPANEL_CATEGORIES } from './analytics/mixpanel';
@@ -80,7 +78,7 @@ import { SPLIT_CATEGORIES } from './abtesting/split';
 
 // Visitor Identification
 import { DEMANDBASE_CATEGORIES } from './visitorid/demandbase';
-import { MERKURY_CATEGORIES } from './visitorid/merkury';
+
 import { SIXSENSE_CATEGORIES } from './visitorid/sixsense';
 
 // Customer Engagement
@@ -133,7 +131,6 @@ export const PROVIDER_CATEGORIES: AllProviderCategories = {
   'The Trade Desk': THE_TRADE_DESK_CATEGORIES,
   'TikTok Pixel': TIKTOK_CATEGORIES,
   'X (Twitter) Pixel': TWITTER_PIXEL_CATEGORIES,
-  Vibes: VIBES_CATEGORIES,
   // Analytics
   Amplitude: AMPLITUDE_CATEGORIES,
   'AT Internet': AT_INTERNET_CATEGORIES,
@@ -142,7 +139,6 @@ export const PROVIDER_CATEGORIES: AllProviderCategories = {
   FullStory: FULLSTORY_CATEGORIES,
   Glassbox: GLASSBOX_CATEGORIES,
   Hotjar: HOTJAR_CATEGORIES,
-  Indicative: INDICATIVE_CATEGORIES,
   Matomo: MATOMO_CATEGORIES,
   'Medallia DXA': MEDALLIA_CATEGORIES,
   Mixpanel: MIXPANEL_CATEGORIES,
@@ -164,7 +160,6 @@ export const PROVIDER_CATEGORIES: AllProviderCategories = {
   // Visitor Identification
   Demandbase: DEMANDBASE_CATEGORIES,
   '6Sense': SIXSENSE_CATEGORIES,
-  Merkury: MERKURY_CATEGORIES,
 
   // Customer Engagement
   Braze: BRAZE_CATEGORIES,

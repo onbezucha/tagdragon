@@ -39,3 +39,26 @@
   font-weight: 600;
   background: var(--bg-1);
 }
+
+/* === ECOMMERCE SUMMARY CARD === */
+.dl-ec-summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  background: var(--bg-2);
+  border-radius: 6px;
+  margin-bottom: 8px;
+  border: 1px solid var(--border);
+}
+
+.dl-ec-summary-icon {
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.dl-ec-summary-text {
+  font-size: 12px;
+  color: var(--text-1);
+  font-family: var(--font-mono);
+}

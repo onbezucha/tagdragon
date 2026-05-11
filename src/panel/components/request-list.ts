@@ -1,9 +1,59 @@
-// ─── REQUEST LIST COMPONENT ──────────────────────────────────────────────────
+// ─── VISIBLE ROW CACHE ──────────────────────────────────────────────────────
+// Cached set of visible row elements for O(1) removal and navigation lookup.
+// Invalidated/updated whenever row visibility changes (filter, provider hide, prune, render).
 
-import type { ParsedRequest } from '@/types/request';
+let _visibleRows = new Set<HTMLElement>();
+
+/**
+ * Add a row to the visible row cache. Call when a row becomes visible.
+ */
+export function addToVisibleCache(row: HTMLElement): void {
+  _visibleRows.add(row);
+}
+
+/**
+ * Remove a row from the visible row cache. Call when a row becomes hidden or removed.
+ */
+export function removeFromVisibleCache(row: HTMLElement): void {
+  _visibleRows.delete(row);
+}
+
+/**
+ * Clear the visible row cache entirely. Call on clear/refresh operations.
+ */
+export function clearVisibleCache(): void {
+  _visibleRows.clear();
+}
+
+/**
+ * Rebuild the visible row cache from current DOM state.
+ * Call this whenever row visibility might have changed.
+ */
+export function updateVisibleRowCache(): void {
+  _visibleRows = new Set(
+    document.querySelectorAll<HTMLElement>(
+      '.req-row:not(.filtered-out):not(.provider-hidden):not(.page-collapsed)'
+    )
+  );
+  resetActiveVisibleIdx();
+}
+
+// ─── ACTIVE VISIBLE INDEX ──────────────────────────────────────────────────
+// Tracked index for fast keyboard navigation. Reset when cache is rebuilt.
+
+let _activeVisibleIdx = -1;
+
+/**
+ * Reset the active visible index. Call when the visible cache is rebuilt.
+ */
+export function resetActiveVisibleIdx(): void {
+  _activeVisibleIdx = -1;
+}
+
+import type { ParsedRequest, PageNavigation } from '@/types/request';
 import type { AppConfig } from '@/shared/constants';
 import { DOM } from '../utils/dom';
-import { getEventName, formatTimestamp } from '../utils/format';
+import { getEventName, formatTimestamp, esc } from '../utils/format';
 import {
   getHiddenProviders,
   getFilteredIds,
@@ -50,13 +100,26 @@ export function createRequestRow(
   const row = rowTemplate.content.firstElementChild?.cloneNode(true) as HTMLElement;
   row.dataset.id = String(data.id);
 
+  if (data._pageNavId) {
+    row.dataset.pageNavId = data._pageNavId;
+  }
+
   const _cfg = cfg ?? getConfig();
   const _sessionStart = sessionStart ?? getAllRequests()[0]?.timestamp;
   const time = formatTimestamp(data.timestamp, _cfg.timestampFormat, _sessionStart);
   const eventName = data._eventName || getEventName(data);
 
-  // Primary line (icon + EVENT NAME + time)
-  const iconEl = row.querySelector('.req-category-icon') as HTMLElement;
+  const primary = row.firstElementChild as HTMLElement;
+  const iconEl = primary.children[0] as HTMLElement;
+  const reqEvent = primary.children[1] as HTMLElement;
+  const reqTime = primary.children[2] as HTMLElement;
+
+  const secondary = row.children[1] as HTMLElement;
+  const dotEl = secondary.children[0] as HTMLElement;
+  const nameEl = secondary.children[1] as HTMLElement;
+  const methodEl = secondary.children[2] as HTMLElement;
+  const statusEl = secondary.children[3] as HTMLElement;
+
   const iconFragment = getCachedIcon(data.provider);
   if (iconFragment) {
     iconEl.appendChild(iconFragment.cloneNode(true));
@@ -64,17 +127,15 @@ export function createRequestRow(
     iconEl.remove();
   }
 
-  (row.querySelector('.req-event') as HTMLElement).textContent = eventName;
-  (row.querySelector('.req-event') as HTMLElement).title = eventName;
-  (row.querySelector('.req-time') as HTMLElement).textContent = time;
+  reqEvent.textContent = eventName;
+  reqEvent.title = eventName;
+  reqTime.textContent = time;
 
   // Secondary line (dot + provider name + method + status)
   // Provider dot
-  const dotEl = row.querySelector('.req-provider-dot') as HTMLElement;
   if (dotEl) dotEl.style.background = data.color;
 
   // Provider name (now in secondary, neutral color)
-  const nameEl = row.querySelector('.req-provider-name') as HTMLElement;
   nameEl.textContent = data.provider;
 
   // Extension badge
@@ -86,13 +147,11 @@ export function createRequestRow(
   }
 
   // Method
-  const methodEl = row.querySelector('.req-method') as HTMLElement;
   methodEl.textContent = data.method;
   if (data.method === 'GET') methodEl.classList.add('method-get');
   else if (data.method === 'POST') methodEl.classList.add('method-post');
 
   // Status
-  const statusEl = row.querySelector('.req-status') as HTMLElement;
   statusEl.textContent = String(data.status || '—');
   if (data.status) statusEl.classList.add(`status-${String(data.status)[0]}`);
 
@@ -115,9 +174,67 @@ export function createRequestRow(
   if (isVisible) {
     row.classList.add('new');
     row.addEventListener('animationend', () => row.classList.remove('new'), { once: true });
+    // Add to visible cache for incremental tracking
+    addToVisibleCache(row);
   }
 
   return row;
+}
+
+/**
+ * Create a page navigation divider element.
+ * Not a .req-row — ignored by keyboard navigation, filters, and selection.
+ */
+export function createPageDivider(nav: PageNavigation): HTMLElement {
+  const divider = document.createElement('div');
+  divider.className = 'page-divider';
+  divider.dataset.navId = nav.id;
+  divider.dataset.pageUrl = nav.url;
+
+  // Parse URL into hostname + path
+  let hostname = '';
+  let displayPath = '';
+  try {
+    const u = new URL(nav.url);
+    hostname = u.hostname;
+    displayPath = u.pathname + u.search;
+  } catch {
+    displayPath = nav.url;
+  }
+
+  // Parse timestamp
+  const time = new Date(nav.timestamp);
+  const timeStr = time.toLocaleTimeString('en-GB', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  });
+
+  divider.innerHTML = `
+    <div class="page-divider-left">
+      <svg class="page-divider-chevron" width="12" height="12" viewBox="0 0 24 24"
+           fill="none" stroke="currentColor" stroke-width="2">
+        <path d="m6 9 6 6 6-6"/>
+      </svg>
+      <svg class="page-divider-favicon" width="16" height="16" viewBox="0 0 24 24"
+           fill="none" stroke="currentColor" stroke-width="1.5">
+        <circle cx="12" cy="12" r="10"/>
+        <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/>
+        <path d="M2 12h20"/>
+      </svg>
+      <span class="page-divider-hostname">${esc(hostname)}</span>
+      <span class="page-divider-time">${esc(timeStr)}</span>
+      <span class="page-divider-path">${esc(displayPath)}</span>
+    </div>
+    <div class="page-divider-right">
+      <span class="page-divider-count">0</span>
+    </div>
+  `;
+
+  // Full URL on hover
+  divider.title = nav.url;
+
+  return divider;
 }
 
 /**
@@ -158,6 +275,9 @@ export function updateRowVisibility(): void {
       }
     }
   }
+
+  // Rebuild cache after visibility changes
+  updateVisibleRowCache();
 }
 
 /**
@@ -166,12 +286,20 @@ export function updateRowVisibility(): void {
  * @param selectCallback Callback to select request
  */
 export function navigateList(direction: 1 | -1, selectCallback: SelectCallback): void {
-  const rows = Array.from(
-    document.querySelectorAll('.req-row:not(.filtered-out):not(.provider-hidden)')
-  );
+  const rows = [..._visibleRows];
   if (rows.length === 0) return;
 
-  const currentIdx = rows.findIndex((r) => r.classList.contains('active'));
+  // Fast path: use tracked index if valid
+  let currentIdx = _activeVisibleIdx;
+  // Validate: ensure tracked index still matches active row
+  if (
+    currentIdx < 0 ||
+    currentIdx >= rows.length ||
+    !rows[currentIdx]?.classList.contains('active')
+  ) {
+    currentIdx = rows.findIndex((r) => r.classList.contains('active'));
+  }
+
   let nextIdx: number;
 
   if (currentIdx === -1) {
@@ -182,9 +310,12 @@ export function navigateList(direction: 1 | -1, selectCallback: SelectCallback):
     if (nextIdx >= rows.length) nextIdx = rows.length - 1;
   }
 
-  const nextRow = rows[nextIdx] as HTMLElement;
+  const nextRow = rows[nextIdx];
   const data = getRequestMap().get(nextRow.dataset.id!);
-  if (data) selectCallback(data, nextRow);
+  if (data) {
+    selectCallback(data, nextRow);
+    _activeVisibleIdx = nextIdx;
+  }
 }
 
 /**
@@ -193,11 +324,9 @@ export function navigateList(direction: 1 | -1, selectCallback: SelectCallback):
  * @param selectCallback Callback to select request
  */
 export function navigateToEdge(edge: 'first' | 'last', selectCallback: SelectCallback): void {
-  const rows = Array.from(
-    document.querySelectorAll('.req-row:not(.filtered-out):not(.provider-hidden)')
-  );
+  const rows = [..._visibleRows];
   if (rows.length === 0) return;
   const row = edge === 'first' ? rows[0] : rows[rows.length - 1];
-  const data = getRequestMap().get((row as HTMLElement).dataset.id!);
-  if (data) selectCallback(data, row as HTMLElement);
+  const data = getRequestMap().get(row.dataset.id!);
+  if (data) selectCallback(data, row);
 }

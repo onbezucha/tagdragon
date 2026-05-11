@@ -7,24 +7,29 @@
 #main, #datalayer-view {
   grid-row: 4;
   grid-column: 1;
+  min-height: 0;
   overflow: hidden;
 }
 
 #main {
   display: grid;
   grid-template-columns: minmax(280px, var(--list-width, 340px)) 6px 1fr;
+  grid-template-rows: 1fr;
   gap: 0;
   position: relative;
 }
 
 /* === DATALAYER VIEW === */
 #datalayer-view {
-  display: none;
+  display: block;
+  position: relative;
+  grid-column: 1;
 }
 
 #dl-main {
   display: grid;
   grid-template-columns: minmax(280px, var(--list-width, 340px)) 6px 1fr;
+  grid-template-rows: 1fr;
   gap: 0;
   height: 100%;
   overflow: hidden;
@@ -34,6 +39,7 @@
 #dl-list-pane {
   display: flex;
   flex-direction: column;
+  min-height: 0;
   background-color: var(--bg-0);
   border-right: 1px solid var(--border);
   overflow: hidden;
@@ -46,10 +52,6 @@
   display: flex;
   flex-direction: column;
 }
-
-#dl-push-list::-webkit-scrollbar { width: 8px; }
-#dl-push-list::-webkit-scrollbar-track { background: var(--bg-0); }
-#dl-push-list::-webkit-scrollbar-thumb { background: var(--bg-2); border-radius: 4px; }
 
 #dl-status-text {
   padding: 3px 8px;

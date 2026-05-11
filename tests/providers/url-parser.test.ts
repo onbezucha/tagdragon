@@ -73,6 +73,61 @@ describe('getParams', () => {
     });
   });
 
+  // ═══ JSON POST body fallback ════════════════════════════════════════════
+
+  describe('JSON POST body fallback', () => {
+    it('stringifies nested objects in JSON POST body', () => {
+      const result = getParams(
+        'https://api.segment.io/v1/t/abc123',
+        JSON.stringify({ type: 'track', event: 'page_view', properties: { page: '/home' } })
+      );
+      expect(result.type).toBe('track');
+      expect(result.event).toBe('page_view');
+      expect(result.properties).toBe('{"page":"/home"}');
+      // NOT '[object Object]'
+      expect(result.properties).not.toBe('[object Object]');
+    });
+
+    it('stringifies arrays in JSON POST body', () => {
+      const result = getParams(
+        'https://api.segment.io/v1/t/abc123',
+        JSON.stringify({ events: [{ type: 'page_view' }], integrations: { Amplitude: false, Mixpanel: true } })
+      );
+      expect(result.events).toBe('[{"type":"page_view"}]');
+      expect(result.events).not.toBe('[object Object]');
+      expect(result.integrations).toBe('{"Amplitude":false,"Mixpanel":true}');
+      expect(result.integrations).not.toBe('[object Object]');
+    });
+
+    it('preserves string values from JSON POST body', () => {
+      const result = getParams(
+        'https://api.segment.io/v1/t/abc123',
+        JSON.stringify({ userId: 'user-123', anonymousId: 'anon-456' })
+      );
+      expect(result.userId).toBe('user-123');
+      expect(result.anonymousId).toBe('anon-456');
+    });
+
+    it('stringifies numeric and boolean values from JSON POST body', () => {
+      const result = getParams(
+        'https://example.com/track',
+        JSON.stringify({ count: 42, enabled: true, ratio: 3.14 })
+      );
+      expect(result.count).toBe('42');
+      expect(result.enabled).toBe('true');
+      expect(result.ratio).toBe('3.14');
+    });
+
+    it('skips null values in JSON POST body', () => {
+      const result = getParams(
+        'https://example.com/track',
+        JSON.stringify({ userId: null, name: 'test' })
+      );
+      expect(result.userId).toBeUndefined();
+      expect(result.name).toBe('test');
+    });
+  });
+
   // ═══ Edge cases ══════════════════════════════════════════════════════════
 
   describe('edge cases', () => {

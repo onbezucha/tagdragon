@@ -1,9 +1,10 @@
 /**
  * Escape a value for CSV output.
+ * @internal
  */
-function escCsv(v: unknown): string {
+export function escCsv(v: unknown): string {
   const s = String(v ?? '');
-  if (s.includes(',') || s.includes('"') || s.includes('\n')) {
+  if (s.includes(',') || s.includes('"') || s.includes('\n') || s.includes('\r')) {
     return '"' + s.replace(/"/g, '""') + '"';
   }
   return s;

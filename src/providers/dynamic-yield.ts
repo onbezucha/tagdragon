@@ -2,6 +2,10 @@ import type { Provider } from '@/types/provider';
 import { getParams } from './url-parser';
 import { parsePostBodyJson } from './parse-helpers';
 
+/**
+ * Dynamic Yield (sold by McDonald's to Mastercard, April 2022)
+ * Operates as "Dynamic Yield by Mastercard". Endpoints unchanged.
+ */
 export const dynamicYield: Provider = {
   name: 'Dynamic Yield',
   color: '#6B5CE7',

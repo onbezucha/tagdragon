@@ -3,30 +3,50 @@
 // and watch path functionality.
 
 import { DOM } from '../../utils/dom';
-import { copyToClipboard, showCopyFeedback } from '../../utils/clipboard';
+import { debounce } from '../../utils/debounce';
 import { getWatchedPaths, addWatchedPath, removeWatchedPath, clearWatchedPaths } from '../state';
-
-// ─── TYPES ─────────────────────────────────────────────────────────────────
-
-type ChangeType = 'added' | 'changed' | 'removed' | undefined;
-
-interface TreeNodeData {
-  key: string;
-  value: unknown;
-  depth: number;
-  path: string;
-  changeType: ChangeType;
-  isLeaf: boolean;
-  childCount: number;
-}
+import { shallowEqual } from '../utils/shallow-equal';
+import { getNestedValue } from '../utils/nested-value';
+import {
+  createTreeNode as createSharedTreeNode,
+  formatTreeValue,
+  isTreeExpandable,
+  type ChangeType,
+  type TreeNodeData,
+  type TreeRendererOptions,
+} from '../utils/tree-renderer';
 
 // ─── STATE ─────────────────────────────────────────────────────────────────
 
 const _toastTimers = new Set<ReturnType<typeof setTimeout>>();
 let pendingHighlights: Map<string, ChangeType> = new Map();
-let highlightTimeoutId: ReturnType<typeof setTimeout> | null = null;
+const highlightTimers = new Map<string, ReturnType<typeof setTimeout>>();
 const HIGHLIGHT_DURATION = 1500;
 let liveTabRendered = false;
+// Stores cumulative state for watch bar re-renders (avoids DOM rebuild via extractStateFromTree)
+let _currentCumulativeState: Record<string, unknown> = {};
+
+// ─── TREE OPTIONS ──────────────────────────────────────────────────────────
+
+// Live Inspector tree options — watch enabled with addWatchedPath callback
+const liveTreeOptions: TreeRendererOptions = {
+  enableWatch: true,
+  enableHighlights: true,
+  startExpanded: false,
+  onWatch: (path: string) => {
+    const added = addWatchedPath(path);
+    if (!added) return;
+    rerenderWatchBar();
+  },
+};
+
+/**
+ * Live Inspector wrapper around shared createTreeNode.
+ * Pre-configures watch and highlight options for the Live tab.
+ */
+function createTreeNode(data: TreeNodeData, changedPaths?: Map<string, ChangeType>): HTMLElement {
+  return createSharedTreeNode(data, liveTreeOptions, changedPaths);
+}
 
 // ─── PUBLIC API ───────────────────────────────────────────────────────────
 
@@ -42,12 +62,14 @@ export function renderLiveInspector(
   changedPaths?: Map<string, ChangeType>
 ): void {
   container.innerHTML = '';
+  // Store for watch bar re-renders (avoids DOM rebuild)
+  _currentCumulativeState = cumulativeState;
 
   const wrapper = document.createElement('div');
   wrapper.className = 'dl-live-container';
 
   // Watch bar
-  renderWatchBar(wrapper);
+  renderWatchBar(wrapper, cumulativeState);
 
   // Live header
   const header = document.createElement('div');
@@ -109,8 +131,8 @@ export function renderLiveInspector(
         depth: 0,
         path: key,
         changeType: changedPaths?.get(key),
-        isLeaf: !isExpandable(cumulativeState[key]),
-        childCount: isExpandable(cumulativeState[key])
+        isLeaf: !isTreeExpandable(cumulativeState[key]),
+        childCount: isTreeExpandable(cumulativeState[key])
           ? Object.keys(cumulativeState[key] as object).length
           : 0,
       };
@@ -194,10 +216,8 @@ export function clearLiveState(): void {
   _toastTimers.clear();
   pendingHighlights.clear();
   liveTabRendered = false;
-  if (highlightTimeoutId) {
-    clearTimeout(highlightTimeoutId);
-    highlightTimeoutId = null;
-  }
+  highlightTimers.forEach((t) => clearTimeout(t));
+  highlightTimers.clear();
 }
 
 // ─── INCREMENTAL TREE UPDATE ─────────────────────────────────────────────
@@ -242,8 +262,8 @@ function updateTreeIncremental(
         depth: 0,
         path: key,
         changeType,
-        isLeaf: !isExpandable(curr[key]),
-        childCount: isExpandable(curr[key]) ? Object.keys(curr[key] as object).length : 0,
+        isLeaf: !isTreeExpandable(curr[key]),
+        childCount: isTreeExpandable(curr[key]) ? Object.keys(curr[key] as object).length : 0,
       };
       const newNode = createTreeNode(nodeData, changedPaths);
       insertNodeSorted(treeContainer, newNode, key);
@@ -274,12 +294,12 @@ function updateExistingNode(
   changeType: ChangeType,
   changedPaths: Map<string, ChangeType>
 ): void {
-  const isLeaf = !isExpandable(newValue);
+  const isLeaf = !isTreeExpandable(newValue);
 
   if (isLeaf) {
     const valEl = node.querySelector(':scope > .dl-tree-row .dl-tree-value') as HTMLElement | null;
     if (valEl) {
-      valEl.textContent = formatValue(newValue);
+      valEl.textContent = formatTreeValue(newValue);
       valEl.title =
         typeof newValue === 'object' ? JSON.stringify(newValue, null, 2) : String(newValue);
     }
@@ -298,7 +318,7 @@ function updateExistingNode(
     if (bracket) {
       const isArray = Array.isArray(newValue);
       const childCount = Object.keys(newValue as object).length;
-      bracket.textContent = isArray ? `[${childCount}]` : `{${childCount}`;
+      bracket.textContent = isArray ? `[${childCount}]` : `{${childCount}}`;
     }
     const oldChildren = node.querySelector(':scope > .dl-tree-children');
     if (oldChildren) oldChildren.remove();
@@ -317,8 +337,8 @@ function updateExistingNode(
         depth: 1,
         path: childPath,
         changeType: changedPaths.get(childPath),
-        isLeaf: !isExpandable(childVal),
-        childCount: isExpandable(childVal) ? Object.keys(childVal as object).length : 0,
+        isLeaf: !isTreeExpandable(childVal),
+        childCount: isTreeExpandable(childVal) ? Object.keys(childVal as object).length : 0,
       };
       childrenContainer.appendChild(createTreeNode(childNode, changedPaths));
     }
@@ -336,7 +356,77 @@ function updateExistingNode(
 
 // ─── WATCH BAR ─────────────────────────────────────────────────────────────
 
-function renderWatchBar(container: HTMLElement): void {
+/**
+ * Create autocomplete input for watch path entry.
+ * Shared between renderWatchBar and renderWatchBarWithState.
+ */
+function createAutocompleteInput(
+  empty: HTMLElement,
+  cumulativeState: Record<string, unknown>
+): void {
+  empty.innerHTML = '';
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.className = 'dl-watch-input';
+  input.placeholder = 'Enter path (e.g. ecommerce.purchase.actionField.id)';
+  empty.appendChild(input);
+  input.focus();
+
+  // Autocomplete dropdown
+  const dropdown = document.createElement('div');
+  dropdown.className = 'dl-watch-autocomplete';
+  dropdown.style.display = 'none';
+  empty.appendChild(dropdown);
+
+  const allPaths = extractAllPaths(cumulativeState);
+  const watched = getWatchedPaths();
+
+  input.addEventListener(
+    'input',
+    debounce(() => {
+      const query = input.value.toLowerCase().trim();
+      dropdown.innerHTML = '';
+      if (!query) {
+        dropdown.style.display = 'none';
+        return;
+      }
+      const matches = allPaths
+        .filter((p) => p.toLowerCase().includes(query) && !watched.includes(p))
+        .slice(0, 10);
+      if (matches.length === 0) {
+        dropdown.style.display = 'none';
+        return;
+      }
+      for (const match of matches) {
+        const item = document.createElement('div');
+        item.className = 'dl-watch-autocomplete-item';
+        item.textContent = match;
+        item.addEventListener('mousedown', (e) => {
+          e.preventDefault();
+          addWatchedPath(match);
+          rerenderWatchBar();
+        });
+        dropdown.appendChild(item);
+      }
+      dropdown.style.display = 'block';
+    }, 300)
+  );
+
+  input.addEventListener('keydown', (ke) => {
+    if (ke.key === 'Enter' && input.value.trim()) {
+      addWatchedPath(input.value.trim());
+      rerenderWatchBar();
+    } else if (ke.key === 'Escape') {
+      rerenderWatchBar();
+    }
+  });
+
+  input.addEventListener('blur', () => {
+    setTimeout(() => rerenderWatchBar(), 150);
+  });
+}
+
+function renderWatchBar(container: HTMLElement, cumulativeState: Record<string, unknown>): void {
   const bar = document.createElement('div');
   bar.className = 'dl-watch-bar';
 
@@ -358,30 +448,7 @@ function renderWatchBar(container: HTMLElement): void {
     if (addBtn) {
       addBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        // Replace hint content with inline input
-        empty.innerHTML = '';
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.className = 'dl-watch-input';
-        input.placeholder = 'Enter path (e.g. ecommerce.purchase.actionField.id)';
-        empty.appendChild(input);
-        input.focus();
-
-        input.addEventListener('keydown', (ke) => {
-          if (ke.key === 'Enter' && input.value.trim()) {
-            addWatchedPath(input.value.trim());
-            rerenderWatchBar();
-          } else if (ke.key === 'Escape') {
-            // Restore hint with + button
-            rerenderWatchBar();
-          }
-        });
-
-        // Close on blur
-        input.addEventListener('blur', () => {
-          // Small delay to allow Enter key to fire first
-          setTimeout(() => rerenderWatchBar(), 150);
-        });
+        createAutocompleteInput(empty, _currentCumulativeState);
       });
     }
   } else {
@@ -419,7 +486,7 @@ function renderWatchBar(container: HTMLElement): void {
 
     // E2: Resolve watch path values after DOM is attached
     // This is called from renderLiveInspector after renderWatchBar
-    resolveWatchPathValues(bar, container);
+    resolveWatchPathValues(bar, container, cumulativeState);
 
     // Clear all button
     const clearBtn = document.createElement('span');
@@ -438,7 +505,11 @@ function renderWatchBar(container: HTMLElement): void {
 }
 
 // E2: Resolve and display values for watched paths in the watch bar
-function resolveWatchPathValues(bar: HTMLElement, wrapper: HTMLElement): void {
+function resolveWatchPathValues(
+  bar: HTMLElement,
+  _wrapper: HTMLElement,
+  cumulativeState: Record<string, unknown>
+): void {
   const chips = bar.querySelectorAll('.dl-watch-chip');
   for (const chip of chips) {
     const path = (chip as HTMLElement).dataset['watchPath'];
@@ -447,14 +518,8 @@ function resolveWatchPathValues(bar: HTMLElement, wrapper: HTMLElement): void {
     const valueSpan = chip.querySelector('.dl-watch-chip-value') as HTMLElement;
     if (!valueSpan) continue;
 
-    // Find the cumulative state from the tree container's data
-    // The wrapper holds the live container with the state
-    const treeContainer = wrapper.querySelector('.dl-tree') as HTMLElement | null;
-    if (!treeContainer) continue;
-
-    // Build state from tree nodes (extract current state from rendered tree)
-    const state = extractStateFromTree(treeContainer);
-    const value = getNestedValue(state, path);
+    // Use cumulativeState directly instead of rebuilding from DOM
+    const value = getNestedValue(cumulativeState, path);
 
     if (value === undefined) {
       // E2: Path not found - show warning
@@ -558,131 +623,96 @@ function rerenderWatchBar(): void {
   if (!container) return;
   // Remove old bar (and its listeners) then render a fresh one into the same container
   bar.remove();
-  renderWatchBar(container);
+  // Pass stored cumulative state to avoid DOM rebuild via extractStateFromTree
+  renderWatchBarWithState(container, _currentCumulativeState);
 }
 
-// ─── TREE RENDERING ────────────────────────────────────────────────────────
+/**
+ * Re-render watch bar with a specific state object (avoids extractStateFromTree DOM traversal).
+ */
+function renderWatchBarWithState(
+  container: HTMLElement,
+  cumulativeState: Record<string, unknown>
+): void {
+  const bar = document.createElement('div');
+  bar.className = 'dl-watch-bar';
 
-function createTreeNode(data: TreeNodeData, changedPaths?: Map<string, ChangeType>): HTMLElement {
-  const node = document.createElement('div');
-  node.className = 'dl-tree-node';
-  node.dataset['path'] = data.path;
+  const label = document.createElement('span');
+  label.className = 'dl-watch-bar-label';
+  label.textContent = 'Watch';
+  bar.appendChild(label);
 
-  const row = document.createElement('div');
-  row.className = 'dl-tree-row';
-  row.style.paddingLeft = `${data.depth * 16}px`;
+  const watched = getWatchedPaths();
+  if (watched.length === 0) {
+    const empty = document.createElement('span');
+    empty.className = 'dl-watch-empty';
+    empty.innerHTML =
+      '💡 Right-click a key to watch it, or click <button class="dl-watch-add-btn">+</button> to add a path';
+    bar.appendChild(empty);
 
-  // Toggle or placeholder
-  if (!data.isLeaf) {
-    const toggle = document.createElement('span');
-    toggle.className = 'dl-tree-toggle';
-    toggle.textContent = '▶';
-    toggle.addEventListener('click', () => {
-      node.classList.toggle('expanded');
-      toggle.classList.toggle('expanded');
-    });
-    row.appendChild(toggle);
+    const addBtn = empty.querySelector('.dl-watch-add-btn') as HTMLButtonElement;
+    if (addBtn) {
+      addBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        createAutocompleteInput(empty, cumulativeState);
+      });
+    }
   } else {
-    const placeholder = document.createElement('span');
-    placeholder.className = 'dl-tree-toggle-placeholder';
-    row.appendChild(placeholder);
-  }
+    for (const path of watched) {
+      const chip = document.createElement('span');
+      chip.className = 'dl-watch-chip';
 
-  // Key
-  const keyEl = document.createElement('span');
-  keyEl.className = 'dl-tree-key';
+      const pathLabel = document.createElement('span');
+      pathLabel.className = 'dl-watch-chip-path';
+      pathLabel.textContent = path;
+      chip.appendChild(pathLabel);
 
-  // Apply change highlight
-  if (data.changeType) {
-    keyEl.classList.add(`dl-tree-key-${data.changeType}`);
-  }
+      const valueSpan = document.createElement('span');
+      valueSpan.className = 'dl-watch-chip-value';
 
-  keyEl.textContent = data.key;
+      chip.dataset['watchPath'] = path;
+      chip.appendChild(valueSpan);
 
-  // Make key clickable to add to watch list (right-click context)
-  keyEl.classList.add('dl-tree-key-watch');
-  keyEl.addEventListener('contextmenu', (e) => {
-    e.preventDefault();
-    const added = addWatchedPath(data.path);
-    if (!added) return;
-    rerenderWatchBar();
-  });
-
-  row.appendChild(keyEl);
-
-  // Separator
-  const sep = document.createElement('span');
-  sep.className = 'dl-tree-separator';
-  sep.textContent = ': ';
-  row.appendChild(sep);
-
-  // Value
-  if (data.isLeaf) {
-    const valEl = document.createElement('span');
-    valEl.className = 'dl-tree-value';
-    valEl.textContent = formatValue(data.value);
-    valEl.title =
-      typeof data.value === 'object' ? JSON.stringify(data.value, null, 2) : String(data.value);
-    valEl.style.cursor = 'pointer';
-    valEl.addEventListener('click', async () => {
-      const text =
-        typeof data.value === 'object'
-          ? JSON.stringify(data.value, null, 2)
-          : String(data.value ?? '');
-      const success = await copyToClipboard(text);
-      showCopyFeedback(valEl, success);
-    });
-    row.appendChild(valEl);
-  } else {
-    const bracket = document.createElement('span');
-    bracket.className = 'dl-tree-value dl-tree-value-bracket';
-    const isArray = Array.isArray(data.value);
-    bracket.textContent = isArray ? `[${data.childCount}]` : `{${data.childCount}}`;
-    row.appendChild(bracket);
-  }
-
-  node.appendChild(row);
-
-  // Children (for objects/arrays)
-  if (!data.isLeaf) {
-    const childrenContainer = document.createElement('div');
-    childrenContainer.className = 'dl-tree-children';
-
-    const obj = data.value as Record<string, unknown>;
-    const entries = Array.isArray(obj)
-      ? obj.map((v, i) => [String(i), v] as [string, unknown])
-      : Object.entries(obj).sort(([a], [b]) => a.localeCompare(b));
-
-    for (const [childKey, childVal] of entries) {
-      const childPath = Array.isArray(obj)
-        ? `${data.path}[${childKey}]`
-        : `${data.path}.${childKey}`;
-      const childNode: TreeNodeData = {
-        key: Array.isArray(obj) ? `[${childKey}]` : childKey,
-        value: childVal,
-        depth: data.depth + 1,
-        path: childPath,
-        changeType: changedPaths?.get(childPath),
-        isLeaf: !isExpandable(childVal),
-        childCount: isExpandable(childVal) ? Object.keys(childVal as object).length : 0,
-      };
-      childrenContainer.appendChild(createTreeNode(childNode, changedPaths));
+      const remove = document.createElement('span');
+      remove.className = 'dl-watch-remove';
+      remove.textContent = '×';
+      remove.addEventListener('click', (e) => {
+        e.stopPropagation();
+        removeWatchedPath(path);
+        rerenderWatchBar();
+      });
+      chip.appendChild(remove);
+      bar.appendChild(chip);
     }
 
-    node.appendChild(childrenContainer);
+    // Resolve watch path values using passed cumulativeState (no DOM rebuild)
+    resolveWatchPathValues(bar, container, cumulativeState);
+
+    const clearBtn = document.createElement('span');
+    clearBtn.className = 'dl-watch-chip';
+    clearBtn.style.cursor = 'pointer';
+    clearBtn.style.color = 'var(--red)';
+    clearBtn.textContent = 'Clear';
+    clearBtn.addEventListener('click', () => {
+      clearWatchedPaths();
+      rerenderWatchBar();
+    });
+    bar.appendChild(clearBtn);
   }
 
-  return node;
+  container.appendChild(bar);
 }
 
 // ─── HIGHLIGHTS ────────────────────────────────────────────────────────────
 
 function applyHighlights(container: HTMLElement, changedPaths: Map<string, ChangeType>): void {
-  if (highlightTimeoutId) {
-    clearTimeout(highlightTimeoutId);
-  }
-
   for (const [path, type] of changedPaths) {
+    // Clear any existing timer for this path to avoid stale callbacks
+    const existingTimer = highlightTimers.get(path);
+    if (existingTimer) {
+      clearTimeout(existingTimer);
+    }
+
     // Find the tree row with matching data-path
     const keyEl = container.querySelector(
       `.dl-tree-node[data-path="${CSS.escape(path)}"] > .dl-tree-row .dl-tree-key`
@@ -694,7 +724,6 @@ function applyHighlights(container: HTMLElement, changedPaths: Map<string, Chang
       // Force reflow to restart animation
       void keyEl.offsetWidth;
       keyEl.classList.add(`dl-tree-key-${type}`);
-
       // Auto-expand parent nodes to make the changed key visible
       let parent = keyEl.closest('.dl-tree-node')?.parentElement?.closest('.dl-tree-node');
       while (parent) {
@@ -706,20 +735,21 @@ function applyHighlights(container: HTMLElement, changedPaths: Map<string, Chang
         parent = parent.parentElement?.closest('.dl-tree-node');
       }
     }
-  }
 
-  // Clean up highlight classes after animation
-  highlightTimeoutId = setTimeout(() => {
-    for (const [path, type] of changedPaths) {
-      const keyEl = container.querySelector(
-        `.dl-tree-node[data-path="${CSS.escape(path)}"] > .dl-tree-row .dl-tree-key`
-      ) as HTMLElement | null;
-      if (keyEl) {
-        keyEl.classList.remove(`dl-tree-key-${type}`);
-      }
-    }
-    highlightTimeoutId = null;
-  }, HIGHLIGHT_DURATION);
+    // Set per-path timer for cleanup
+    highlightTimers.set(
+      path,
+      setTimeout(() => {
+        const keyEl = container.querySelector(
+          `.dl-tree-node[data-path="${CSS.escape(path)}"] > .dl-tree-row .dl-tree-key`
+        ) as HTMLElement | null;
+        if (keyEl) {
+          keyEl.classList.remove(`dl-tree-key-${type}`);
+        }
+        highlightTimers.delete(path);
+      }, HIGHLIGHT_DURATION)
+    );
+  }
 }
 
 // ─── WATCH TOASTS ──────────────────────────────────────────────────────────
@@ -782,59 +812,26 @@ function showWatchToast(
   }
 }
 
-// ─── UTILITIES ─────────────────────────────────────────────────────────────
+// ─── HELPERS ────────────────────────────────────────────────────────────────
 
 /**
- * Get a nested value from an object using dot-notation path.
- * Supports bracket notation for arrays: "items[0].name"
+ * Extract all dot-notation paths from a state object (up to maxDepth).
  */
-function getNestedValue(obj: Record<string, unknown>, path: string): unknown {
-  const parts = path.replace(/\[(\d+)\]/g, '.$1').split('.');
-  let current: unknown = obj;
-  for (const part of parts) {
-    if (current === null || current === undefined) return undefined;
-    if (typeof current === 'object') {
-      current = (current as Record<string, unknown>)[part];
-    } else {
-      return undefined;
+function extractAllPaths(obj: Record<string, unknown>, prefix = '', maxDepth = 4): string[] {
+  const paths: string[] = [];
+  if (maxDepth <= 0) return paths;
+
+  for (const [key, value] of Object.entries(obj)) {
+    const path = prefix ? `${prefix}.${key}` : key;
+    paths.push(path);
+    if (value && typeof value === 'object' && !Array.isArray(value)) {
+      paths.push(...extractAllPaths(value as Record<string, unknown>, path, maxDepth - 1));
     }
   }
-  return current;
+  return paths;
 }
 
-function isExpandable(val: unknown): boolean {
-  return val !== null && typeof val === 'object';
-}
-
-/**
- * Shallow compare for primitive and simple object equality.
- * Used to avoid JSON.stringify for watch path comparisons.
- */
-function shallowEqual(a: unknown, b: unknown): boolean {
-  if (a === b) return true;
-  if (typeof a !== typeof b) return false;
-  if (a === null || b === null) return a === b;
-  if (typeof a !== 'object') return false;
-  const keysA = Object.keys(a as object);
-  const keysB = Object.keys(b as object);
-  if (keysA.length !== keysB.length) return false;
-  return keysA.every(
-    (k) => (a as Record<string, unknown>)[k] === (b as Record<string, unknown>)[k]
-  );
-}
-
-function formatValue(val: unknown): string {
-  if (val === null) return 'null';
-  if (val === undefined) return 'undefined';
-  if (typeof val === 'string') return `"${val}"`;
-  if (typeof val === 'number' || typeof val === 'boolean') return String(val);
-  if (Array.isArray(val)) return `Array(${val.length})`;
-  if (typeof val === 'object') {
-    const keys = Object.keys(val as object);
-    return `{${keys.length} keys}`;
-  }
-  return String(val);
-}
+// ─── UTILITIES ─────────────────────────────────────────────────────────────
 
 function formatValueShort(val: unknown): string {
   if (val === null || val === undefined) return '—';

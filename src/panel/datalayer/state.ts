@@ -5,9 +5,11 @@ import type {
   DataLayerPush,
   DataLayerState,
   DataLayerSource,
+  DlTimelineEntry,
   ValidationResult,
   ValidationRule,
 } from '@/types/datalayer';
+import { isDlNavMarker, isDlPush } from '@/types/datalayer';
 import { getConfig, updateConfigImmediate } from '@/panel/state';
 
 // ─── STATE CONTAINERS ────────────────────────────────────────────────────────
@@ -24,8 +26,15 @@ const dlState: DataLayerState = {
   _sourceCountMap: new Map(),
 };
 
-/** Cached event name counts — invalidated on push add/clear/prune. */
-let _eventNameCache: Array<[string, number]> | null = null;
+/** Cached event name counts — incrementally updated on push add/prune/clear. */
+const MAX_EVENT_NAME_CACHE = 1000;
+let _eventNameCountMap: Map<string, number> = new Map();
+
+/** Cached navigation push counts — incrementally updated on push add/prune/clear. */
+const _navPushCounts = new Map<number, number>();
+
+/** Incremental push count — updated on add/prune/clear for O(1) getDlTotalCount(). */
+let _dlPushCount = 0;
 
 // ─── FILTER STATE ────────────────────────────────────────────────────────────
 
@@ -35,6 +44,7 @@ interface DlFilterState {
   eventName: string; // Filtered via DL filter popover → Event Name submenu
   hasKey: string; // Filtered via DL filter popover → Has Key submenu
   ecommerceOnly: boolean;
+  hideGtmSystem: boolean; // true = filter out pushes with event names starting with "gtm."
 }
 
 const dlFilterState: DlFilterState = {
@@ -43,6 +53,7 @@ const dlFilterState: DlFilterState = {
   eventName: '',
   hasKey: '',
   ecommerceOnly: false,
+  hideGtmSystem: false,
 };
 
 let watchedPaths: string[] = [];
@@ -52,30 +63,53 @@ let watchedPaths: string[] = [];
 // Invalidated on any structural change (prune, clear).
 
 const _cumulativeCache = new Map<number, Record<string, unknown>>();
-const MAX_CUMULATIVE_CACHE = 50;
+const MAX_CUMULATIVE_CACHE = 200;
+const CUMULATIVE_EVICT_COUNT = 100;
+
+// Track the lowest cached index to optimize backward scans after cache clear
+let _lowestCachedIndex = Infinity;
 
 // ─── PUSH OPERATIONS ─────────────────────────────────────────────────────────
 
-export function addDlPush(push: DataLayerPush): boolean {
+export function addDlPush(push: DlTimelineEntry): boolean {
   dlState.all.push(push);
   dlState.map.set(push.id, push);
-  _eventNameCache = null;
 
-  // Increment source count
-  const sourceCountMap = dlState._sourceCountMap ?? new Map();
-  sourceCountMap.set(push.source, (sourceCountMap.get(push.source) ?? 0) + 1);
-  dlState._sourceCountMap = sourceCountMap;
+  // Skip source/event counts for navigation markers
+  if (!isDlNavMarker(push)) {
+    // Increment incrementally-maintained counters
+    _dlPushCount++;
+
+    // Increment source count
+    const sourceCountMap = dlState._sourceCountMap ?? new Map();
+    sourceCountMap.set(push.source, (sourceCountMap.get(push.source) ?? 0) + 1);
+    dlState._sourceCountMap = sourceCountMap;
+
+    // Incrementally update event name cache
+    const eventName = push.data?.event;
+    if (typeof eventName === 'string' && eventName) {
+      _eventNameCountMap.set(eventName, (_eventNameCountMap.get(eventName) ?? 0) + 1);
+      // LRU eviction: delete the oldest (first-inserted) entry when cache exceeds max size
+      if (_eventNameCountMap.size > MAX_EVENT_NAME_CACHE) {
+        const oldestKey = _eventNameCountMap.keys().next().value;
+        if (oldestKey !== undefined) _eventNameCountMap.delete(oldestKey);
+      }
+    }
+  }
 
   // Auto-prune if limit exceeded (mirrors network request pruning)
   const maxPushes = getConfig().maxDlPushes;
   if (maxPushes > 0 && dlState.all.length > maxPushes) {
-    const pruneTo = Math.floor(maxPushes * 0.75);
+    const pruneTo = Math.floor(maxPushes * (getConfig().pruneRatio ?? 0.75));
     const removeCount = dlState.all.length - pruneTo;
 
     // Before splicing, decrement source counts for removed pushes
     for (let i = 0; i < removeCount; i++) {
-      const source = dlState.all[i].source;
+      const entry = dlState.all[i];
+      if (isDlNavMarker(entry)) continue;
+      const source = entry.source;
       if (source) {
+        if (!dlState._sourceCountMap) dlState._sourceCountMap = new Map();
         const current = dlState._sourceCountMap.get(source) ?? 0;
         if (current <= 1) {
           dlState._sourceCountMap.delete(source);
@@ -85,15 +119,65 @@ export function addDlPush(push: DataLayerPush): boolean {
       }
     }
 
+    // Decrement event name counts for removed pushes
+    for (let i = 0; i < removeCount; i++) {
+      const entry = dlState.all[i];
+      if (isDlNavMarker(entry)) continue;
+      const removedEvent = entry.data?.event;
+      if (typeof removedEvent === 'string' && removedEvent) {
+        const current = _eventNameCountMap.get(removedEvent) ?? 0;
+        if (current <= 1) {
+          _eventNameCountMap.delete(removedEvent);
+        } else {
+          _eventNameCountMap.set(removedEvent, current - 1);
+        }
+      }
+    }
+
+    // Decrement nav push counts for removed pushes
+    for (let i = 0; i < removeCount; i++) {
+      const entry = dlState.all[i];
+      if (isDlNavMarker(entry)) continue;
+      const markerId = (entry as { _dlNavMarkerId?: number })._dlNavMarkerId;
+      if (markerId !== undefined) {
+        decrementNavPushCount(markerId);
+      }
+    }
+
     const removed = dlState.all.splice(0, removeCount);
     removed.forEach((p) => dlState.map.delete(p.id));
+
+    // Decrement push count for removed pushes
+    const removedPushCount = removed.filter((e) => !isDlNavMarker(e)).length;
+    _dlPushCount -= removedPushCount;
+
+    // Remove orphaned markers (no pushes remaining after prune)
+    const orphanedIds: number[] = [];
+    for (const entry of dlState.all) {
+      if (isDlNavMarker(entry) && !_navPushCounts.has(entry.id)) {
+        orphanedIds.push(entry.id);
+      }
+    }
+    if (orphanedIds.length > 0) {
+      const orphanedSet = new Set(orphanedIds);
+      dlState.all = dlState.all.filter((e) => !orphanedSet.has(e.id));
+      orphanedIds.forEach((id) => dlState.map.delete(id));
+    }
+
     // Invalidate cache — all indices have shifted
     _cumulativeCache.clear();
-    // Clean validation errors for pruned pushes
-    clearValidationErrors();
+    _lowestCachedIndex = Infinity;
+    // Invalidate push-only cache after prune
+    invalidatePushCache();
+    // Clean validation errors for pruned pushes only
+    for (const p of removed) {
+      validationErrors.delete(p.id);
+    }
     return true; // signal prune
   }
-  return false;
+  // Invalidate push-only cache after adding a new push
+  invalidatePushCache();
+  return false; // signal prune
 }
 
 export function clearDlPushes(): void {
@@ -104,16 +188,71 @@ export function clearDlPushes(): void {
   dlState.sourceLabels.clear();
   dlState.selectedId = null;
   dlState._sourceCountMap = new Map();
-  _eventNameCache = null;
+  _eventNameCountMap = new Map();
+  clearNavPushCounts();
+  _dlPushCount = 0;
   _cumulativeCache.clear();
+  _lowestCachedIndex = Infinity;
+  // Invalidate push-only cache after clear
+  invalidatePushCache();
 }
 
+let _pushOnlyCache: DataLayerPush[] | null = null;
+
 export function getAllDlPushes(): DataLayerPush[] {
+  if (_pushOnlyCache !== null) return _pushOnlyCache;
+  _pushOnlyCache = dlState.all.filter(isDlPush) as DataLayerPush[];
+  return _pushOnlyCache;
+}
+
+/** Invalidate push-only cache. Call on add/prune/clear. */
+function invalidatePushCache(): void {
+  _pushOnlyCache = null;
+}
+
+/** Get all timeline entries (pushes + markers). */
+export function getAllDlEntries(): DlTimelineEntry[] {
   return dlState.all;
 }
 
-export function getDlPushById(id: number): DataLayerPush | undefined {
+/** Count of navigation markers currently in the timeline */
+export function getDlNavMarkerCount(): number {
+  return dlState.all.filter((p) => isDlNavMarker(p)).length;
+}
+
+/** Get all navigation markers in timeline order */
+export function getDlNavMarkers(): import('@/types/datalayer').DlNavMarker[] {
+  return dlState.all.filter(isDlNavMarker) as import('@/types/datalayer').DlNavMarker[];
+}
+
+export function getNavPushCounts(): Map<number, number> {
+  return _navPushCounts;
+}
+
+export function incrementNavPushCount(markerId: number): void {
+  _navPushCounts.set(markerId, (_navPushCounts.get(markerId) ?? 0) + 1);
+}
+
+export function decrementNavPushCount(markerId: number): void {
+  const current = _navPushCounts.get(markerId) ?? 0;
+  if (current <= 1) _navPushCounts.delete(markerId);
+  else _navPushCounts.set(markerId, current - 1);
+}
+
+export function clearNavPushCounts(): void {
+  _navPushCounts.clear();
+}
+
+/** Get any timeline entry by ID (push or marker) */
+export function getDlEntryById(id: number): DlTimelineEntry | undefined {
   return dlState.map.get(id);
+}
+
+/** Get a push entry by ID (excludes markers) */
+export function getDlPushById(id: number): DataLayerPush | undefined {
+  const entry = dlState.map.get(id);
+  if (entry && isDlPush(entry)) return entry;
+  return undefined;
 }
 
 // ─── FILTERED IDS ────────────────────────────────────────────────────────────
@@ -165,17 +304,9 @@ export function getDlSourceCount(source: DataLayerSource): number {
 }
 
 export function getDlEventNames(): Array<[string, number]> {
-  if (_eventNameCache !== null) return _eventNameCache;
-
-  const counts: Record<string, number> = {};
-  for (const push of dlState.all) {
-    const eventName = push.data?.event;
-    if (typeof eventName === 'string' && eventName) {
-      counts[eventName] = (counts[eventName] || 0) + 1;
-    }
-  }
-  _eventNameCache = Object.entries(counts).sort((a, b) => b[1] - a[1]);
-  return _eventNameCache;
+  // Build sorted array from incrementally-maintained count map
+  // Sort by count descending (most frequent first)
+  return Array.from(_eventNameCountMap.entries()).sort((a, b) => b[1] - a[1]);
 }
 
 // ─── FILTER STATE ────────────────────────────────────────────────────────────
@@ -220,6 +351,14 @@ export function getDlEcommerceOnly(): boolean {
   return dlFilterState.ecommerceOnly;
 }
 
+export function getDlHideGtmSystem(): boolean {
+  return dlFilterState.hideGtmSystem;
+}
+
+export function setDlHideGtmSystem(hide: boolean): void {
+  dlFilterState.hideGtmSystem = hide;
+}
+
 // ─── STATS ───────────────────────────────────────────────────────────────────
 
 export function getDlVisibleCount(): number {
@@ -227,7 +366,7 @@ export function getDlVisibleCount(): number {
 }
 
 export function getDlTotalCount(): number {
-  return dlState.all.length;
+  return _dlPushCount;
 }
 
 // ─── CUMULATIVE STATE TRACKING ───────────────────────────────────────────────
@@ -239,14 +378,15 @@ export function computeCumulativeState(upToIndex: number): Record<string, unknow
 
   // Cache hit — returns the stored snapshot without recomputation
   const cached = _cumulativeCache.get(upToIndex);
-  if (cached !== undefined) return cached;
+  if (cached !== undefined) return { ...cached };
 
   const push = all[upToIndex];
 
   // Prefer pre-computed cumulative state from legacy pushes (before this optimization)
   if (push.cumulativeState && Object.keys(push.cumulativeState).length > 0) {
-    _cumulativeCache.set(upToIndex, push.cumulativeState);
-    return push.cumulativeState;
+    const cloned = { ...push.cumulativeState };
+    _cumulativeCache.set(upToIndex, cloned);
+    return cloned;
   }
 
   // Incremental build: use cached previous state if available, otherwise find nearest cache entry
@@ -262,7 +402,8 @@ export function computeCumulativeState(upToIndex: number): Record<string, unknow
   } else {
     // Find nearest cached entry below upToIndex for partial incremental build
     let nearestIndex = -1;
-    for (let i = upToIndex - 1; i >= 0; i--) {
+    // Use _lowestCachedIndex as lower bound — skip scan entirely if cache is empty
+    for (let i = upToIndex - 1; i >= _lowestCachedIndex; i--) {
       if (_cumulativeCache.has(i)) {
         nearestIndex = i;
         break;
@@ -277,21 +418,38 @@ export function computeCumulativeState(upToIndex: number): Record<string, unknow
     }
   }
 
-  // Merge remaining pushes
+  // Merge remaining pushes using shallow spread (fast) — each push's keys
+  // overwrite previous values. Deep clone only at cache boundary to prevent
+  // mutation corruption from affecting cached results.
   for (let i = startIndex; i <= upToIndex; i++) {
-    const data = all[i].data;
-    for (const key of Object.keys(data)) {
-      result[key] = data[key];
+    const entry = all[i];
+    if (isDlNavMarker(entry)) continue; // markers have no data to merge
+    const pushData = entry.data;
+    // Shallow spread is sufficient here: new keys overwrite old, and we clone
+    // before storing in cache to protect against mutation of original data
+    result = { ...result, ...pushData };
+  }
+
+  // Evict oldest cache entries in batch when at capacity
+  if (_cumulativeCache.size >= MAX_CUMULATIVE_CACHE) {
+    // Collect keys first to avoid mutating Map during iteration
+    const keysToDelete = Array.from(_cumulativeCache.keys()).slice(0, CUMULATIVE_EVICT_COUNT);
+    for (const key of keysToDelete) {
+      _cumulativeCache.delete(key);
+    }
+    // Update lowest cached index incrementally — after evicting the first
+    // CUMULATIVE_EVICT_COUNT keys, the new lowest is the next key in the Map
+    // (keys are sequential indices, inserted in ascending order)
+    if (keysToDelete.includes(_lowestCachedIndex)) {
+      const nextKey = _cumulativeCache.keys().next().value;
+      _lowestCachedIndex = nextKey !== undefined ? nextKey : Infinity;
     }
   }
 
-  // Evict oldest cache entry if at capacity
-  if (_cumulativeCache.size >= MAX_CUMULATIVE_CACHE) {
-    const oldestKey = _cumulativeCache.keys().next().value;
-    if (oldestKey !== undefined) _cumulativeCache.delete(oldestKey);
-  }
-
-  _cumulativeCache.set(upToIndex, result);
+  // Deep clone result before caching to prevent mutation corruption
+  _cumulativeCache.set(upToIndex, structuredClone(result));
+  // Track lowest cached index incrementally
+  if (upToIndex < _lowestCachedIndex) _lowestCachedIndex = upToIndex;
   return result;
 }
 

@@ -21,16 +21,16 @@ export const tiktokPixel: Provider = {
 
     const result: Record<string, string | undefined> = {
       // Event
-      Event: str(body['event']) ?? p['event'],
+      Event: str(body['event']) ?? str(p['event']),
       Timestamp: str(body['timestamp']),
       // Pixel Info
-      'Pixel Code': str(body['pixel_code']) ?? p['pixel_code'],
+      'Pixel Code': str(body['pixel_code']) ?? str(p['pixel_code']),
       // Page
-      URL: str(props['url']) ?? str(ctxPage['url']) ?? p['url'],
+      URL: str(props['url']) ?? str(ctxPage['url']) ?? str(p['url']),
       Referrer: str(ctxPage['referrer']) || undefined,
       // Ecommerce
-      Value: str(props['value']) ?? p['value'],
-      Currency: str(props['currency']) ?? p['currency'],
+      Value: str(props['value']) ?? str(p['value']),
+      Currency: str(props['currency']) ?? str(p['currency']),
       'Content ID': str(props['content_id']),
       'Content Type': str(props['content_type']),
       'Content Name': str(props['content_name']),
@@ -60,7 +60,7 @@ export const tiktokPixel: Provider = {
       }
     }
 
-    result._eventName = str(body['event']) ?? p['event'];
+    result._eventName = str(body['event']) ?? str(p['event']);
 
     return result;
   },

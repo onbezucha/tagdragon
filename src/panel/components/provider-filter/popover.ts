@@ -14,7 +14,7 @@ import {
   setFilterMethod,
   getAllRequests,
 } from '../../state';
-import { updateGroupStates, updateHiddenBadge, updateFooterSummary } from './pill-rendering';
+import { updateGroupStates, updateHiddenBadge, updateFooterSummary } from './pill-dom-updates';
 
 // ─── TYPES ────────────────────────────────────────────────────────────────
 

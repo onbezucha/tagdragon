@@ -24,7 +24,7 @@
 </p>
 
 <p align="center">
-  <em>62 providers · DataLayer Inspector · Consent Panel · No data leaves your browser</em>
+  <em>59 providers · DataLayer Inspector · Consent Panel · No data leaves your browser</em>
 </p>
 
 ---
@@ -36,7 +36,7 @@
 <td width="33%" valign="top">
 
 ### 🔍 Request Capture
-Real-time monitoring of tracking requests from 62 providers. Pause/resume, sort, auto-prune.
+Real-time monitoring of tracking requests from 59 providers. Pause/resume, sort, auto-prune.
 
 </td>
 <td width="33%" valign="top">
@@ -55,8 +55,8 @@ Inspect and override cookie/consent state. Test consent mode behavior without ma
 <tr>
 <td width="33%" valign="top">
 
-### 📊 62 Providers
-GA4, Meta, TikTok, LinkedIn, Adobe, Hotjar, Braze, HubSpot, Medallia, RudderStack, and 53 more across 9 categories + ungrouped.
+### 📊 59 Providers
+GA4, Meta, TikTok, LinkedIn, Adobe, Hotjar, Braze, HubSpot, Medallia, RudderStack, and 49 more across 9 categories.
 
 </td>
 <td width="33%" valign="top">
@@ -106,16 +106,16 @@ npm run dev    # Watches CSS + JS for live changes
 
 ## 📊 Supported Providers
 
-62 providers across 9 categories + ungrouped.
+59 providers across 9 categories + ungrouped.
 
 | Category | Count | Providers |
 |----------|-------|-----------|
-| 📊 Analytics | 13 | GA4, Adobe Client-Side, Adobe Server-Side (AEP WebSDK), Amplitude, Mixpanel, Matomo, Piwik PRO, AT Internet, Comscore, Parse.ly, Medallia DXA, Indicative, RudderStack |
+| 📊 Analytics | 12 | GA4, Adobe Client-Side, Adobe Server-Side (AEP WebSDK), Amplitude, Mixpanel, Matomo, Piwik PRO, AT Internet, Comscore, Parse.ly, Medallia DXA, RudderStack |
 | 🏷️ Tag Managers | 5 | Google Tag Manager, Tealium, Segment, Ensighten, Piwik PRO TM |
-| 📢 Marketing & Advertising | 22 | Google Ads, Meta Pixel, Bing Ads, Adform, DoubleClick, Criteo, Seznam Sklik, TikTok, X, Pinterest, The Trade Desk, Reddit, Snapchat, Spotify, Amazon Ads, Outbrain, Teads, RTB House, Sojern, Vibes, Brevo, Invoca, HubSpot |
+| 📢 Marketing & Advertising | 22 | Google Ads, Meta Pixel, Bing Ads, Adform, DoubleClick, Criteo, Seznam Sklik, TikTok, X, Pinterest, The Trade Desk, Reddit, Snapchat, Spotify, Amazon Ads, Outbrain, Teads, RTB House, Sojern, Brevo, Invoca, HubSpot |
 | 🎥 Session Replay | 6 | Hotjar, Microsoft Clarity, Microsoft Clarity Tag, FullStory, Crazy Egg, Glassbox |
 | 🧪 A/B Testing | 4 | Optimizely, Dynamic Yield, Split, Omniconvert |
-| 👤 Visitor Identification | 4 | LinkedIn, Merkury, Demandbase, 6Sense |
+| 👤 Visitor Identification | 3 | LinkedIn, Demandbase, 6Sense |
 | 💬 Customer Engagement | 2 | Braze, Lytics |
 | 🗄️ CDP | 2 | mParticle, Tealium EventStream |
 | 🍂 Adobe Stack | 3 | Adobe Target, ECID, Launch (CN) |
@@ -161,7 +161,7 @@ npm run dev    # Watches CSS + JS for live changes
 | `npm run lint` | ESLint check |
 | `npm run format` | Prettier auto-format |
 | `npm run format:check` | Prettier check (CI) |
-| `npm run test` | Vitest run all tests (78 test files) |
+| `npm run test` | Vitest run all tests (115 test files) |
 | `npm run test:watch` | Vitest watch mode |
 | `npm run test:coverage` | Vitest with coverage report |
 | `npm run analyze` | Build with bundle visualizer → `dist/stats.html` |
@@ -184,7 +184,7 @@ Full documentation available at [tagdragon.net/docs](https://www.tagdragon.net/d
 | [Features](https://www.tagdragon.net/docs/features) | Complete feature overview |
 | [DataLayer Tab](https://www.tagdragon.net/docs/datalayer) | DataLayer inspector guide |
 | [Consent Panel](https://www.tagdragon.net/docs/consent-panel) | Consent testing guide |
-| [Provider Reference](https://www.tagdragon.net/docs/providers) | All 62 providers |
+| [Provider Reference](https://www.tagdragon.net/docs/providers) | All 59 providers |
 | [Adobe Env Switcher](https://www.tagdragon.net/docs/adobe-env-switcher) | Adobe environment switching |
 | [Toolbar Reference](https://www.tagdragon.net/docs/toolbar-reference) | Complete UI reference |
 | [FAQ](https://www.tagdragon.net/docs/faq) | Frequently asked questions |

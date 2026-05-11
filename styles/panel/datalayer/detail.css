@@ -1,7 +1,7 @@
 /* ═══════════════════════════════════════════════════════════════════════════
-   DATALAYER DETAIL — #dl-detail-*, .dl-dtab, .dl-data-section, .dl-kv-*
-   Extracted from public/panel.html inline <style>
-   ═══════════════════════════════════════════════════════════════════════════ */
+    DATALAYER DETAIL — #dl-detail-*, .dl-dtab, .dl-kv-*
+    Extracted from public/panel.html inline <style>
+    ═══════════════════════════════════════════════════════════════════════════ */
 
 #dl-detail-header {
   display: flex;
@@ -75,32 +75,7 @@
   padding: 12px;
 }
 
-#dl-detail-content::-webkit-scrollbar { width: 8px; }
-#dl-detail-content::-webkit-scrollbar-track { background: var(--bg-0); }
-#dl-detail-content::-webkit-scrollbar-thumb { background: var(--bg-2); border-radius: 4px; }
-
 /* === DL DETAIL CONTENT === */
-.dl-data-section {
-  margin-bottom: 12px;
-}
-
-.dl-data-section-header {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--text-2);
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-  padding: 4px 0;
-  border-bottom: 1px solid var(--border);
-  margin-bottom: 6px;
-  cursor: pointer;
-  user-select: none;
-}
-
-.dl-data-section.collapsed .dl-data-section-body {
-  display: none;
-}
-
 .dl-kv-row {
   display: flex;
   gap: 8px;
@@ -125,11 +100,19 @@
   color: var(--text-0);
   flex: 1;
   word-break: break-all;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .dl-kv-value-json {
-  white-space: pre-wrap;
   color: var(--text-1);
+}
+
+body.wrap-values .dl-kv-value {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
 }
 
 .dl-copy-btn {
@@ -157,4 +140,105 @@
   border-left: 2px solid var(--red);
   padding-left: 6px;
   background: rgba(239, 68, 68, 0.08);
+}
+
+/* === LIVE TAB NOTIFICATION BADGE === */
+.dl-tab-notification {
+  font-size: 9px;
+  font-family: var(--font-sans);
+  color: var(--accent);
+  background: var(--accent-a15, rgba(99, 102, 241, 0.15));
+  padding: 1px 5px;
+  border-radius: 8px;
+  margin-left: 4px;
+  white-space: nowrap;
+}
+
+/* === CHANGED KEY BADGE IN PUSH DATA TAB === */
+.dl-kv-changed-badge {
+  font-size: 9px;
+  color: var(--accent);
+  opacity: 0.7;
+  margin-left: 6px;
+  font-weight: 400;
+  font-family: var(--font-sans);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.dl-kv-row:hover .dl-kv-changed-badge {
+  opacity: 1;
+}
+
+/* === INLINE PUSH SEARCH === */
+.dl-push-search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.dl-push-search-input {
+  flex: 1;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-1);
+  font-size: 11px;
+  padding: 4px 8px;
+  outline: none;
+  font-family: var(--font-sans);
+}
+
+.dl-push-search-input:focus {
+  border-color: var(--accent);
+}
+
+.dl-push-search-count {
+  font-size: 10px;
+  color: var(--text-3);
+  white-space: nowrap;
+  min-width: 50px;
+  text-align: right;
+}
+
+/* === SEARCH MATCH/HIDDEN STATES === */
+.dl-kv-row.dl-search-hidden {
+  display: none;
+}
+
+.dl-kv-row.dl-search-match .dl-kv-key,
+.dl-kv-row.dl-search-match .dl-kv-value {
+  background: var(--accent-a15, rgba(99, 102, 241, 0.15));
+  border-radius: 2px;
+}
+
+/* === CURRENT STATE SEARCH === */
+.dl-state-search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.dl-state-search-input {
+  flex: 1;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-1);
+  font-size: 11px;
+  padding: 4px 8px;
+  outline: none;
+  font-family: var(--font-sans);
+}
+
+.dl-state-search-input:focus {
+  border-color: var(--accent);
+}
+
+.dl-state-search-count {
+  font-size: 10px;
+  color: var(--text-3);
+  white-space: nowrap;
 }

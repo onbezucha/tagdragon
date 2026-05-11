@@ -3,6 +3,7 @@
   "name": "TagDragon",
   "version": "1.7.0",
   "description": "The dragon that sees every tag. Captures and decodes network requests from analytics, tracking, and marketing tags.",
+  "homepage_url": "https://www.tagdragon.net",
 
   "action": {
     "default_popup": "public/popup.html",
@@ -13,7 +14,7 @@
       "128": "public/icons/icon128.png",
       "192": "public/icons/icon192.png"
     },
-    "default_title": "TagDragon – Request Tracker"
+    "default_title": "TagDragon"
   },
 
   "devtools_page": "public/devtools.html",

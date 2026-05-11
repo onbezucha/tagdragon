@@ -6,9 +6,43 @@ import { initPopupBridge } from './popup-bridge';
 import { initBadge } from './badge';
 import { generateId } from '@/shared/id-gen';
 import { headersToObj } from '@/shared/http-utils';
+import { validateRedirectUrls, deduplicateCookies, buildCookieUrl } from './redirect-utils';
 
 initPopupBridge();
 initBadge();
+
+// ─── COOKIE DELETION HELPER ──────────────────────────────────────────────
+
+async function performCookieDeletion(
+  url: string,
+  urlObj: URL,
+  sendResponse: (response: unknown) => void
+): Promise<void> {
+  try {
+    const [byCookies, byDomain] = await Promise.all([
+      chrome.cookies.getAll({ url }),
+      chrome.cookies.getAll({ domain: urlObj.hostname }),
+    ]);
+
+    const all = deduplicateCookies(byCookies, byDomain);
+
+    const results = await Promise.allSettled(
+      all.map((cookie) => {
+        const cookieUrl = buildCookieUrl(cookie);
+        return chrome.cookies.remove({
+          url: cookieUrl,
+          name: cookie.name,
+          storeId: cookie.storeId,
+        });
+      })
+    );
+
+    const deleted = results.filter((r) => r.status === 'fulfilled').length;
+    sendResponse({ deleted });
+  } catch (e) {
+    sendResponse({ deleted: 0, error: String(e) });
+  }
+}
 
 // ─── ADOBE ENV REDIRECT ───────────────────────────────────────────────────────
 // Uses declarativeNetRequest to redirect Adobe Launch library URLs at network level.
@@ -34,37 +68,9 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message.type === 'SET_ADOBE_REDIRECT') {
     const { fromUrl, toUrl } = message;
 
-    // Validate redirect target: only allow Adobe CDN domains over HTTPS
-    const allowedHostnames = ['assets.adobedtm.com', 'assets.adobedtm.com.ostrk.org'];
-    try {
-      const parsedTo = new URL(toUrl);
-      if (parsedTo.protocol !== 'https:') {
-        sendResponse({ ok: false, error: 'Only HTTPS redirect targets are allowed' });
-        return true;
-      }
-      if (!allowedHostnames.includes(parsedTo.hostname)) {
-        sendResponse({ ok: false, error: 'Invalid redirect target hostname' });
-        return true;
-      }
-    } catch {
-      sendResponse({ ok: false, error: 'Invalid redirect URL' });
-      return true;
-    }
-    // Also validate fromUrl is parseable and uses HTTPS
-    try {
-      const parsedFrom = new URL(fromUrl);
-      if (parsedFrom.protocol !== 'https:') {
-        sendResponse({ ok: false, error: 'Only HTTPS source URLs are allowed' });
-        return true;
-      }
-    } catch {
-      sendResponse({ ok: false, error: 'Invalid source URL' });
-      return true;
-    }
-
-    // Reject fromUrl containing declarativeNetRequest special characters
-    if (/[*^|]/.test(fromUrl)) {
-      sendResponse({ ok: false, error: 'Source URL contains invalid characters (*, ^, |)' });
+    const error = validateRedirectUrls(fromUrl, toUrl);
+    if (error) {
+      sendResponse({ ok: false, error });
       return true;
     }
 
@@ -230,46 +236,32 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         sendResponse({ deleted: 0 });
         return;
       }
+      // Direct tab sender — origin validated, proceed with deletion
+      (async () => {
+        await performCookieDeletion(url, urlObj, sendResponse);
+      })();
+      return true; // async
+    } else if (message.source === 'devtools' && typeof message.tabId === 'number') {
+      // DevTools panel sender — validate via inspected tab
+      (async () => {
+        try {
+          const tab = await chrome.tabs.get(message.tabId);
+          const tabOrigin = new URL(tab.url ?? '').origin;
+          if (tabOrigin !== urlObj.origin) {
+            sendResponse({ deleted: 0 });
+            return;
+          }
+          await performCookieDeletion(url, urlObj, sendResponse);
+        } catch {
+          sendResponse({ deleted: 0 });
+        }
+      })();
+      return true; // async
     } else {
-      // Extension pages (no sender tab) are not allowed to clear cookies
+      // Unknown sender without tab — not allowed
       sendResponse({ deleted: 0 });
       return;
     }
-
-    (async () => {
-      try {
-        const [byCookies, byDomain] = await Promise.all([
-          chrome.cookies.getAll({ url }),
-          chrome.cookies.getAll({ domain: urlObj.hostname }),
-        ]);
-
-        const seen = new Set<string>();
-        const all = [...byCookies, ...byDomain].filter((c) => {
-          const key = `${c.name}|${c.domain}|${c.path}|${c.storeId}`;
-          if (seen.has(key)) return false;
-          seen.add(key);
-          return true;
-        });
-
-        const results = await Promise.allSettled(
-          all.map((cookie) => {
-            const domain = cookie.domain.startsWith('.') ? cookie.domain.slice(1) : cookie.domain;
-            const cookieUrl = `${cookie.secure ? 'https' : 'http'}://${domain}${cookie.path}`;
-            return chrome.cookies.remove({
-              url: cookieUrl,
-              name: cookie.name,
-              storeId: cookie.storeId,
-            });
-          })
-        );
-
-        const deleted = results.filter((r) => r.status === 'fulfilled').length;
-        sendResponse({ deleted });
-      } catch (e) {
-        sendResponse({ deleted: 0, error: String(e) });
-      }
-    })();
-    return true; // async
   }
 });
 

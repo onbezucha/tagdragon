@@ -45,6 +45,7 @@
 }
 
 .dl-watch-empty {
+  position: relative;
   font-size: 11px;
   color: var(--text-3);
   font-style: italic;
@@ -137,6 +138,37 @@
   outline: none;
 }
 
+/* Watch path autocomplete dropdown */
+.dl-watch-autocomplete {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--bg-1);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  max-height: 150px;
+  overflow-y: auto;
+  z-index: 10;
+  margin-top: 2px;
+}
+
+.dl-watch-autocomplete-item {
+  padding: 4px 8px;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--text-1);
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dl-watch-autocomplete-item:hover {
+  background: var(--bg-2);
+  color: var(--accent);
+}
+
 /* E3: Tree controls */
 .dl-tree-controls {
   display: flex;
@@ -227,6 +259,9 @@
   font-size: 11px;
   color: var(--text-0);
   word-break: break-all;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .dl-tree-value-bracket {
@@ -337,4 +372,11 @@
 
 .dl-group-body.collapsed {
   display: none;
+}
+
+/* Wrap long values in live inspector tree when enabled */
+body.wrap-values .dl-tree-value {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
 }

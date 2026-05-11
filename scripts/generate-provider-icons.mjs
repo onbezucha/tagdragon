@@ -84,10 +84,6 @@ const SVG_FALLBACKS = {
   'Adobe ECID': `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
     <path d="M13.966 22.624l-1.69-4.281H8.122l3.892-9.144 5.662 13.425zM8.884 1.376H0l8.884 21.248zm6.232 0L24 22.624 15.116 1.376z" fill="#4B21A8"/>
   </svg>`,
-  'Indicative': `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-    <rect width="24" height="24" rx="5" fill="#4E2AD4"/>
-    <path d="M10 4h4v3h-4V4zm0 6h4v10h-4V10z" fill="white"/>
-  </svg>`,
   'Webtrends': `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
     <rect width="24" height="24" rx="5" fill="#3CB54A"/>
     <path d="M2 4h3.5L8 12.5 10.5 7 12 4h3l1.5 3.5L16 12.5 18.5 4H22l-5 16h-2l-2-4.5L11 20H9L4 4z" fill="white"/>

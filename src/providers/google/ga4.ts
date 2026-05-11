@@ -1,5 +1,5 @@
-import type { Provider } from '../../types/provider';
-import { getParams } from '../url-parser';
+import type { Provider } from '@/types/provider';
+import { getParams } from '@/providers/url-parser';
 
 export const ga4: Provider = {
   name: 'GA4',
@@ -76,4 +76,4 @@ export const ga4: Provider = {
 
     return decoded;
   },
-};
+} as const;

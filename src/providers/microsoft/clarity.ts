@@ -276,7 +276,7 @@ function decodeAnalyticsEvents(events: unknown[][]): Record<string, string | und
  * Uses CLARITY_EVENT_PRIORITY to pick the best candidate.
  * For Custom/Consent/Navigation events, appends extra context.
  */
-function extractEventName(events: unknown[][]): string | undefined {
+function extractClarityEventName(events: unknown[][]): string | undefined {
   const presentTypes = new Set<number>();
   for (const ev of events) {
     if (Array.isArray(ev) && ev.length >= 2) {
@@ -351,7 +351,7 @@ export const microsoftClarity: Provider = {
     const eventParams = decodeAnalyticsEvents(payload.a || []);
 
     // Extract best event name for the request list
-    const eventName = extractEventName(payload.a || []);
+    const eventName = extractClarityEventName(payload.a || []);
 
     // Build event type summary
     const eventTypes = new Set<string>();

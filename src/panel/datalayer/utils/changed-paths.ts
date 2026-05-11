@@ -1,22 +1,6 @@
 // ─── SHALLOW EQUALITY CHECK ──────────────────────────────────────────────────
 
-/**
- * Shallow comparison of two values.
- * Returns true if both values are the same primitive,
- * or if they are both non-null objects with the same own-key values.
- */
-function shallowEqual(a: unknown, b: unknown): boolean {
-  if (a === b) return true;
-  if (typeof a !== 'object' || typeof b !== 'object') return false;
-  if (a === null || b === null) return false;
-  const keysA = Object.keys(a as Record<string, unknown>);
-  const keysB = Object.keys(b as Record<string, unknown>);
-  if (keysA.length !== keysB.length) return false;
-  for (const key of keysA) {
-    if ((a as Record<string, unknown>)[key] !== (b as Record<string, unknown>)[key]) return false;
-  }
-  return true;
-}
+import { shallowEqual } from './shallow-equal';
 
 // ─── CHANGE DETECTION ────────────────────────────────────────────────────────
 

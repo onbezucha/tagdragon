@@ -26,7 +26,7 @@
 .summary-row-1 {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--icon-gap-md);
   line-height: 1;
 }
 .summary-provider-icon {
@@ -37,8 +37,8 @@
 }
 
 .summary-provider-icon svg {
-  width: 20px;
-  height: 20px;
+  width: var(--icon-lg);
+  height: var(--icon-lg);
 }
 
 .summary-provider-name {

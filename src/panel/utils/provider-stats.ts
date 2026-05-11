@@ -12,11 +12,6 @@ export interface ProviderStat {
   avgTime: number; // ms
 }
 
-/**
- * Compute per-provider statistics from the request list.
- * Aggregates count, errors, total size, and average response time.
- * Results are sorted by count (descending).
- */
 export function computeProviderStats(requests: ParsedRequest[]): ProviderStat[] {
   const statsMap = new Map<string, ProviderStat>();
 
@@ -51,15 +46,6 @@ export function computeProviderStats(requests: ParsedRequest[]): ProviderStat[] 
   results.sort((a, b) => b.count - a.count);
 
   return results;
-}
-
-/**
- * Format bytes to human-readable size.
- */
-export function formatBytes(bytes: number): string {
-  if (bytes < 1024) return bytes + 'B';
-  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + 'KB';
-  return (bytes / (1024 * 1024)).toFixed(1) + 'MB';
 }
 
 /**

@@ -1,6 +1,10 @@
 import type { Provider } from '@/types/provider';
 import { getParams } from './url-parser';
 
+/**
+ * Parse.ly (acquired by WordPress VIP / Automattic, February 2021)
+ * Now distributed as "Parse.ly for WordPress VIP". Endpoints unchanged.
+ */
 export const parsely: Provider = {
   name: 'Parse.ly',
   color: '#5BA4E5',

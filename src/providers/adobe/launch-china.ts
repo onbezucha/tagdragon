@@ -1,4 +1,4 @@
-import type { Provider } from '../../types/provider';
+import type { Provider } from '@/types/provider';
 
 export const adobeLaunchChina: Provider = {
   name: 'Adobe Launch (CN)',

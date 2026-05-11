@@ -20,6 +20,8 @@
 
 /* === DL FILTER BAR === */
 #dl-filter-bar {
+  grid-row: 3;
+  grid-column: 1;
   display: none;
   align-items: center;
   padding: 0 8px;
@@ -121,4 +123,13 @@
 #dl-clear-filter:hover {
   opacity: 1;
   background-color: transparent;
+}
+
+/* GTM system events toggle */
+#dl-btn-hide-gtm {
+  opacity: 0.5;
+}
+
+#dl-btn-hide-gtm.active {
+  opacity: 1;
 }

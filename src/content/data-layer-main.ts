@@ -11,6 +11,12 @@ import { sanitize } from './sanitize';
   if (win['__tagdragon_main__']) return;
   win['__tagdragon_main__'] = true;
 
+  // Track injection generation — survives guard clearing on re-inject
+  const prevGeneration = (win['__tagdragon_generation__'] as number) || 0;
+  const generation = prevGeneration + 1;
+  win['__tagdragon_generation__'] = generation;
+  const isReinject = generation > 1;
+
   // ─── HELPERS ─────────────────────────────────────────────────────────────
 
   function sendPush(
@@ -78,13 +84,14 @@ import { sanitize } from './sanitize';
   }
 
   function interceptDataLayer(dataLayer: unknown[]): void {
-    // Replay all existing items (only if array has content)
-    if (Array.isArray(dataLayer) && dataLayer.length > 0) {
+    // Skip replay on re-inject — panel already has this data (or user cleared it)
+    if (!isReinject && Array.isArray(dataLayer) && dataLayer.length > 0) {
       replayDataLayer(dataLayer);
     }
 
-    // Monkey-patch .push on the specific instance (NOT Array.prototype)
-    const originalPush = dataLayer.push.bind(dataLayer);
+    // Always wrap the ORIGINAL Array.prototype.push to prevent stacking.
+    // On re-inject, dataLayer.push may already be our wrapper — bypass it.
+    const originalPush = Array.prototype.push.bind(dataLayer);
     dataLayer.push = function (...args: unknown[]) {
       args.forEach((arg, i) => {
         sendPush('gtm', dataLayer.length + i, new Date().toISOString(), arg, false);
@@ -132,11 +139,17 @@ import { sanitize } from './sanitize';
     }
 
     if (event.data.type === 'TAGDRAGON_DL_REPLAY_REQUEST') {
-      const dl = win['dataLayer'];
-      if (Array.isArray(dl)) replayDataLayer(dl);
-      // digitalData: send snapshot if detected
-      if (detected.digitalData || (win['digitalData'] && typeof win['digitalData'] === 'object')) {
-        sendDigitalDataSnapshot(true);
+      // Only replay if this is the first generation (fresh page load)
+      // On re-inject, the panel cleared its data — don't re-fill it
+      if (generation <= 1) {
+        const dl = win['dataLayer'];
+        if (Array.isArray(dl)) replayDataLayer(dl);
+        if (
+          detected.digitalData ||
+          (win['digitalData'] && typeof win['digitalData'] === 'object')
+        ) {
+          sendDigitalDataSnapshot(true);
+        }
       }
     }
   });
@@ -152,8 +165,10 @@ import { sanitize } from './sanitize';
     const utagData = utag['data'];
     if (!utagData || typeof utagData !== 'object') return;
 
-    // Initial snapshot
-    sendPush('tealium', 0, new Date().toISOString(), utagData as Record<string, unknown>, true);
+    // Initial snapshot — skip on re-inject (panel already has this)
+    if (!isReinject) {
+      sendPush('tealium', 0, new Date().toISOString(), utagData as Record<string, unknown>, true);
+    }
 
     // Wrap utag.link / utag.view if they exist
     let tealiumIdx = 1;
@@ -177,10 +192,14 @@ import { sanitize } from './sanitize';
     // Adobe Client Data Layer (ACDL)
     const acdl = win['adobeDataLayer'] as unknown[] | undefined;
     if (Array.isArray(acdl)) {
-      for (let i = 0; i < acdl.length; i++) {
-        sendPush('adobe', adobeIdx++, new Date().toISOString(), acdl[i], true);
+      // Skip replay on re-inject
+      if (!isReinject) {
+        for (let i = 0; i < acdl.length; i++) {
+          sendPush('adobe', adobeIdx++, new Date().toISOString(), acdl[i], true);
+        }
       }
-      const origPush = acdl.push.bind(acdl);
+      // Always wrap the ORIGINAL Array.prototype.push to prevent stacking
+      const origPush = Array.prototype.push.bind(acdl);
       acdl.push = function (...args: unknown[]) {
         args.forEach((arg) => {
           sendPush('adobe', adobeIdx++, new Date().toISOString(), arg, false);
@@ -276,8 +295,10 @@ import { sanitize } from './sanitize';
     const raw = win['digitalData'];
     if (!raw || typeof raw !== 'object') return;
 
-    // Send initial snapshot
-    sendDigitalDataSnapshot(true);
+    // Send initial snapshot — skip on re-inject
+    if (!isReinject) {
+      sendDigitalDataSnapshot(true);
+    }
 
     // Install Proxy to catch future mutations
     try {
@@ -313,8 +334,8 @@ import { sanitize } from './sanitize';
       if (!detected.gtm) {
         const dl = win['dataLayer'];
         if (Array.isArray(dl)) {
-          detected.gtm = true;
           interceptDataLayer(dl as unknown[]);
+          detected.gtm = true;
         }
       }
     } catch {
@@ -378,7 +399,9 @@ import { sanitize } from './sanitize';
 
   // Retry for late-initialized globals
   let retries = 0;
+  let lastNewDetection = 0;
   const MAX_RETRIES = 20;
+  const STALE_THRESHOLD = 3;
   const RETRY_INTERVAL_MS = 500;
   const retryInterval = setInterval(() => {
     const allDetected =
@@ -391,8 +414,35 @@ import { sanitize } from './sanitize';
       clearInterval(retryInterval);
       return;
     }
+    // Count sources before this attempt
+    const beforeCount =
+      (detected.gtm ? 1 : 0) +
+      (detected.tealium ? 1 : 0) +
+      (detected.adobe ? 1 : 0) +
+      (detected.segment ? 1 : 0) +
+      (detected.digitalData ? 1 : 0);
+
     detectAndIntercept();
     retries++;
+
+    // Count sources after this attempt
+    const afterCount =
+      (detected.gtm ? 1 : 0) +
+      (detected.tealium ? 1 : 0) +
+      (detected.adobe ? 1 : 0) +
+      (detected.segment ? 1 : 0) +
+      (detected.digitalData ? 1 : 0);
+
+    if (afterCount > beforeCount) {
+      lastNewDetection = retries;
+    }
+
+    // Stop if no new sources detected in the last STALE_THRESHOLD retries
+    // (avoids wasting CPU checking for non-existent sources)
+    if (retries - lastNewDetection >= STALE_THRESHOLD && retries > 0) {
+      clearInterval(retryInterval);
+      return;
+    }
   }, RETRY_INTERVAL_MS);
 
   // Also detect on DOMContentLoaded

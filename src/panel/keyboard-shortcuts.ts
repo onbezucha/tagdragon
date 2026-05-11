@@ -3,7 +3,7 @@
 import type { ParsedRequest } from '@/types/request';
 import type { DataLayerPush } from '@/types/datalayer';
 import { DOM } from './utils/dom';
-import { closeDetailPane } from './components/detail-pane';
+import { closeDetailPane, setSmoothScroll } from './components/detail-pane';
 import { navigateList, navigateToEdge } from './components/request-list';
 import { navigateDlList, navigateDlToEdge } from './datalayer/components/push-list';
 import { closeDlDetail } from './datalayer/components/push-detail';
@@ -206,9 +206,11 @@ export function initKeyboardHandlers(ctx: KeyboardContext): void {
       e.preventDefault();
       const view = ctx.getActiveView();
       if (view === 'datalayer') {
-        navigateDlList(e.key === 'ArrowDown' ? 1 : -1, ctx.doSelectPush);
+        navigateDlList(e.key === 'ArrowDown' ? 1 : -1, ctx.doSelectPush, e.shiftKey);
       } else {
+        setSmoothScroll(false);
         navigateList(e.key === 'ArrowDown' ? 1 : -1, ctx.doSelectRequest);
+        setSmoothScroll(true);
       }
       return;
     }
@@ -223,7 +225,9 @@ export function initKeyboardHandlers(ctx: KeyboardContext): void {
       if (view === 'datalayer') {
         navigateDlToEdge('first', ctx.doSelectPush);
       } else {
+        setSmoothScroll(false);
         navigateToEdge('first', ctx.doSelectRequest);
+        setSmoothScroll(true);
       }
       return;
     }
@@ -238,7 +242,9 @@ export function initKeyboardHandlers(ctx: KeyboardContext): void {
       if (view === 'datalayer') {
         navigateDlToEdge('last', ctx.doSelectPush);
       } else {
+        setSmoothScroll(false);
         navigateToEdge('last', ctx.doSelectRequest);
+        setSmoothScroll(true);
       }
       return;
     }

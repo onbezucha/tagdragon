@@ -25,6 +25,7 @@
 
 #settings-popover.visible {
   display: flex;
+  pointer-events: auto;
 }
 
 .settings-section {

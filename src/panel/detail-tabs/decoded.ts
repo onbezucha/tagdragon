@@ -3,7 +3,8 @@
 import { COPY_SVG } from '@/shared/constants';
 import { esc } from '../utils/format';
 import { validateValue, parseAdobeEvents, parseAdobeProducts } from '../utils/categorize';
-import type { CategoryMeta, CategorizedParams } from '../utils/categorize';
+import type { CategoryMeta } from '@/types/categorized';
+import type { CategorizedParams } from '@/types/categorized';
 import { getConfig } from '@/panel/state';
 
 /**
@@ -23,6 +24,7 @@ export function renderCategorizedParams(
   );
 
   const parts: string[] = [];
+  const cfg = getConfig();
 
   for (const [catKey, params] of sortedEntries) {
     const category = params._meta;
@@ -34,7 +36,6 @@ export function renderCategorizedParams(
     const paramCount = Object.keys(paramsWithoutMeta).length;
     if (paramCount === 0) continue;
 
-    const cfg = getConfig();
     const isCollapsed = cfg.autoExpand
       ? false
       : cfg.collapsedGroups.includes(catKey) || category.defaultExpanded === false;
@@ -47,8 +48,8 @@ export function renderCategorizedParams(
            style="--provider-color: ${esc(providerColor)};">
         <div class="category-header ${collapsedClass}">
           <div class="category-left">
-            <span class="category-icon">${category.icon}</span>
-            <span class="category-label">${category.label}</span>
+            <span class="category-icon">${esc(category.icon)}</span>
+            <span class="category-label">${esc(category.label)}</span>
             <span class="category-count">(${paramCount})</span>
           </div>
           <span class="category-toggle">▼</span>

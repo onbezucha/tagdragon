@@ -9,6 +9,36 @@ type ParamValue = string;
 type ParamRecord = Record<string, ParamValue>;
 
 /**
+ * Fast query string parser — avoids allocating URL/URLSearchParams objects.
+ * Only extracts query parameters from the URL string using manual string operations.
+ */
+function fastParseQueryString(url: string): Record<string, string> {
+  const params: Record<string, string> = {};
+  const qStart = url.indexOf('?');
+  if (qStart === -1) return params;
+  const hashStart = url.indexOf('#', qStart);
+  const qStr = hashStart === -1 ? url.substring(qStart + 1) : url.substring(qStart + 1, hashStart);
+  let start = 0;
+  while (start < qStr.length) {
+    const eq = qStr.indexOf('=', start);
+    const amp = qStr.indexOf('&', start);
+    const end = amp === -1 ? qStr.length : amp;
+    if (eq !== -1 && eq < end) {
+      try {
+        // Replace + with space for URL-encoded form data compatibility
+        const decodedValue = qStr.substring(eq + 1, end).replace(/\+/g, ' ');
+        params[decodeURIComponent(qStr.substring(start, eq))] = decodeURIComponent(decodedValue);
+      } catch {
+        // Invalid URI component — store raw
+        params[qStr.substring(start, eq)] = qStr.substring(eq + 1, end);
+      }
+    }
+    start = end + 1;
+  }
+  return params;
+}
+
+/**
  * Convert any postBody format to plain string for further parsing.
  * Handles string, object, and HAR format post bodies.
  */
@@ -48,13 +78,10 @@ function postBodyToString(postBody: unknown): string {
 export function getParams(url: string, postBody?: unknown): ParamRecord {
   const params: ParamRecord = {};
 
-  // 1. First URL query string
-  try {
-    new URL(url).searchParams.forEach((v, k) => {
-      params[k] = v;
-    });
-  } catch {
-    // URL parsing failed, continue
+  // 1. First URL query string — fast parse, no URL object allocation
+  const queryParams = fastParseQueryString(url);
+  for (const k in queryParams) {
+    params[k] = queryParams[k];
   }
 
   // 2. POST body — overwrites any duplicates from URL
@@ -62,23 +89,36 @@ export function getParams(url: string, postBody?: unknown): ParamRecord {
   if (bodyStr) {
     // Try URLencoded first (most common for tracking pixels and AA implementations)
     // v1=value&v2=other&pageName=Home&events=purchase
-    try {
-      const urlParams = new URLSearchParams(bodyStr);
-      let hasParams = false;
-      urlParams.forEach((v, k) => {
-        params[k] = v;
+    // Manual parse to avoid URLSearchParams allocation
+    let hasParams = false;
+    let bodyStart = 0;
+    while (bodyStart < bodyStr.length) {
+      const eq = bodyStr.indexOf('=', bodyStart);
+      const amp = bodyStr.indexOf('&', bodyStart);
+      const end = amp === -1 ? bodyStr.length : amp;
+      if (eq !== -1 && eq < end) {
+        try {
+          // Replace + with space for URL-encoded form data compatibility
+          const decodedValue = bodyStr.substring(eq + 1, end).replace(/\+/g, ' ');
+          params[decodeURIComponent(bodyStr.substring(bodyStart, eq))] =
+            decodeURIComponent(decodedValue);
+        } catch {
+          params[bodyStr.substring(bodyStart, eq)] = bodyStr.substring(eq + 1, end);
+        }
         hasParams = true;
-      });
-      if (hasParams) return params;
-    } catch {
-      // URLSearchParams parsing failed, continue
+      }
+      bodyStart = end + 1;
     }
+    if (hasParams) return params;
 
     // Fallback to JSON (Web SDK, some modern implementations)
     try {
       const json = JSON.parse(bodyStr);
       if (json && typeof json === 'object') {
-        Object.assign(params, json);
+        for (const [k, v] of Object.entries(json)) {
+          if (v == null) continue;
+          params[k] = typeof v === 'string' ? v : JSON.stringify(v);
+        }
         return params;
       }
     } catch {

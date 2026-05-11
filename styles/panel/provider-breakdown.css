@@ -3,7 +3,7 @@
 .provider-breakdown {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--icon-gap-lg);
   padding: 0 8px;
   font-size: 11px;
   color: var(--text-2);
@@ -21,7 +21,7 @@
 .pb-item {
   display: inline-flex;
   align-items: center;
-  gap: 3px;
+  gap: var(--icon-gap-xs);
 }
 
 .pb-dot {

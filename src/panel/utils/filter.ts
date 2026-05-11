@@ -11,6 +11,33 @@ const _regexCache = new Map<string, RegExp | null>();
 const REGEX_CACHE_MAX = 50;
 
 /**
+ * Build search index string for a request.
+ * Used for fast text-filter matching across URL, provider, params, and decoded keys.
+ */
+function buildSearchIndex(data: ParsedRequest): string {
+  return [
+    data.url || '',
+    data.provider || '',
+    ...Object.keys(data.allParams || {}),
+    ...Object.values(data.allParams || {}).map(String),
+    ...Object.keys(data.decoded || {}),
+    ...Object.values(data.decoded || {}).map(String),
+  ]
+    .join('\0')
+    .toLowerCase();
+}
+
+/**
+ * Get search index for a request. Computed lazily on first access.
+ */
+function getSearchIndex(data: ParsedRequest): string {
+  if (!data._searchIndex) {
+    data._searchIndex = buildSearchIndex(data);
+  }
+  return data._searchIndex;
+}
+
+/**
  * Check if a request matches current filters.
  */
 export function matchesFilter(data: ParsedRequest): boolean {
@@ -47,23 +74,29 @@ export function matchesFilter(data: ParsedRequest): boolean {
       }
 
       if (regex) {
-        const haystack = data._searchIndex ?? `${data.url}\0${data.provider}`;
+        const haystack = getSearchIndex(data);
         if (!regex.test(haystack)) return false;
       } else {
         const q = filterText.toLowerCase();
-        const haystack =
-          data._searchIndex ?? `${data.url.toLowerCase()}\0${data.provider.toLowerCase()}`;
+        const haystack = getSearchIndex(data);
+        if (!haystack.includes(q)) return false;
+      }
+    } else if (!filterEventType && !filterUserId && !filterHasParam) {
+      // Fast path: simple plain-text filter with no other text-dependent filters.
+      // Skip buildSearchIndex allocation — check URL + provider directly.
+      const q = filterText.toLowerCase();
+      if (
+        !(data.url || '').toLowerCase().includes(q) &&
+        !(data.provider || '').toLowerCase().includes(q)
+      ) {
+        // Missed on fast path — fall back to full index for param keys/values
+        const haystack = getSearchIndex(data);
         if (!haystack.includes(q)) return false;
       }
     } else {
       const q = filterText.toLowerCase();
-      if (data._searchIndex) {
-        if (!data._searchIndex.includes(q)) return false;
-      } else {
-        const matchesText =
-          data.url.toLowerCase().includes(q) || data.provider.toLowerCase().includes(q);
-        if (!matchesText) return false;
-      }
+      const haystack = getSearchIndex(data);
+      if (!haystack.includes(q)) return false;
     }
   }
 

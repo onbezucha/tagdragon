@@ -2,7 +2,7 @@
 // Quick-view popup showing request statistics for the active tab.
 
 import type { PopupStatsResponse, ProviderStats, TabPopupStats } from '@/types/popup';
-import { formatBytes } from '@/panel/utils/format';
+import { formatBytes } from '@/shared/format-bytes';
 
 // ─── DOM REFS ─────────────────────────────────────────────────────────────────
 

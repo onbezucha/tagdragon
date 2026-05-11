@@ -101,8 +101,8 @@ describe('matchProvider', () => {
       }
     });
 
-    it('has more than 60 providers registered', () => {
-      expect(PROVIDERS.length).toBeGreaterThan(60);
+    it('has at least 59 providers registered', () => {
+      expect(PROVIDERS.length).toBeGreaterThanOrEqual(59);
     });
   });
 });

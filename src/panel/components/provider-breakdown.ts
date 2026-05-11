@@ -2,7 +2,10 @@
 // Compact horizontal bar in status bar showing per-provider request counts
 // with expandable popover for detailed metrics
 
-import { computeProviderStats, formatBytes, formatMs } from '../utils/provider-stats';
+import { computeProviderStats } from '../utils/provider-stats';
+import { formatBytes } from '@/shared/format-bytes';
+import { formatMs } from '../utils/provider-stats';
+import { esc } from '../utils/format';
 import type { ProviderStat } from '../utils/provider-stats';
 import { getAllRequests } from '../state';
 
@@ -32,9 +35,9 @@ export function renderProviderBreakdown(): void {
     // Show top 6 providers
     const errorBadge =
       stat.errorCount > 0 ? `<span class="pb-error">${stat.errorCount}</span>` : '';
-    html += `<span class="pb-item" data-provider="${stat.name}">
+    html += `<span class="pb-item" data-provider="${esc(stat.name)}">
       <span class="pb-dot" style="background:${stat.color}"></span>
-      <span class="pb-name">${stat.name}</span>
+      <span class="pb-name">${esc(stat.name)}</span>
       <span class="pb-count">${stat.count}</span>
       ${errorBadge}
     </span>`;
@@ -103,7 +106,7 @@ function togglePopover(stats?: ProviderStat[]): void {
       <tr>
         <td>
           <span class="pb-dot" style="background:${stat.color}"></span>
-          ${stat.name}
+          ${esc(stat.name)}
         </td>
         <td>${stat.count}</td>
         <td>${stat.errorCount > 0 ? `<span class="pb-table-error">${stat.errorCount}</span>` : '0'}</td>

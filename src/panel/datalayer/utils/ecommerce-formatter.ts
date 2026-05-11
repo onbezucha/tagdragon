@@ -90,6 +90,45 @@ export function renderEcommerceTable(container: HTMLElement, ec: Record<string, 
     }
   }
 
+  // E-commerce summary card
+  const summaryEl = document.createElement('div');
+  summaryEl.className = 'dl-ec-summary';
+
+  const parts: string[] = [];
+  parts.push(`${products.length} item${products.length !== 1 ? 's' : ''}`);
+
+  if (total) {
+    parts.push(`Total: ${total}`);
+  }
+
+  // Extract transaction ID from various e-commerce structures
+  let transactionId = '';
+  const ecActionField = (ec['purchase'] as Record<string, unknown> | undefined)?.['actionField'] as
+    | Record<string, unknown>
+    | undefined;
+  if (ecActionField?.['id']) {
+    transactionId = String(ecActionField['id']);
+  } else if (ec['transaction_id']) {
+    transactionId = String(ec['transaction_id']);
+  } else if (ec['transactionId']) {
+    transactionId = String(ec['transactionId']);
+  }
+  if (transactionId) {
+    parts.push(`Transaction: ${esc(transactionId)}`);
+  }
+
+  // Build the summary line
+  const summaryIcon = document.createElement('span');
+  summaryIcon.className = 'dl-ec-summary-icon';
+  summaryIcon.textContent = '💰';
+
+  const summaryText = document.createElement('span');
+  summaryText.className = 'dl-ec-summary-text';
+  summaryText.textContent = parts.join(' · ');
+
+  summaryEl.appendChild(summaryIcon);
+  summaryEl.appendChild(summaryText);
+
   const wrapper = document.createElement('div');
   wrapper.className = 'dl-ecommerce-products';
 
@@ -130,6 +169,7 @@ export function renderEcommerceTable(container: HTMLElement, ec: Record<string, 
     table.appendChild(tfoot);
   }
 
+  wrapper.appendChild(summaryEl);
   wrapper.appendChild(table);
   container.appendChild(wrapper);
 }

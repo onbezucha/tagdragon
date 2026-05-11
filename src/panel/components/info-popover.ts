@@ -3,39 +3,16 @@
 import { PROVIDERS } from '@/providers/index';
 import { PROVIDER_GROUPS } from '@/shared/provider-groups';
 import { DATA_LAYER_SOURCES } from '@/shared/datalayer-constants';
+import { getAllRequests, getActiveProviders } from '@/panel/state';
+import { getDlTotalCount } from '@/panel/datalayer/state';
 import { DOM } from '../utils/dom';
 import { closeAllPopovers, registerPopover } from '../utils/popover-manager';
 import { isMac } from '../utils/platform';
 import { esc } from '../utils/format';
 import { buildGroupIcon } from '../utils/icon-builder';
-import { GROUP_ICONS } from '../utils/group-icons';
-import {
-  createIcons,
-  Cable,
-  Database,
-  Eraser,
-  Cookie,
-  Sun,
-  Moon,
-  Trash2,
-  Settings,
-  CircleHelp,
-  Search,
-  ArrowUpDown,
-  WrapText,
-  Maximize2,
-  AlignJustify,
-  Filter,
-  Download,
-  Pause,
-  Play,
-  ChevronDown,
-  X,
-  SlidersHorizontal,
-  ShoppingCart,
-  CheckCircle,
-  Upload,
-} from 'lucide';
+import { GROUP_ICONS, GROUP_COLORS } from '../utils/group-icons';
+import { createIcons } from 'lucide';
+import { PANEL_ICONS } from '../utils/lucide-icons';
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
 
@@ -51,6 +28,7 @@ export function initInfoPopover(): void {
     closeAllPopovers();
     if (opening) {
       $popover.classList.add('visible');
+      renderSessionStats();
       // Focus search on open
       setTimeout(
         () => (document.getElementById('info-search') as HTMLInputElement | null)?.focus(),
@@ -60,7 +38,9 @@ export function initInfoPopover(): void {
   });
 
   setVersion();
+  updateDescription();
   renderProviderGroups();
+  renderWhatsNew();
   renderShortcuts();
   renderToolbarIcons();
   renderDataLayerSources();
@@ -92,6 +72,125 @@ function setVersion(): void {
   }
 }
 
+// ─── DESCRIPTION ──────────────────────────────────────────────────────────
+
+function updateDescription(): void {
+  const $count = document.getElementById('info-provider-count');
+  if ($count) $count.textContent = String(PROVIDERS.length);
+
+  const $categories = document.getElementById('info-category-count');
+  if ($categories) $categories.textContent = String(PROVIDER_GROUPS.length);
+}
+
+// ─── SESSION STATS ────────────────────────────────────────────────────────
+
+function renderSessionStats(): void {
+  const $reqs = document.getElementById('info-stat-requests');
+  const $provs = document.getElementById('info-stat-providers');
+  const $dl = document.getElementById('info-stat-dl');
+  const $top = document.getElementById('info-stats-top');
+
+  if (!$reqs || !$provs || !$dl || !$top) return;
+
+  // 1. Read counts from state modules (all O(1) except requests.length)
+  const requests = getAllRequests();
+  const requestCount = requests.length;
+  const providerCount = getActiveProviders().size;
+  const dlPushCount = getDlTotalCount();
+
+  // 2. Update stat cards
+  $reqs.textContent = String(requestCount);
+  $provs.textContent = String(providerCount);
+  $dl.textContent = String(dlPushCount);
+
+  // 3. Compute top 3 providers by request frequency
+  if (requestCount === 0) {
+    $top.innerHTML = '<span class="info-stats-empty">No requests captured yet</span>';
+    return;
+  }
+
+  const counts = new Map<string, number>();
+  for (const req of requests) {
+    counts.set(req.provider, (counts.get(req.provider) ?? 0) + 1);
+  }
+
+  const sorted = [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3);
+
+  // Build color map from PROVIDERS (already imported in info-popover.ts)
+  const colorMap = new Map(PROVIDERS.map((p) => [p.name, p.color]));
+
+  $top.innerHTML = sorted
+    .map(([name, count]) => {
+      const color = colorMap.get(name) ?? '#888';
+      return (
+        `<span class="info-top-pill" style="border-color:${color}">` +
+        `${esc(name)}` +
+        `<span class="info-top-pill-count">${count}</span>` +
+        `</span>`
+      );
+    })
+    .join('');
+}
+
+// ─── WHAT'S NEW ────────────────────────────────────────────────────────────
+
+const WHATS_NEW: ReadonlyArray<{ version: string; changes: readonly string[] }> = [
+  {
+    version: '1.7.0',
+    changes: ['Documentation overhaul — 59 providers, 75 test files, GitHub Actions CI/CD'],
+  },
+  {
+    version: '1.6.0',
+    changes: [
+      'ESLint + Prettier with pre-commit hooks',
+      'Bundle analysis tool (npm run analyze)',
+      'DataLayer sort and group-by-source fixes',
+    ],
+  },
+  {
+    version: '1.5.6',
+    changes: [
+      'DataLayer validation engine with custom rules',
+      'DataLayer watch paths for focused monitoring',
+      'DataLayer filter popover — filter by event, key, source',
+      'Provider icon caching system',
+    ],
+  },
+  {
+    version: '1.5.5',
+    changes: [
+      'Medallia DXA provider added',
+      'Microsoft Clarity Tag provider added',
+      'Domain index for faster URL matching',
+    ],
+  },
+  {
+    version: '1.5.0',
+    changes: [
+      'DataLayer Inspector — GTM, Tealium, Adobe, Segment, W3C',
+      'Consent Panel — inspect and override cookie state',
+      'Adobe Environment Switcher (DEV/ACC/PROD)',
+      'Extension Popup with live stats',
+    ],
+  },
+];
+
+function renderWhatsNew(): void {
+  const $container = document.getElementById('info-whats-new');
+  if (!$container) return;
+
+  $container.innerHTML = WHATS_NEW.map(
+    (entry) => `
+    <div class="info-whats-new-version">
+      <span class="info-whats-new-tag">v${esc(entry.version)}</span>
+      <ul class="info-whats-new-changes">
+        ${entry.changes.map((c) => `<li>${esc(c)}</li>`).join('')}
+      </ul>
+    </div>
+  `
+  ).join('');
+}
+
 // ─── PROVIDER GROUPS ──────────────────────────────────────────────────────────
 
 function renderProviderGroups(): void {
@@ -120,8 +219,10 @@ function renderProviderGroups(): void {
 
     const groupIcon = GROUP_ICONS[group.id] ?? '';
 
+    const groupColor = GROUP_COLORS[group.id] ?? 'var(--border)';
+
     return `
-      <div class="info-provider-group" data-group="${group.id}">
+      <div class="info-provider-group" data-group="${group.id}" style="border-left:3px solid ${groupColor};padding-left:8px;">
         <div class="info-provider-group-label">
           ${groupIcon ? `<span class="info-group-icon">${groupIcon}</span>` : ''}
           ${esc(group.label)}
@@ -269,34 +370,7 @@ function renderToolbarIcons(): void {
     .join('');
 
   // Re-render Lucide icons for the new elements
-  createIcons({
-    icons: {
-      Cable,
-      Database,
-      Eraser,
-      Cookie,
-      Sun,
-      Moon,
-      Trash2,
-      Settings,
-      CircleHelp,
-      Search,
-      ArrowUpDown,
-      WrapText,
-      Maximize2,
-      AlignJustify,
-      Filter,
-      Download,
-      Pause,
-      Play,
-      ChevronDown,
-      X,
-      SlidersHorizontal,
-      ShoppingCart,
-      CheckCircle,
-      Upload,
-    },
-  });
+  createIcons({ icons: PANEL_ICONS });
 }
 
 // ─── DATALAYER SOURCES ───────────────────────────────────────────────────────

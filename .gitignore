@@ -20,15 +20,16 @@ ehthumbs.db
 
 # Obsidian
 .obsidian/
+*.canvas
 
 # AI coding tools
 AGENTS.md
 CLAUDE.md
-JEAN.md
 .claude/
 .cursor/
 .windsurf/
 .aider*
+.agents/
 
 # Dependencies
 node_modules/
@@ -72,8 +73,8 @@ coverage/
 # VS Code Local History
 .history/
 
-# Canvas files
-*.canvas
+# LLM Obsidian Vault (personal knowledge base for Obsidian + Jean2)
+obsidian/
 
-# LLM Wiki (personal knowledge base for Obsidian + Jean2)
+# Personal research notes
 wiki/

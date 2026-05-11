@@ -16,7 +16,7 @@ const DETECT_ADOBE_SCRIPT = `
     var src = scripts[i].src;
     if (src.indexOf('assets.adobedtm.com') !== -1 ||
         /launch-EN[a-f0-9]+/.test(src) ||
-        /launch-[a-f0-9]+\\\\.min\\\\.js/.test(src) ||
+        /launch-[a-f0-9]+\\\\\\\\.min\\\\\\\\.js/.test(src) ||
         /satellite-[a-f0-9]+/.test(src)) {
       return JSON.stringify({ url: src, hostname: location.hostname });
     }
@@ -27,7 +27,7 @@ const DETECT_ADOBE_SCRIPT = `
 
 // ─── ENV DETECTION ────────────────────────────────────────────────────────
 
-function parseAdobeLibraryUrl(url: string): Omit<AdobeDetected, 'url' | 'hostname'> {
+export function parseAdobeLibraryUrl(url: string): Omit<AdobeDetected, 'url' | 'hostname'> {
   const envMatch = url.match(/launch-EN([a-f0-9]+)(?:-(development|staging))?\.min\.js/);
   const legacyMatch = url.match(/launch-([a-f0-9]+)(?:-(development|staging))?\.min\.js/);
   const satelliteMatch = url.match(/satellite-([a-f0-9]+)\.js/);
@@ -81,7 +81,7 @@ async function saveEnvConfig(hostname: string, envConfig: AdobeEnvConfig): Promi
     all[hostname] = envConfig;
     await chrome.storage.local.set({ rt_adobe_env: all });
   } catch {
-    console.warn('Request Tracker: Env config save failed');
+    console.warn('[TagDragon] Env config save failed');
   }
 }
 

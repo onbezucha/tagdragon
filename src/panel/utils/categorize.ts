@@ -1,29 +1,11 @@
 // ─── CATEGORIZATION UTILITIES ────────────────────────────────────────────────
 // Functions for categorizing and validating parameters
 
-import type { SpecialRenderer } from '@/types/categories';
+import type { CategorizedParams, CategoryMeta } from '@/types/categorized';
 import { PROVIDER_CATEGORIES } from '@/shared/categories';
 
-/**
- * Metadata attached to each categorized section
- */
-export interface CategoryMeta {
-  label: string;
-  icon: string;
-  order: number;
-  defaultExpanded: boolean;
-  specialRenderer: SpecialRenderer | null;
-  requiredParams: string[] | null;
-}
-
-/**
- * Categorized parameters with metadata
- */
-export interface CategorizedParams {
-  [key: string]: Record<string, string | undefined> & {
-    _meta?: CategoryMeta;
-  };
-}
+// Re-export for backward compatibility
+export type { CategorizedParams, CategoryMeta };
 
 /**
  * Validation result for a parameter

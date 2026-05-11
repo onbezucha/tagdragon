@@ -93,3 +93,25 @@
 .dl-reset-link:hover {
   text-decoration: underline;
 }
+
+/* === CORRELATION CONFIDENCE LEGEND === */
+.dl-correlation-legend {
+  display: flex;
+  gap: 12px;
+  margin-top: 6px;
+  font-size: 10px;
+  color: var(--text-3);
+}
+
+.dl-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.dl-legend-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
